@@ -13,25 +13,33 @@ export const ProfileSection: React.FC = () => {
     const svg = svgRef.current;
     if (!svg) return;
 
+    // Clear previous content first
     svg.innerHTML = '';
-    
+
+    // Create rough instance AFTER clearing
     const rc = createRoughSVG(svg);
     const style = getHandDrawnStyle(theme === 'dark');
-    
-    const centerX = 75;
-    const centerY = 75;
+
+    const centerX = 70;
+    const centerY = 70;
     const radius = 65;
-    
-    drawRoughCircle(rc, centerX, centerY, radius * 2, {
+
+    // drawRoughCircle returns a DOM node that must be appended
+    const circleNode = drawRoughCircle(rc, centerX, centerY, radius * 2, {
       ...style,
-      strokeWidth: 3,
+      strokeWidth: 1,
       roughness: 2,
     });
+
+    // Manually append the returned node to the SVG
+    if (circleNode) {
+      svg.appendChild(circleNode as Node);
+    }
   }, [theme]);
 
   return (
-    <div className="flex flex-col items-center mb-8">
-      <div className="relative w-32 h-32 mb-4">
+    <div className="flex flex-col items-center mb-2">
+      <div className="relative w-32">
         <svg
           ref={svgRef}
           width="150"
@@ -39,9 +47,9 @@ export const ProfileSection: React.FC = () => {
           className="absolute -top-2 -left-2 pointer-events-none"
           style={{ zIndex: 1 }}
         />
-        <div 
+        <div
           className="relative w-28 h-28 rounded-full overflow-hidden"
-          style={{ 
+          style={{
             zIndex: 2,
             top: '8px',
             left: '8px'

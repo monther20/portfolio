@@ -25,7 +25,10 @@ export const SkillsSection: React.FC = () => {
       >
         skills
       </h2>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid gap-3" style={{
+        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+        justifyItems: 'center'
+      }}>
         {skills.map((skill, index) => (
           <RoughButton
             key={index}

@@ -17,7 +17,7 @@ export const Sidebar: React.FC = () => {
         zIndex: 10
       }}
     >
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col border-r border-gray-200 pr-4">
         <ProfileSection />
         <AboutSection />
         <SkillsSection />
