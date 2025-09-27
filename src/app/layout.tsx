@@ -30,11 +30,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <div className="flex">
-            <Sidebar />
-            <main className="flex-1 ml-80">
-              {children}
-            </main>
+          <div className="w-full flex justify-center">
+            <div className="flex max-w-[1522px] w-full">
+              <Sidebar />
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
           </div>
         </ThemeProvider>
       </body>

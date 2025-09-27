@@ -28,7 +28,7 @@ export const ProfileSection: React.FC = () => {
     const circleNode = drawRoughCircle(rc, centerX, centerY, radius * 2, {
       ...style,
       strokeWidth: 1,
-      roughness: 2,
+      roughness: 1,
     });
 
     // Manually append the returned node to the SVG
@@ -38,13 +38,13 @@ export const ProfileSection: React.FC = () => {
   }, [theme]);
 
   return (
-    <div className="flex flex-col items-center mb-2">
-      <div className="relative w-32">
+    <div className="flex flex-col items-center mb-4 mt-20">
+      <div className="w-32 relative">
         <svg
           ref={svgRef}
           width="150"
           height="150"
-          className="absolute -top-2 -left-2 pointer-events-none"
+          className="absolute -top-3 -left-2 pointer-events-none"
           style={{ zIndex: 1 }}
         />
         <div

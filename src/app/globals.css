@@ -2,10 +2,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf9f6;
+  --background: #F9FBFF;
   --foreground: #2c3e50;
-  --color-sidebarBg: #faf9f6;
-  --color-cardBg: #faf9f6;
+  --color-sidebarBg: #F9FBFF;
+  --color-cardBg: #F9FBFF;
   --color-primary: #2c3e50;
   --color-secondary: #34495e;
   --color-accent: #3498db;
@@ -45,3 +45,46 @@ main {
 html {
   scroll-behavior: smooth;
 }
+
+/* Hand-drawn scrollbar styling */
+::-webkit-scrollbar {
+  width: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-skillBg);
+  border-radius: 8px 12px 10px 6px;
+  box-shadow: 
+    inset 2px 1px 3px rgba(44, 62, 80, 0.1),
+    inset -1px -2px 2px rgba(44, 62, 80, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(145deg, #7f8c8d 0%, #95a5a6 45%, #7f8c8d 100%);
+  border-radius: 10px 6px 12px 8px;
+  border: 1px solid rgba(44, 62, 80, 0.15);
+  box-shadow: 
+    2px 1px 4px rgba(44, 62, 80, 0.2),
+    -1px -1px 2px rgba(255, 255, 255, 0.8),
+    inset 1px 0px 2px rgba(255, 255, 255, 0.4);
+  position: relative;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(145deg, var(--color-primary) 0%, #34495e 45%, var(--color-primary) 100%);
+  box-shadow: 
+    3px 2px 6px rgba(44, 62, 80, 0.3),
+    -1px -2px 3px rgba(255, 255, 255, 0.6),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  transition: all 0.2s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--color-primary);
+  box-shadow: 
+    inset 2px 2px 4px rgba(44, 62, 80, 0.4),
+    1px 1px 2px rgba(255, 255, 255, 0.3);
+  transform: scale(0.98);
+}
+

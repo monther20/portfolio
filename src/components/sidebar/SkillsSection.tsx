@@ -8,7 +8,8 @@ const skills = [
   'React', 'React-Native', 'NextJS',
   'React Query', 'Tailwind', 'NodeJS',
   'Framer Motion', 'GSAP', 'RoughJS',
-  'PhyJS'
+  'PhyJS', "SVG", "Firebase", "TypeScript", "Git", "GitHub",
+  "Figma"
 ];
 
 export const SkillsSection: React.FC = () => {
@@ -23,9 +24,9 @@ export const SkillsSection: React.FC = () => {
           fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
         }}
       >
-        skills
+        Skills
       </h2>
-      <div className="grid gap-3" style={{
+      <div className="grid gap-1" style={{
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
         justifyItems: 'center'
       }}>

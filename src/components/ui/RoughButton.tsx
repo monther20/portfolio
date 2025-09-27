@@ -97,7 +97,7 @@ export const RoughButton: React.FC<RoughButtonProps> = ({
   return (
     <button
       ref={containerRef}
-      className={`relative px-4 py-2 text-sm font-medium transition-opacity duration-200 ${className}`}
+      className={`relative px-4 py-2 text-lg font-medium transition-opacity duration-200 ${className}`}
       onClick={onClick}
       disabled={disabled}
       style={{

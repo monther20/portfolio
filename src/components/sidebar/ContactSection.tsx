@@ -8,37 +8,39 @@ export const ContactSection: React.FC = () => {
 
   return (
     <div>
-      <h2 
+      <h2
         className="text-2xl mb-4 font-bold"
-        style={{ 
+        style={{
           color: colors.text,
           fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
         }}
       >
-        contact
+        Contact
       </h2>
-      <div className="space-y-2">
-        <div 
-          className="text-sm"
-          style={{ 
+      <div className="flex justify-between">
+
+        <div
+          className="text-lg"
+          style={{
+            color: colors.textSecondary,
+            fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
+          }}
+        >
+          monther.aloufi20@gmail.com
+        </div>
+        <div
+          className="text-lg"
+          style={{
             color: colors.textSecondary,
             fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
           }}
         >
           +962 780672010
         </div>
-        <div 
-          className="text-sm"
-          style={{ 
-            color: colors.textSecondary,
-            fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
-          }}
-        >
-          monther.abufizzo@gmail.com
-        </div>
-        <div 
-          className="text-sm"
-          style={{ 
+
+        <div
+          className="text-lg"
+          style={{
             color: colors.textSecondary,
             fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
           }}
