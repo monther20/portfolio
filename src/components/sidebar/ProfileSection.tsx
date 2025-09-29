@@ -40,13 +40,13 @@ export const ProfileSection: React.FC = () => {
   return (
     <div className="flex flex-col items-center mb-8">
       <div className="w-40 relative">
-        <svg
+        {/* <svg
           ref={svgRef}
           width="190"
           height="190"
           className="absolute -top-1 -left-2 pointer-events-none"
           style={{ zIndex: 1 }}
-        />
+        /> */}
         <div
           className="relative w-36 h-36 overflow-hidden"
           style={{

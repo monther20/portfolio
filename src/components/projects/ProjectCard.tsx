@@ -80,13 +80,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     const card = hoverCardRef.current;
     if (!svg || !card) return;
 
-    const width = 300;
+    const contentWidth = 300;
+    const totalWidth = 340; // Add 80px for longer arrow extensions (40px each side)
     const height = 200;
     const padding = 4;
+    const arrowOffset = 40; // Offset for longer arrow extension space
 
-    svg.setAttribute('width', width.toString());
+    svg.setAttribute('width', totalWidth.toString());
     svg.setAttribute('height', height.toString());
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('viewBox', `0 0 ${totalWidth} ${height}`);
     svg.innerHTML = '';
 
     const rc = createRoughSVG(svg);
@@ -96,20 +98,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
       roughness: 1.5,
     };
 
-    // Create the complete border rectangle
-    const borderRect = drawRoughRectangle(rc, padding, padding, width - (padding * 2), height - (padding * 2), style);
+    // Create the complete border rectangle (offset by arrowOffset to center within expanded SVG)
+    const borderRect = drawRoughRectangle(rc, padding + arrowOffset, padding, contentWidth - (padding * 2), height - (padding * 2), style);
 
     // Create arrow pointing to the project card
-    const arrowStartX = hoverPosition === 'right' ? padding : width - padding;
+    const arrowStartX = hoverPosition === 'right' ? padding + arrowOffset : totalWidth - padding - arrowOffset;
     const arrowStartY = height / 2;
-    const arrowEndX = hoverPosition === 'right' ? -20 : width + 20;
+    const arrowEndX = hoverPosition === 'right' ? -20 : totalWidth + 40; // Extend 20px beyond SVG boundary
     const arrowEndY = height / 2;
 
     const arrowLine = drawRoughLine(rc, arrowStartX, arrowStartY, arrowEndX, arrowEndY, style);
 
     // Arrow head
     const arrowSize = 8;
-    const arrowHeadX = hoverPosition === 'right' ? -20 : width + 20;
+    const arrowHeadX = hoverPosition === 'right' ? -20 : totalWidth + 10; // Match arrow endpoint
     const arrowHead1 = drawRoughLine(rc, arrowHeadX, arrowEndY,
       arrowHeadX + (hoverPosition === 'right' ? arrowSize : -arrowSize), arrowEndY - arrowSize, style);
     const arrowHead2 = drawRoughLine(rc, arrowHeadX, arrowEndY,
@@ -311,39 +313,35 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           className={`absolute top-1/2 transform -translate-y-1/2 z-50 pointer-events-none ${hoverPosition === 'right' ? 'left-full ml-4' : 'right-full mr-4'
             }`}
           style={{
-            width: '300px',
+            width: '400px', // Updated to match new SVG width
             height: '200px',
             opacity: 1,
             transform: 'scale(0)',
             transformOrigin: hoverPosition === 'right' ? 'left center' : 'right center'
           }}
         >
-          {/* Background */}
-          <div
-            className="absolute inset-0 rounded-lg"
-            style={{
-              backgroundColor: colors.background,
-              zIndex: 0
-            }}
-          />
+
 
           <svg
             ref={hoverSvgRef}
             className="absolute inset-0 w-full h-full"
-            style={{ zIndex: 1 }}
+            style={{ zIndex: 1, backgroundColor: colors.background }}
           />
 
           <div
             className="relative w-full h-full p-3"
-            style={{ zIndex: 2 }}
+            style={{ marginLeft: '80px', width: '250px' }} // Offset content to center within expanded container
           >
             <div className="relative w-full h-full overflow-hidden rounded-lg">
               <Image
                 src={project.imageUrl}
                 alt={project.title}
+                style={{
+                  zIndex: 2,
+                  backgroundColor: colors.background,
+                }}
                 fill
-                className="object-cover"
-                sizes="300px"
+                sizes="200px"
               />
             </div>
           </div>

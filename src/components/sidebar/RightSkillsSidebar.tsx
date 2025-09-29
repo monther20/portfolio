@@ -51,8 +51,8 @@ export const RightSkillsSidebar: React.FC = () => {
   const { colors } = useTheme();
 
   return (
-    <aside className="sticky top-0 h-screen overflow-y-auto p-6">
-      <div className="h-full">
+    <aside className="sticky top-0 h-screen  p-6">
+      <div className="h-full border-l border-gray-200 pl-4 pr-2 -mr-6 overflow-y-auto">
         <h2
           className="text-2xl mb-6 font-bold"
           style={{
@@ -61,35 +61,35 @@ export const RightSkillsSidebar: React.FC = () => {
         >
           Skills & Technologies
         </h2>
-        
-        <SkillCategory 
-          title="Languages" 
-          skills={skillsData.languages} 
-          colors={colors} 
+
+        <SkillCategory
+          title="Languages"
+          skills={skillsData.languages}
+          colors={colors}
         />
-        
-        <SkillCategory 
-          title="Frontend" 
-          skills={skillsData.frontend} 
-          colors={colors} 
+
+        <SkillCategory
+          title="Frontend"
+          skills={skillsData.frontend}
+          colors={colors}
         />
-        
-        <SkillCategory 
-          title="Cloud & DevOps" 
-          skills={skillsData.cloudDevOps} 
-          colors={colors} 
+
+        <SkillCategory
+          title="Cloud & DevOps"
+          skills={skillsData.cloudDevOps}
+          colors={colors}
         />
-        
-        <SkillCategory 
-          title="Development Tools" 
-          skills={skillsData.devTools} 
-          colors={colors} 
+
+        <SkillCategory
+          title="Development Tools"
+          skills={skillsData.devTools}
+          colors={colors}
         />
-        
-        <SkillCategory 
-          title="Currently Learning" 
-          skills={skillsData.currentlyLearning} 
-          colors={colors} 
+
+        <SkillCategory
+          title="Currently Learning"
+          skills={skillsData.currentlyLearning}
+          colors={colors}
         />
       </div>
     </aside>
