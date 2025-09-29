@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { Sidebar } from "@/components/sidebar/Sidebar";
+import { RightSkillsSidebar } from "@/components/sidebar/RightSkillsSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,10 +33,15 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="w-full flex justify-center">
             <div className="flex max-w-[1522px] w-full">
-              <Sidebar />
-              <main className="flex-1">
+              <div className="w-1/4">
+                <Sidebar />
+              </div>
+              <main className="w-1/2">
                 {children}
               </main>
+              <div className="w-1/4">
+                <RightSkillsSidebar />
+              </div>
             </div>
           </div>
         </ThemeProvider>

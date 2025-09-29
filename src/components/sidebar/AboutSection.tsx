@@ -78,21 +78,11 @@ export const AboutSection: React.FC = () => {
   }, [showLine, theme]);
 
   return (
-    <div className="mb-8">
-      <h2
-        className="text-2xl mb-4 font-bold"
-        style={{
-          color: colors.text,
-          fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
-        }}
-      >
-        About Me
-      </h2>
+    <div className="mb-4">
       <p
         className="text-lg leading-relaxed"
         style={{
           color: colors.textSecondary,
-          fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif",
           lineHeight: '1.6'
         }}
       >

@@ -14,7 +14,6 @@ export const ProjectsSection: React.FC = () => {
         className="text-2xl mb-4 font-bold"
         style={{
           color: colors.text,
-          fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
         }}
       >
         My Projects

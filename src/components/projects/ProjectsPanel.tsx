@@ -8,7 +8,7 @@ export const ProjectsPanel: React.FC = () => {
   const { colors } = useTheme();
 
   return (
-    <div className="p-6">
+    <div className="p-8">
       <ProjectsSection />
     </div>
   );

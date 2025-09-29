@@ -20,9 +20,9 @@ export const ProfileSection: React.FC = () => {
     const rc = createRoughSVG(svg);
     const style = getHandDrawnStyle(theme === 'dark');
 
-    const centerX = 70;
-    const centerY = 70;
-    const radius = 65;
+    const centerX = 90;
+    const centerY = 90;
+    const radius = 85;
 
     // drawRoughCircle returns a DOM node that must be appended
     const circleNode = drawRoughCircle(rc, centerX, centerY, radius * 2, {
@@ -38,17 +38,17 @@ export const ProfileSection: React.FC = () => {
   }, [theme]);
 
   return (
-    <div className="flex flex-col items-center mb-4 mt-20">
-      <div className="w-32 relative">
+    <div className="flex flex-col items-center mb-8">
+      <div className="w-40 relative">
         <svg
           ref={svgRef}
-          width="150"
-          height="150"
-          className="absolute -top-3 -left-2 pointer-events-none"
+          width="190"
+          height="190"
+          className="absolute -top-1 -left-2 pointer-events-none"
           style={{ zIndex: 1 }}
         />
         <div
-          className="relative w-28 h-28 rounded-full overflow-hidden"
+          className="relative w-36 h-36 overflow-hidden"
           style={{
             zIndex: 2,
             top: '8px',

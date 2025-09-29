@@ -98,49 +98,49 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
     // Create the complete border rectangle
     const borderRect = drawRoughRectangle(rc, padding, padding, width - (padding * 2), height - (padding * 2), style);
-    
+
     // Create arrow pointing to the project card
     const arrowStartX = hoverPosition === 'right' ? padding : width - padding;
     const arrowStartY = height / 2;
     const arrowEndX = hoverPosition === 'right' ? -20 : width + 20;
     const arrowEndY = height / 2;
-    
+
     const arrowLine = drawRoughLine(rc, arrowStartX, arrowStartY, arrowEndX, arrowEndY, style);
-    
+
     // Arrow head
     const arrowSize = 8;
     const arrowHeadX = hoverPosition === 'right' ? -20 : width + 20;
-    const arrowHead1 = drawRoughLine(rc, arrowHeadX, arrowEndY, 
+    const arrowHead1 = drawRoughLine(rc, arrowHeadX, arrowEndY,
       arrowHeadX + (hoverPosition === 'right' ? arrowSize : -arrowSize), arrowEndY - arrowSize, style);
-    const arrowHead2 = drawRoughLine(rc, arrowHeadX, arrowEndY, 
+    const arrowHead2 = drawRoughLine(rc, arrowHeadX, arrowEndY,
       arrowHeadX + (hoverPosition === 'right' ? arrowSize : -arrowSize), arrowEndY + arrowSize, style);
 
     // Timeline for coordinated animations
     const timeline = gsap.timeline();
-    
+
     // Start with card scaling up
     timeline.to(card, {
       scale: 1,
       duration: 0.4,
       ease: 'back.out(1.7)'
     });
-    
+
     if (borderRect) {
       svg.appendChild(borderRect as Node);
-      
+
       // Get all path elements within the border
       const paths = borderRect.querySelectorAll('path');
-      
+
       if (paths.length > 0) {
         // Animate border drawing
         paths.forEach((path, index) => {
           const pathLength = path.getTotalLength();
-          
+
           gsap.set(path, {
             strokeDasharray: pathLength,
             strokeDashoffset: pathLength
           });
-          
+
           timeline.to(path, {
             strokeDashoffset: 0,
             duration: 0.6,
@@ -150,7 +150,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         });
       }
     }
-    
+
     // Animate arrow after border is drawn
     if (arrowLine) {
       svg.appendChild(arrowLine as Node);
@@ -161,7 +161,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           strokeDasharray: arrowLength,
           strokeDashoffset: arrowLength
         });
-        
+
         timeline.to(arrowPath, {
           strokeDashoffset: 0,
           duration: 0.3,
@@ -169,7 +169,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         }, 0.8);
       }
     }
-    
+
     // Animate arrow heads
     [arrowHead1, arrowHead2].forEach((head, index) => {
       if (head) {
@@ -181,7 +181,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             strokeDasharray: headLength,
             strokeDashoffset: headLength
           });
-          
+
           timeline.to(headPath, {
             strokeDashoffset: 0,
             duration: 0.2,
@@ -231,7 +231,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
               className="text-xs px-2 py-1"
               style={{
                 color: colors.accent,
-                fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif",
                 fontWeight: 'bold'
               }}
             >
@@ -244,7 +243,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           className="text-lg font-bold mb-2"
           style={{
             color: colors.text,
-            fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
           }}
         >
           {project.title}
@@ -254,7 +252,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           className="text-lg mb-3 leading-relaxed"
           style={{
             color: colors.textSecondary,
-            fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif",
             lineHeight: '1.5'
           }}
         >
@@ -267,7 +264,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
               <RoughButton key={index}>
                 <span
                   style={{
-                    fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif",
                     fontSize: '12px'
                   }}
                 >
@@ -287,7 +283,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
               className="text-xs underline hover:opacity-70"
               style={{
                 color: colors.accent,
-                fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
               }}
             >
               github
@@ -301,7 +296,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
               className="text-xs underline hover:opacity-70"
               style={{
                 color: colors.accent,
-                fontFamily: "'Shadows Into Light', 'Comic Sans MS', cursive, sans-serif"
               }}
             >
               live demo
