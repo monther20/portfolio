@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@/theme/ThemeProvider';
 import { createRoughSVG, drawRoughLine, getHandDrawnStyle } from '@/utils/roughUtils';
+import { aboutData } from '@/data/personal';
 
 export const AboutSection: React.FC = () => {
   const { theme, colors } = useTheme();
@@ -86,14 +87,14 @@ export const AboutSection: React.FC = () => {
           lineHeight: '1.6'
         }}
       >
-        I'm Monther Aloufi, a <span className="relative inline-block">
-          <span ref={textRef}>frontend developer</span>
+        I'm {aboutData.name}, a <span className="relative inline-block">
+          <span ref={textRef}>{aboutData.title}</span>
           <svg
             ref={svgRef}
             className="absolute left-0 top-full pointer-events-none"
             style={{ zIndex: 1 }}
           />
-        </span> passionate about creating seamless web and mobile experiences with React and React Native. Currently in my 4th year of studies, I've progressed from freelancing to working as a graduate trainee at Alphaworks, where I tackle real-world challenges and deliver client solutions. I'm expanding my skill set into backend development and UI/UX design, working toward becoming a versatile full-stack developer who can bring ideas to life from concept to deployment
+        </span> {aboutData.description.replace(`I'm ${aboutData.name}, a ${aboutData.title} `, '')}
       </p>
     </div>
   );

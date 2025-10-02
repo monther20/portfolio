@@ -3,14 +3,8 @@
 import React from 'react';
 import { useTheme } from '@/theme/ThemeProvider';
 import { RoughButton } from '@/components/ui/RoughButton';
+import { skills } from '@/data/skills';
 
-const skills = [
-  'React', 'React-Native', 'NextJS',
-  'React Query', 'Tailwind', 'NodeJS',
-  'Framer Motion', 'GSAP', 'RoughJS',
-  'PhyJS', "SVG", "Firebase", "TypeScript", "Git", "GitHub",
-  "Figma"
-];
 
 export const SkillsSection: React.FC = () => {
   const { colors } = useTheme();

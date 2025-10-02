@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useTheme } from '@/theme/ThemeProvider';
+import { contactData } from '@/data/personal';
 
 export const ContactSection: React.FC = () => {
   const { colors } = useTheme();
@@ -23,7 +24,7 @@ export const ContactSection: React.FC = () => {
             color: colors.textSecondary,
           }}
         >
-          monther.aloufi20@gmail.com
+          {contactData.email}
         </div>
         <div
           className="text-lg"
@@ -31,7 +32,7 @@ export const ContactSection: React.FC = () => {
             color: colors.textSecondary,
           }}
         >
-          +962 780672010
+          {contactData.phone}
         </div>
       </div>
     </div>
