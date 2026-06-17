@@ -29,7 +29,7 @@ export default function ExteriorRoof() {
     <>
       {/* The Partition Wall / Skyscraper Exterior Face */}
       <group position={[0, 0, -16.15]}>
-        <mesh position={[-32.25, 20, 0]}>
+        <mesh position={[-32.555, 20, 0]}>
           <boxGeometry args={[60, 100, 0.5]} />
           <meshStandardMaterial
             map={sideWallTexture}
@@ -40,7 +40,7 @@ export default function ExteriorRoof() {
             color="#ffffff"
           />
         </mesh>
-        <mesh position={[32.25, 20, 0]}>
+        <mesh position={[32.555, 20, 0]}>
           <boxGeometry args={[60, 100, 0.5]} />
           <meshStandardMaterial
             map={sideWallTexture}
@@ -51,8 +51,8 @@ export default function ExteriorRoof() {
             color="#ffffff"
           />
         </mesh>
-        <mesh position={[0, 40.5, 0]}>
-          <boxGeometry args={[4.5, 79, 0.5]} />
+        <mesh position={[0, 42.49, 0]}>
+          <boxGeometry args={[5.11, 79, 0.5]} />
           <meshStandardMaterial
             map={topWallTexture}
             bumpMap={topWallTexture}

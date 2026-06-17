@@ -3,6 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
+import { useLoader } from "@react-three/fiber";
 
 export default function AnimatedDoor({
   isOpen,
@@ -12,6 +13,11 @@ export default function AnimatedDoor({
   setIsOpen: (v: boolean) => void;
 }) {
   const doorRef = useRef<THREE.Group>(null);
+  const doorTexture = useLoader(THREE.TextureLoader, "/textures/door.png");
+  const frameTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/door_frame.png",
+  );
 
   useEffect(() => {
     if (doorRef.current) {
@@ -24,27 +30,31 @@ export default function AnimatedDoor({
   }, [isOpen]);
 
   return (
-    <group position={[0, -2.5, -15.9]}>
-      {/* Outer Door Frame */}
-      <group position={[0, 0, 0]}>
-        <mesh position={[-2, 0, 0]}>
-          <boxGeometry args={[0.5, 7, 0.5]} />
-          <meshStandardMaterial color="#2a2a2a" />
+    <group position={[0, -1.285, -15.9]}>
+      {/* Outer Door Frame (Single Plane with Transparent Center) */}
+      {/* <group position={[0, 0, 0]}>
+        <mesh position={[0, 0, 0.2]}>
+          <planeGeometry args={[5.79, 9.43]} />
+          <meshStandardMaterial
+            map={frameTexture}
+            bumpMap={frameTexture}
+            bumpScale={0.02}
+            roughness={1}
+            metalness={0}
+            color="#fff"
+            emissive="#53646b"
+            emissiveMap={frameTexture}
+            emissiveIntensity={0.05}
+            transparent={true}
+            side={THREE.DoubleSide}
+          />
         </mesh>
-        <mesh position={[2, 0, 0]}>
-          <boxGeometry args={[0.5, 7, 0.5]} />
-          <meshStandardMaterial color="#2a2a2a" />
-        </mesh>
-        <mesh position={[0, 3.25, 0]}>
-          <boxGeometry args={[3.5, 0.5, 0.5]} />
-          <meshStandardMaterial color="#2a2a2a" />
-        </mesh>
-      </group>
+      </group> */}
 
       {/* Animated Swinging Door */}
       <group
         ref={doorRef}
-        position={[-1.75, 0, 0]}
+        position={[-2.555, -0.22, 0]}
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
@@ -52,10 +62,17 @@ export default function AnimatedDoor({
         onPointerOver={() => (document.body.style.cursor = "pointer")}
         onPointerOut={() => (document.body.style.cursor = "auto")}
       >
-        <group position={[1.75, 0, 0]}>
+        <group position={[2.555, 0, 0]}>
           <mesh position={[0, 0, 0.1]}>
-            <boxGeometry args={[3.5, 6.5, 0.6]} />
-            <meshStandardMaterial color="#222222" />
+            <boxGeometry args={[5.11, 8.99, 0.2]} />
+            <meshStandardMaterial
+              map={doorTexture}
+              bumpMap={doorTexture}
+              bumpScale={0.02}
+              roughness={1}
+              metalness={0}
+              color="#ffffff"
+            />
           </mesh>
         </group>
       </group>
