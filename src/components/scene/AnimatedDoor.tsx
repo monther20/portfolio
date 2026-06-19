@@ -7,10 +7,10 @@ import { useLoader } from "@react-three/fiber";
 
 export default function AnimatedDoor({
   isOpen,
-  setIsOpen,
+  onClick,
 }: {
   isOpen: boolean;
-  setIsOpen: (v: boolean) => void;
+  onClick?: () => void;
 }) {
   const doorRef = useRef<THREE.Group>(null);
   const doorTexture = useLoader(THREE.TextureLoader, "/textures/door.png");
@@ -57,7 +57,7 @@ export default function AnimatedDoor({
         position={[-2.555, -0.22, 0]}
         onClick={(e) => {
           e.stopPropagation();
-          setIsOpen(!isOpen);
+          if (onClick) onClick();
         }}
         onPointerOver={() => (document.body.style.cursor = "pointer")}
         onPointerOut={() => (document.body.style.cursor = "auto")}
