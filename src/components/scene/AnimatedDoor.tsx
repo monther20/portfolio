@@ -32,9 +32,10 @@ export default function AnimatedDoor({
   return (
     <group position={[0, -1.285, -15.9]}>
       {/* Outer Door Frame (Single Plane with Transparent Center) */}
-      {/* <group position={[0, 0, 0]}>
+      <group position={[0, 0, 0]}>
         <mesh position={[0, 0, 0.2]}>
-          <planeGeometry args={[5.79, 9.43]} />
+          {/* Scaled up slightly so the transparent gap fits the door properly */}
+          <planeGeometry args={[7.15, 10.0]} />
           <meshStandardMaterial
             map={frameTexture}
             bumpMap={frameTexture}
@@ -49,7 +50,7 @@ export default function AnimatedDoor({
             side={THREE.DoubleSide}
           />
         </mesh>
-      </group> */}
+      </group>
 
       {/* Animated Swinging Door */}
       <group

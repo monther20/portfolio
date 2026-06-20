@@ -3,7 +3,6 @@
 import React from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
-import WaterPuddle from "./WaterPuddle";
 
 export default function InteriorDetails() {
   const wallTexture = useLoader(THREE.TextureLoader, "/textures/walls.png");
@@ -12,90 +11,38 @@ export default function InteriorDetails() {
   wallTexture.repeat.set(3, 3); // Increased repetition for a denser texture
   wallTexture.anisotropy = 16;
 
-  const floorTexture = useLoader(THREE.TextureLoader, "/textures/floor.png");
+  const baseFloorTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/floor.png",
+  );
+  // Clone the texture to ensure our tiling settings don't conflict with the global cache
+  const floorTexture = baseFloorTexture.clone();
   floorTexture.wrapS = THREE.RepeatWrapping;
   floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(1, 1); // Tile the floor texture
+  floorTexture.repeat.set(12, 4); // Tile the floor texture proportionally to the room depth
   floorTexture.anisotropy = 16;
-
-  const drainTexture = useLoader(THREE.TextureLoader, "/textures/Water_drain.png");
-  drainTexture.anisotropy = 16;
+  floorTexture.needsUpdate = true;
 
   return (
     <>
-      {/* The Interior Hallway */}
-      <mesh position={[0, 0, -4.075]}>
-        <boxGeometry args={[16, 12, 24.15]} />
+      {/* Wide Floor strictly inside the room (Stops at the wall z=-16.15) */}
+      <mesh position={[0, -6.5, -1.15]}>
+        <boxGeometry args={[100, 1, 30]} />
         <meshStandardMaterial
-          attach="material-0"
-          map={wallTexture}
-          bumpMap={wallTexture}
-          bumpScale={0.02}
-          roughness={1}
-          metalness={0}
-          color="#ffffff"
-          side={THREE.BackSide}
-        />{" "}
-        {/* Right */}
-        <meshStandardMaterial
-          attach="material-1"
-          map={wallTexture}
-          bumpMap={wallTexture}
-          bumpScale={0.02}
-          roughness={1}
-          metalness={0}
-          color="#ffffff"
-          side={THREE.BackSide}
-        />{" "}
-        {/* Left */}
-        <meshStandardMaterial
-          attach="material-2"
-          color="#0a0a0a"
-          side={THREE.BackSide}
-        />{" "}
-        {/* Ceiling */}
-        <meshStandardMaterial
-          attach="material-3"
           map={floorTexture}
           bumpMap={floorTexture}
           bumpScale={0.02}
           roughness={1}
           metalness={0}
           color="#ffffff"
-          side={THREE.BackSide}
-        />{" "}
-        {/* Floor */}
-        <meshStandardMaterial
-          attach="material-4"
-          map={wallTexture}
-          bumpMap={wallTexture}
-          bumpScale={0.02}
-          roughness={1}
-          metalness={0}
-          color="#ffffff"
-          side={THREE.BackSide}
-        />{" "}
-        {/* Back */}
-        <meshStandardMaterial attach="material-5" visible={false} />{" "}
-        {/* Front (Door Hole) */}
-      </mesh>
-
-      {/* Floor Grate (Right Corner) */}
-      <mesh position={[6.5, -5.98, -14.5]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1.5, 1.5]} />
-        <meshStandardMaterial 
-          map={drainTexture} 
-          bumpMap={drainTexture} 
-          bumpScale={0.02} 
-          roughness={1} 
-          metalness={0} 
-          color="#ffffff" 
-          transparent={true} 
         />
       </mesh>
 
-      {/* Animated Water Puddle beside the drain */}
-      <WaterPuddle />
+      {/* Wide Ceiling strictly inside the room */}
+      <mesh position={[0, 6.5, -1.15]}>
+        <boxGeometry args={[100, 1, 30]} />
+        <meshStandardMaterial color="#0a0a0a" />
+      </mesh>
 
       {/* Interior Ambient Light */}
       <ambientLight intensity={1.5} color="#ffffff" />

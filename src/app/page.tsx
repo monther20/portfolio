@@ -1,15 +1,11 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 
-// Import our refactored modular scene orchestrators
 import RoomScene from "../components/scene/RoomScene";
-import PaperPlaneScene from "../components/scene/PaperPlaneScene";
 
 export default function MoodyHallwayScene() {
-  const [sceneState, setSceneState] = useState<'ROOM' | 'PAPER_PLANE'>('ROOM');
-
   return (
     <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
       <Canvas
@@ -17,11 +13,7 @@ export default function MoodyHallwayScene() {
         onCreated={({ camera }) => camera.lookAt(0, -1.285, -15.9)}
       >
         <Suspense fallback={null}>
-          {sceneState === 'ROOM' ? (
-            <RoomScene onTransitionComplete={() => setSceneState('PAPER_PLANE')} />
-          ) : (
-            <PaperPlaneScene />
-          )}
+          <RoomScene onTransitionComplete={() => console.log("Transition complete")} />
         </Suspense>
       </Canvas>
     </div>

@@ -8,62 +8,23 @@ import PortalShader from "./PortalShader";
 export default function ExteriorRoof() {
   const baseTexture = useLoader(THREE.TextureLoader, "/textures/walls.png");
 
-  const sideWallTexture = useMemo(() => {
-    const t = baseTexture.clone();
-    t.wrapS = THREE.RepeatWrapping;
-    t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(10, 25);
-    t.needsUpdate = true;
-    return t;
-  }, [baseTexture]);
-
-  const topWallTexture = useMemo(() => {
-    const t = baseTexture.clone();
-    t.wrapS = THREE.RepeatWrapping;
-    t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(1, 20);
-    t.needsUpdate = true;
-    return t;
-  }, [baseTexture]);
+  const bricksTexture = useLoader(THREE.TextureLoader, "/textures/wall_bricks_2.png");
+  // Set anisotropy for better quality when viewed at an angle
+  bricksTexture.anisotropy = 16;
 
   return (
     <>
       {/* The Partition Wall / Skyscraper Exterior Face */}
-      <group position={[0, 0, -16.15]}>
-        <mesh position={[-32.555, 20, 0]}>
-          <boxGeometry args={[60, 100, 0.5]} />
-          <meshStandardMaterial
-            map={sideWallTexture}
-            bumpMap={sideWallTexture}
-            bumpScale={0.02}
-            roughness={1}
-            metalness={0}
-            color="#ffffff"
-          />
-        </mesh>
-        <mesh position={[32.555, 20, 0]}>
-          <boxGeometry args={[60, 100, 0.5]} />
-          <meshStandardMaterial
-            map={sideWallTexture}
-            bumpMap={sideWallTexture}
-            bumpScale={0.02}
-            roughness={1}
-            metalness={0}
-            color="#ffffff"
-          />
-        </mesh>
-        <mesh position={[0, 42.49, 0]}>
-          <boxGeometry args={[5.11, 79, 0.5]} />
-          <meshStandardMaterial
-            map={topWallTexture}
-            bumpMap={topWallTexture}
-            bumpScale={0.02}
-            roughness={1}
-            metalness={0}
-            color="#ffffff"
-          />
-        </mesh>
-      </group>
+      <mesh position={[0, 2, -16.15]}>
+        <planeGeometry args={[32, 16]} />
+        <meshStandardMaterial
+          map={bricksTexture}
+          transparent={true}
+          alphaTest={0.01}
+          roughness={0.9}
+          color="#ffffff"
+        />
+      </mesh>
 
       {/* Skyscraper Roof Platform */}
       <group position={[0, 0, 0]}>
