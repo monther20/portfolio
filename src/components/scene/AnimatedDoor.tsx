@@ -7,17 +7,27 @@ import { useLoader } from "@react-three/fiber";
 
 export default function AnimatedDoor({
   isOpen,
+  isNight,
   onClick,
 }: {
   isOpen: boolean;
+  isNight: boolean;
   onClick?: () => void;
 }) {
   const doorRef = useRef<THREE.Group>(null);
-  const doorTexture = useLoader(THREE.TextureLoader, "/textures/door.png");
-  const frameTexture = useLoader(
-    THREE.TextureLoader,
-    "/textures/door_frame.png",
-  );
+  const doorMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const frameMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  const doorClosedTexture = useLoader(THREE.TextureLoader, "/textures/door.png");
+  const doorOpenTexture = useLoader(THREE.TextureLoader, "/textures/door_handle_open.png");
+  const frameTexture = useLoader(THREE.TextureLoader, "/textures/door_frame.png");
+
+  useEffect(() => {
+    if (doorMaterialRef.current) {
+      doorMaterialRef.current.map = isOpen ? doorOpenTexture : doorClosedTexture;
+      doorMaterialRef.current.needsUpdate = true;
+    }
+  }, [isOpen, doorClosedTexture, doorOpenTexture]);
 
   useEffect(() => {
     if (doorRef.current) {
@@ -29,30 +39,42 @@ export default function AnimatedDoor({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const targetColor = new THREE.Color(isNight ? "#888899" : "#ffffff");
+    if (doorMaterialRef.current) {
+      gsap.to(doorMaterialRef.current.color, {
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        duration: 1.5,
+        ease: "power2.inOut",
+      });
+    }
+    if (frameMaterialRef.current) {
+      gsap.to(frameMaterialRef.current.color, {
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        duration: 1.5,
+        ease: "power2.inOut",
+      });
+    }
+  }, [isNight]);
+
   return (
     <group position={[0, -1.285, -15.9]}>
-      {/* Outer Door Frame (Single Plane with Transparent Center) */}
       <group position={[0, 0, 0]}>
         <mesh position={[0, 0, 0.2]}>
-          {/* Scaled up slightly so the transparent gap fits the door properly */}
-          <planeGeometry args={[7.15, 10.0]} />
-          <meshStandardMaterial
+          <planeGeometry args={[7, 10.05]} />
+          <meshBasicMaterial
+            ref={frameMaterialRef}
             map={frameTexture}
-            bumpMap={frameTexture}
-            bumpScale={0.02}
-            roughness={1}
-            metalness={0}
-            color="#fff"
-            emissive="#53646b"
-            emissiveMap={frameTexture}
-            emissiveIntensity={0.05}
             transparent={true}
             side={THREE.DoubleSide}
           />
         </mesh>
       </group>
 
-      {/* Animated Swinging Door */}
       <group
         ref={doorRef}
         position={[-2.555, -0.22, 0]}
@@ -64,15 +86,11 @@ export default function AnimatedDoor({
         onPointerOut={() => (document.body.style.cursor = "auto")}
       >
         <group position={[2.555, 0, 0]}>
-          <mesh position={[0, 0, 0.1]}>
-            <boxGeometry args={[5.11, 8.99, 0.2]} />
-            <meshStandardMaterial
-              map={doorTexture}
-              bumpMap={doorTexture}
-              bumpScale={0.02}
-              roughness={1}
-              metalness={0}
-              color="#ffffff"
+          <mesh position={[0, -0.1, 0]}>
+            <boxGeometry args={[4.9, 8.8, 0.2]} />
+            <meshBasicMaterial
+              ref={doorMaterialRef}
+              map={doorClosedTexture}
             />
           </mesh>
         </group>
@@ -80,3 +98,4 @@ export default function AnimatedDoor({
     </group>
   );
 }
+

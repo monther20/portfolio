@@ -13,7 +13,9 @@ export default function MoodyHallwayScene() {
         onCreated={({ camera }) => camera.lookAt(0, -1.285, -15.9)}
       >
         <Suspense fallback={null}>
-          <RoomScene onTransitionComplete={() => console.log("Transition complete")} />
+          <RoomScene
+            onTransitionComplete={() => console.log("Transition complete")}
+          />
         </Suspense>
       </Canvas>
     </div>

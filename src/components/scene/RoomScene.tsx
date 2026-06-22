@@ -8,7 +8,7 @@ import ScrollCameraManager from "./ScrollCameraManager";
 import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
-import { AirplaneModel } from "./PaperAirplane";
+import Corridor from "./Corridor";
 
 export default function RoomScene({
   onTransitionComplete,
@@ -17,8 +17,31 @@ export default function RoomScene({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isNight, setIsNight] = useState(false);
   const itemsGroupRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
+  const { camera, scene } = useThree();
+
+  const toggleNight = () => setIsNight(!isNight);
+
+  useEffect(() => {
+      const targetColor = new THREE.Color(isNight ? "#555566" : "#c0c0c0");
+    if (scene.background instanceof THREE.Color) {
+      gsap.to(scene.background, {
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        duration: 1.5,
+      });
+    }
+    if (scene.fog instanceof THREE.Fog) {
+      gsap.to(scene.fog.color, {
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        duration: 1.5,
+      });
+    }
+  }, [isNight, scene]);
 
   const handleDoorClick = () => {
     if (isTransitioning) return;
@@ -30,21 +53,22 @@ export default function RoomScene({
 
     const tl = gsap.timeline({
       onComplete: () => {
+        setIsTransitioning(false); // Remount the scroll manager
         onTransitionComplete();
       },
     });
 
-    // Simply walk the camera straight out the door
+    // Walk the camera through the door and into the corridor
     tl.to(
       camera.position,
       {
         x: 0,
-        y: -1.5, // Keep the same height so it feels like walking
-        z: -20, // Walk through the door (which is at -15.9)
-        duration: 2.0,
+        y: -1.5,
+        z: -50, // Walk through the door and deep into the corridor
+        duration: 3.5,
         ease: "power2.inOut",
       },
-      "+=0.5", // Start moving 0.5s after the door starts swinging open
+      "+=0.5",
     );
   };
 
@@ -55,7 +79,7 @@ export default function RoomScene({
       {!isTransitioning && <ScrollCameraManager isOpen={isOpen} />}
 
       {/* Lighting */}
-      <ambientLight intensity={0.4} />
+      <ambientLight intensity={isNight ? 0.3 : 0.4} />
       <pointLight
         position={[0, 30, -50]}
         intensity={1500}
@@ -70,7 +94,8 @@ export default function RoomScene({
         color="#ff9955"
         decay={2}
       />
-      <fog attach="fog" args={["#000510", 30, 200]} />
+      <color attach="background" args={["#c0c0c0"]} />
+      <fog attach="fog" args={["#c0c0c0", 5, 40]} />
 
       {/* 
         ENVIRONMENT MAP (HDRI)
@@ -86,21 +111,16 @@ export default function RoomScene({
       />
 
       {/* Structural Room Components (These stay stationary) */}
-      <InteriorDetails />
+      <InteriorDetails isNight={isNight} toggleNight={toggleNight} />
       <ExteriorRoof />
-      <AnimatedDoor isOpen={isOpen} onClick={handleDoorClick} />
+      <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} />
+
+      {/* Corridor — hidden behind the wall, revealed when door opens */}
+      <Corridor />
 
       {/* The Loose Items (These get sucked into the portal) */}
       <group ref={itemsGroupRef}>
         
-        {/* The Interactive Paper Airplane! */}
-        {/* Sits on the floor as a paper airplane and gets sucked into the portal */}
-        <AirplaneModel
-          isFolded={true}
-          position={[1, -5.9, -13]}
-          rotation={[0, -Math.PI / 6, 0]}
-          scale={0.4}
-        />
       </group>
     </>
   );

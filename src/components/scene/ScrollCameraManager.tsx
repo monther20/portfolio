@@ -1,41 +1,37 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import * as THREE from "three";
+import { useThree, useFrame } from "@react-three/fiber";
 import gsap from "gsap";
 
 export default function ScrollCameraManager({ isOpen }: { isOpen: boolean }) {
   const { camera } = useThree();
-  const scrollTargetZ = useRef(8);
+  const scrollTargetZ = useRef<number | null>(null);
 
-  // Auto-move camera through the door when it opens or closes
-  useEffect(() => {
-    if (isOpen) {
-      scrollTargetZ.current = -20;
-      gsap.to(camera.position, {
-        z: -20,
-        duration: 2.5,
-        ease: "power2.inOut",
-        overwrite: "auto",
-      });
-    } else {
-      scrollTargetZ.current = 8;
-      gsap.to(camera.position, {
-        z: 8,
-        duration: 1.5,
-        ease: "power2.inOut",
-        overwrite: "auto",
-      });
-    }
-  }, [isOpen, camera]);
-
-  // Handle scrolling ONLY once outside
+  // Handle scrolling
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (!isOpen) return;
+      // Initialize the target Z to the camera's current Z the first time they scroll
+      if (scrollTargetZ.current === null) {
+        scrollTargetZ.current = camera.position.z;
+      }
 
-      scrollTargetZ.current -= e.deltaY * 0.05;
-      scrollTargetZ.current = Math.max(-90, Math.min(-20, scrollTargetZ.current));
+      // Base scroll speed
+      let delta = e.deltaY * 0.05;
+
+      // Inside the corridor (isOpen === true)
+      if (isOpen) {
+        scrollTargetZ.current -= delta;
+        // Don't let them scroll backward through the door (which is at z = -15.9)
+        scrollTargetZ.current = Math.min(-16, scrollTargetZ.current);
+      } 
+      // Outside the room (isOpen === false)
+      else {
+        scrollTargetZ.current -= delta;
+        // Bound the outside scrolling between z=8 (start) and z=30 (far back)
+        scrollTargetZ.current = Math.max(8, Math.min(30, scrollTargetZ.current));
+      }
 
       gsap.to(camera.position, {
         z: scrollTargetZ.current,
@@ -48,6 +44,14 @@ export default function ScrollCameraManager({ isOpen }: { isOpen: boolean }) {
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
   }, [isOpen, camera]);
+
+  // Constantly gently pull the camera yaw back to 0. 
+  // Individual doors will fight this to pull the camera towards them when near.
+  useFrame(() => {
+    if (isOpen) {
+      camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, 0, 0.02);
+    }
+  });
 
   return null;
 }
