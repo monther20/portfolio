@@ -1,52 +1,70 @@
 "use client";
 
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 
-// Volumetric light cone — open cylinder tapered from lantern tip down
+// Real Three.js SpotLight that illuminates surrounding geometry
 export default function SpotlightCone({
   position,
-  rotation,
+  targetPosition,
   isNight,
+  intensity = 12,
+  angle = Math.PI / 4,
+  penumbra = 0.6,
+  distance = 15,
+  color = "#ffe4a0",
+  decay = 1.5,
 }: {
   position: [number, number, number];
-  rotation: [number, number, number];
+  targetPosition: [number, number, number];
   isNight: boolean;
+  intensity?: number;
+  angle?: number;
+  penumbra?: number;
+  distance?: number;
+  color?: string;
+  decay?: number;
 }) {
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const lightRef = useRef<THREE.SpotLight>(null);
 
-  // Cone height ~6 units (from lantern down to floor)
-  // Top is narrow (0.05), bottom fans wide (2.5)
-  // Origin sits at the TOP of the cone (the lantern tip)
-  const geometry = useMemo(() => {
-    const geo = new THREE.CylinderGeometry(0.05, 2.5, 6, 32, 1, true);
-    geo.translate(0, -3, 0); // origin at top
-    return geo;
-  }, []);
-
+  // Add spotlight target to the scene and aim at targetPosition
   useEffect(() => {
-    if (materialRef.current) {
-      gsap.to(materialRef.current, {
-        opacity: isNight ? 0.28 : 0,
+    const light = lightRef.current;
+    if (light) {
+      light.target.position.set(...targetPosition);
+      light.parent?.add(light.target);
+    }
+    return () => {
+      if (light?.target && light.parent) {
+        light.parent.remove(light.target);
+      }
+    };
+  }, [targetPosition]);
+
+  // Animate intensity on day/night toggle
+  useEffect(() => {
+    if (lightRef.current) {
+      gsap.to(lightRef.current, {
+        intensity: isNight ? intensity : 0,
         duration: 1.5,
         ease: "power2.inOut",
       });
     }
-  }, [isNight]);
+  }, [isNight, intensity]);
 
   return (
-    <mesh position={position} rotation={rotation} geometry={geometry}>
-      <meshBasicMaterial
-        ref={materialRef}
-        color="#ffe4a0"
-        transparent
-        opacity={0}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <spotLight
+      ref={lightRef}
+      position={position}
+      angle={angle}
+      penumbra={penumbra}
+      intensity={0}
+      color={color}
+      distance={distance}
+      decay={decay}
+      castShadow={false}
+    />
   );
 }
 
@@ -55,22 +73,24 @@ export function FloorGlow({
   position,
   isNight,
   radius = 2.0,
+  maxOpacity = 0.55,
 }: {
   position: [number, number, number];
   isNight: boolean;
   radius?: number;
+  maxOpacity?: number;
 }) {
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
 
   useEffect(() => {
     if (materialRef.current) {
       gsap.to(materialRef.current, {
-        opacity: isNight ? 0.55 : 0,
+        opacity: isNight ? maxOpacity : 0,
         duration: 1.5,
         ease: "power2.inOut",
       });
     }
-  }, [isNight]);
+  }, [isNight, maxOpacity]);
 
   return (
     <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>

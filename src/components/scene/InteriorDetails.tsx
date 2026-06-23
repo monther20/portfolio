@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
 import gsap from "gsap";
 import SpotlightCone, { FloorGlow } from "./SpotlightCone";
+import Lantern from "./Lantern";
 
 // Billboard sprite — stands on the floor and always faces the camera
 function FloorDecal({
@@ -24,7 +25,19 @@ function FloorDecal({
   const width = scale * aspect;
   const height = scale;
   const [x, y, z] = position;
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const geoRef = useRef<THREE.PlaneGeometry>(null);
+
+  useEffect(() => {
+    if (geoRef.current) {
+      const normals = geoRef.current.attributes.normal;
+      for (let i = 0; i < normals.count; i++) {
+        // Point normals straight UP so they catch the overhead spotlights perfectly
+        normals.setXYZ(i, 0, 1, 0);
+      }
+      normals.needsUpdate = true;
+    }
+  }, []);
 
   useEffect(() => {
     if (materialRef.current) {
@@ -48,13 +61,15 @@ function FloorDecal({
       lockZ={false}
     >
       <mesh>
-        <planeGeometry args={[width, height]} />
-        <meshBasicMaterial
+        <planeGeometry ref={geoRef} args={[width, height]} />
+        <meshStandardMaterial
           ref={materialRef}
           map={texture}
           transparent
           alphaTest={0.01}
           depthWrite={false}
+          roughness={1}
+          metalness={0}
         />
       </mesh>
     </Billboard>
@@ -68,14 +83,13 @@ export default function InteriorDetails({
   isNight: boolean;
   toggleNight: () => void;
 }) {
+  const [lanternHovered, setLanternHovered] = useState(false);
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const pathMatRef = useRef<THREE.MeshStandardMaterial>(null);
-  const wallLMatRef = useRef<THREE.MeshBasicMaterial>(null);
-  const wallRMatRef = useRef<THREE.MeshBasicMaterial>(null);
 
   useEffect(() => {
     const targetColor = new THREE.Color(isNight ? "#888899" : "#ffffff");
-    const mats = [floorMatRef.current, pathMatRef.current, wallLMatRef.current, wallRMatRef.current].filter(Boolean);
+    const mats = [floorMatRef.current, pathMatRef.current].filter(Boolean);
     mats.forEach((mat) => {
       if (mat) {
         gsap.to(mat.color, {
@@ -104,15 +118,21 @@ export default function InteriorDetails({
   }, [baseFloorTexture]);
 
   const lightTex = useLoader(THREE.TextureLoader, "/textures/light.png");
+  const lightOnTex = useLoader(THREE.TextureLoader, "/textures/light_on.png");
   const rock1Tex = useLoader(THREE.TextureLoader, "/textures/rock-1.png");
   const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/rock_and_herp.png");
   const herpTex = useLoader(THREE.TextureLoader, "/textures/herp.png");
   const stonePathTex = useLoader(THREE.TextureLoader, "/textures/stone-path.webp");
+  const tableTex = useLoader(THREE.TextureLoader, "/textures/table.png");
+  const chairTex = useLoader(THREE.TextureLoader, "/textures/chair.png");
 
   // aspect ratios: rock-1 401x157, rock_and_herp 412x160, herp 490x262
   const ROCK1_ASPECT = 401 / 157; // ~2.55
   const ROCKH_ASPECT = 412 / 160; // ~2.575
   const HERP_ASPECT = 490 / 262; // ~1.87
+  const TABLE_ASPECT = 1536 / 1024; // 1.5
+  const CHAIR_ASPECT = 1254 / 1254; // 1.0
+  const CUP_ASPECT = 1536 / 1024; // 1.5
 
   const decals = useMemo(
     () => [
@@ -140,8 +160,14 @@ export default function InteriorDetails({
       { tex: herpTex, pos: [4.5, -6.0, -8] as [number, number, number], s: 0.6, a: HERP_ASPECT },
       { tex: herpTex, pos: [7.0, -6.0, -5] as [number, number, number], s: 0.7, a: HERP_ASPECT },
       { tex: herpTex, pos: [9.0, -6.0, -13] as [number, number, number], s: 0.5, a: HERP_ASPECT },
+      // New additions (Left side of the path, near the wall)
+      { tex: tableTex, pos: [-4.2, -6.0, -8.5] as [number, number, number], s: 3.2, a: TABLE_ASPECT },
+      { tex: chairTex, pos: [-6.8, -6.4, -8.5] as [number, number, number], s: 4.5, a: CHAIR_ASPECT },
     ],
-    [rock1Tex, rockHerpTex, herpTex, ROCK1_ASPECT, ROCKH_ASPECT, HERP_ASPECT],
+    [
+      rock1Tex, rockHerpTex, herpTex, tableTex, chairTex, 
+      ROCK1_ASPECT, ROCKH_ASPECT, HERP_ASPECT, TABLE_ASPECT, CHAIR_ASPECT, CUP_ASPECT
+    ],
   );
 
   return (
@@ -177,57 +203,60 @@ export default function InteriorDetails({
       </mesh>
 
       {/* ── LANTERNS (Clickable) ── */}
-      <group
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleNight();
-        }}
-        onPointerEnter={() => (document.body.style.cursor = "pointer")}
-        onPointerLeave={() => (document.body.style.cursor = "auto")}
-      >
+      <group>
         {/* ─── LEFT LANTERN ─── */}
-        <mesh position={[-4.5, 0, -16.1]}>
-          <planeGeometry args={[2.19, 3.39]} />
-          <meshBasicMaterial ref={wallLMatRef} map={lightTex} transparent alphaTest={0.01} depthWrite={false} />
-        </mesh>
-        {/* Left lantern – outer beam: fans left/outward from lantern tip */}
-        <SpotlightCone
-          position={[-4.5, -0.6, -16.05]}
-          rotation={[0, 0, -0.55]}
+        <Lantern
+          position={[-4.5, 2, -16.1]}
+          texBase={lightTex}
+          texOn={lightOnTex}
           isNight={isNight}
+          isHovered={lanternHovered}
+          onClick={toggleNight}
+          onPointerOver={() => setLanternHovered(true)}
+          onPointerOut={() => setLanternHovered(false)}
         />
-        {/* Left lantern – inner beam: crosses right toward door center */}
+        
+        {/* Left lantern – SpotLight fans out to the LEFT */}
         <SpotlightCone
-          position={[-4.5, -0.6, -16.05]}
-          rotation={[0, 0, 0.65]}
+          position={[-4.5, 2.7, -15.1]}
+          targetPosition={[-4.3, -4.9, -14.1]}
           isNight={isNight}
+          intensity={35}
+          angle={1.2}
+          penumbra={0.13}
+          distance={12.5}
+          decay={0.6}
+          color="#ffe4a8"
         />
-        {/* Floor glow under left lantern outer beam (left side ground) */}
-        <FloorGlow position={[-7.0, -5.98, -14.5]} isNight={isNight} radius={2.2} />
-        {/* Floor glow under left lantern inner beam (stone path, center) */}
-        <FloorGlow position={[-1.5, -5.98, -14.5]} isNight={isNight} radius={2.0} />
+        {/* Floor glow under left lantern beam */}
+        <FloorGlow position={[-3.2, -4.8, -27.1]} isNight={isNight} radius={5.8} maxOpacity={0.35} />
 
         {/* ─── RIGHT LANTERN ─── */}
-        <mesh position={[4.5, 0, -16.1]}>
-          <planeGeometry args={[2.19, 3.39]} />
-          <meshBasicMaterial ref={wallRMatRef} map={lightTex} transparent alphaTest={0.01} depthWrite={false} />
-        </mesh>
-        {/* Right lantern – outer beam: fans right/outward */}
-        <SpotlightCone
-          position={[4.5, -0.6, -16.05]}
-          rotation={[0, 0, 0.55]}
+        <Lantern
+          position={[4.5, 2.0, -16.1]}
+          texBase={lightTex}
+          texOn={lightOnTex}
           isNight={isNight}
+          isHovered={lanternHovered}
+          onClick={toggleNight}
+          onPointerOver={() => setLanternHovered(true)}
+          onPointerOut={() => setLanternHovered(false)}
         />
-        {/* Right lantern – inner beam: crosses left toward door center */}
+        
+        {/* Right lantern – SpotLight fans out to the RIGHT */}
         <SpotlightCone
-          position={[4.5, -0.6, -16.05]}
-          rotation={[0, 0, -0.65]}
+          position={[4.5, 2.6, -15.1]}
+          targetPosition={[5.0, -18.1, -14.1]}
           isNight={isNight}
+          intensity={24}
+          angle={1.2}
+          penumbra={0.13}
+          distance={12.5}
+          decay={0.6}
+          color="#ffe4a8"
         />
-        {/* Floor glow under right lantern outer beam (right side ground) */}
-        <FloorGlow position={[7.0, -5.98, -14.5]} isNight={isNight} radius={2.2} />
-        {/* Floor glow under right lantern inner beam (stone path, center) */}
-        <FloorGlow position={[1.5, -5.98, -14.5]} isNight={isNight} radius={2.0} />
+        {/* Floor glow under right lantern beam */}
+        <FloorGlow position={[4.7, -4.8, -22.6]} isNight={isNight} radius={2.5} maxOpacity={0.55} />
       </group>
 
       {decals.map((d, i) => (

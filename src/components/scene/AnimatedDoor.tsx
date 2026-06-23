@@ -1,9 +1,56 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
-import { useLoader } from "@react-three/fiber";
+import { useLoader, extend } from "@react-three/fiber";
+import { shaderMaterial } from "@react-three/drei";
+
+// Same wipe shader as the lanterns — blends from texBase to texOn top-to-bottom
+const DoorWipeMaterial = shaderMaterial(
+  {
+    texBase: null,
+    texOn: null,
+    progress: 0,
+  },
+  // Vertex
+  `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  // Fragment
+  `
+    varying vec2 vUv;
+    uniform sampler2D texBase;
+    uniform sampler2D texOn;
+    uniform float progress;
+
+    void main() {
+      vec4 base = texture2D(texBase, vUv);
+      vec4 on   = texture2D(texOn,   vUv);
+
+      // progress 0→1: wipe line moves from top (1.0) to bottom (0.0)
+      float p = progress * 1.4 - 0.2;
+      float Y = 1.0 - p;
+      float mixVal = smoothstep(Y - 0.15, Y + 0.15, vUv.y);
+
+      gl_FragColor = mix(base, on, mixVal);
+    }
+  `
+);
+
+extend({ DoorWipeMaterial });
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      doorWipeMaterial: any;
+    }
+  }
+}
 
 export default function AnimatedDoor({
   isOpen,
@@ -15,20 +62,27 @@ export default function AnimatedDoor({
   onClick?: () => void;
 }) {
   const doorRef = useRef<THREE.Group>(null);
-  const doorMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const frameMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const frameMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const wipeMaterialRef = useRef<any>(null);
+  const [hovered, setHovered] = useState(false);
 
   const doorClosedTexture = useLoader(THREE.TextureLoader, "/textures/door.png");
   const doorOpenTexture = useLoader(THREE.TextureLoader, "/textures/door_handle_open.png");
+  const doorColoredTexture = useLoader(THREE.TextureLoader, "/textures/door_colored.png");
   const frameTexture = useLoader(THREE.TextureLoader, "/textures/door_frame.png");
 
+  // Animate the wipe progress on hover (only when door is closed)
   useEffect(() => {
-    if (doorMaterialRef.current) {
-      doorMaterialRef.current.map = isOpen ? doorOpenTexture : doorClosedTexture;
-      doorMaterialRef.current.needsUpdate = true;
-    }
-  }, [isOpen, doorClosedTexture, doorOpenTexture]);
+    if (!wipeMaterialRef.current) return;
+    const target = hovered && !isOpen ? 1 : 0;
+    gsap.to(wipeMaterialRef.current, {
+      progress: target,
+      duration: 0.7,
+      ease: "power2.inOut",
+    });
+  }, [hovered, isOpen]);
 
+  // Rotate door open/closed
   useEffect(() => {
     if (doorRef.current) {
       gsap.to(doorRef.current.rotation, {
@@ -39,17 +93,9 @@ export default function AnimatedDoor({
     }
   }, [isOpen]);
 
+  // Dim everything at night
   useEffect(() => {
     const targetColor = new THREE.Color(isNight ? "#888899" : "#ffffff");
-    if (doorMaterialRef.current) {
-      gsap.to(doorMaterialRef.current.color, {
-        r: targetColor.r,
-        g: targetColor.g,
-        b: targetColor.b,
-        duration: 1.5,
-        ease: "power2.inOut",
-      });
-    }
     if (frameMaterialRef.current) {
       gsap.to(frameMaterialRef.current.color, {
         r: targetColor.r,
@@ -63,18 +109,22 @@ export default function AnimatedDoor({
 
   return (
     <group position={[0, -1.285, -15.9]}>
+      {/* Door frame */}
       <group position={[0, 0, 0]}>
         <mesh position={[0, 0, 0.2]}>
           <planeGeometry args={[7, 10.05]} />
-          <meshBasicMaterial
+          <meshStandardMaterial
             ref={frameMaterialRef}
             map={frameTexture}
             transparent={true}
             side={THREE.DoubleSide}
+            roughness={1}
+            metalness={0}
           />
         </mesh>
       </group>
 
+      {/* Door panel — pivots for open animation */}
       <group
         ref={doorRef}
         position={[-2.555, -0.22, 0]}
@@ -82,15 +132,25 @@ export default function AnimatedDoor({
           e.stopPropagation();
           if (onClick) onClick();
         }}
-        onPointerOver={() => (document.body.style.cursor = "pointer")}
-        onPointerOut={() => (document.body.style.cursor = "auto")}
+        onPointerEnter={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerLeave={(e) => {
+          e.stopPropagation();
+          setHovered(false);
+          document.body.style.cursor = "auto";
+        }}
       >
         <group position={[2.555, 0, 0]}>
           <mesh position={[0, -0.1, 0]}>
-            <boxGeometry args={[4.9, 8.8, 0.2]} />
-            <meshBasicMaterial
-              ref={doorMaterialRef}
-              map={doorClosedTexture}
+            <planeGeometry args={[4.9, 8.8]} />
+            <doorWipeMaterial
+              ref={wipeMaterialRef}
+              texBase={isOpen ? doorOpenTexture : doorClosedTexture}
+              texOn={doorColoredTexture}
+              transparent={false}
             />
           </mesh>
         </group>
@@ -98,4 +158,3 @@ export default function AnimatedDoor({
     </group>
   );
 }
-

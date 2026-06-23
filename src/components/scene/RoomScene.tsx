@@ -24,7 +24,7 @@ export default function RoomScene({
   const toggleNight = () => setIsNight(!isNight);
 
   useEffect(() => {
-      const targetColor = new THREE.Color(isNight ? "#555566" : "#c0c0c0");
+      const targetColor = new THREE.Color(isNight ? "#555566" : "#fff");
     if (scene.background instanceof THREE.Color) {
       gsap.to(scene.background, {
         r: targetColor.r,
@@ -94,7 +94,7 @@ export default function RoomScene({
         color="#ff9955"
         decay={2}
       />
-      <color attach="background" args={["#c0c0c0"]} />
+      <color attach="background" args={["#fff"]} />
       <fog attach="fog" args={["#c0c0c0", 5, 40]} />
 
       {/* 

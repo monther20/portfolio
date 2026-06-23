@@ -33,7 +33,7 @@ export default function TvStack({
         if (child.isMesh && child.material) {
           const mats = Array.isArray(child.material) ? child.material : [child.material];
           
-          const newMats = mats.map((mat) => {
+          const newMats = mats.map((mat: any) => {
             // Identify the screen material by its texture maps or name
             const isScreen = mat.map || mat.emissiveMap || (mat.name && mat.name.toLowerCase().includes("screen"));
             

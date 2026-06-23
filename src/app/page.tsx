@@ -2,6 +2,7 @@
 
 import React, { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
 
 import RoomScene from "../components/scene/RoomScene";
 
@@ -11,6 +12,7 @@ export default function MoodyHallwayScene() {
       <Canvas
         camera={{ position: [0, -2, 8], fov: 32 }}
         onCreated={({ camera }) => camera.lookAt(0, -1.285, -15.9)}
+        gl={{ toneMapping: THREE.NoToneMapping }}
       >
         <Suspense fallback={null}>
           <RoomScene
