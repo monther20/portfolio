@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useLoader } from "@react-three/fiber";
@@ -137,9 +137,19 @@ export default function Corridor() {
   const baseboardTex = useLoader(THREE.TextureLoader, "/textures/textures/corridor/texturadoprogow.webp");
   const floorEdgeTex = useLoader(THREE.TextureLoader, "/textures/textures/corridor/zakonczeniepodlogi.webp");
 
+  // Corridor textures are color/albedo images. Mark them as sRGB so they don't
+  // render lighter/washed out than the source artwork.
+  useEffect(() => {
+    [baseFloorTex, baseWallTex, baseCeilTex, lampTex, baseboardTex, floorEdgeTex].forEach((texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+    });
+  }, [baseFloorTex, baseWallTex, baseCeilTex, lampTex, baseboardTex, floorEdgeTex]);
+
   // Tile textures based on SEGMENT_LENGTH so they align seamlessly between blocks
   const floorTex = useMemo(() => {
     const t = baseFloorTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(2, SEGMENT_LENGTH / 3);
     t.needsUpdate = true;
@@ -148,6 +158,7 @@ export default function Corridor() {
 
   const wallTexL = useMemo(() => {
     const t = baseWallTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(SEGMENT_LENGTH / 3, CORRIDOR_HEIGHT / 2);
     t.needsUpdate = true;
@@ -156,6 +167,7 @@ export default function Corridor() {
 
   const wallTexR = useMemo(() => {
     const t = baseWallTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(SEGMENT_LENGTH / 3, CORRIDOR_HEIGHT / 2);
     t.needsUpdate = true;
@@ -164,6 +176,7 @@ export default function Corridor() {
 
   const ceilTex = useMemo(() => {
     const t = baseCeilTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(2, SEGMENT_LENGTH / 3);
     t.needsUpdate = true;
@@ -172,6 +185,7 @@ export default function Corridor() {
 
   const bbTexL = useMemo(() => {
     const t = baseboardTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(SEGMENT_LENGTH / 2.5, 1);
     t.needsUpdate = true;
@@ -180,6 +194,7 @@ export default function Corridor() {
 
   const bbTexR = useMemo(() => {
     const t = baseboardTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(SEGMENT_LENGTH / 2.5, 1);
     t.needsUpdate = true;
@@ -188,6 +203,7 @@ export default function Corridor() {
 
   const floorEdgeTexL = useMemo(() => {
     const t = floorEdgeTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(SEGMENT_LENGTH / 3, 1);
     t.needsUpdate = true;
@@ -196,6 +212,7 @@ export default function Corridor() {
 
   const floorEdgeTexR = useMemo(() => {
     const t = floorEdgeTex.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(SEGMENT_LENGTH / 3, 1);
     t.needsUpdate = true;

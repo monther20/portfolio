@@ -12,6 +12,7 @@ const DoorWipeMaterial = shaderMaterial(
     texBase: null,
     texOn: null,
     progress: 0,
+    tintColor: new THREE.Color("#ffffff"),
   },
   // Vertex
   `
@@ -27,6 +28,7 @@ const DoorWipeMaterial = shaderMaterial(
     uniform sampler2D texBase;
     uniform sampler2D texOn;
     uniform float progress;
+    uniform vec3 tintColor;
 
     void main() {
       vec4 base = texture2D(texBase, vUv);
@@ -37,18 +39,17 @@ const DoorWipeMaterial = shaderMaterial(
       float Y = 1.0 - p;
       float mixVal = smoothstep(Y - 0.15, Y + 0.15, vUv.y);
 
-      gl_FragColor = mix(base, on, mixVal);
+      gl_FragColor = mix(base, on, mixVal) * vec4(tintColor, 1.0);
+      #include <colorspace_fragment>
     }
   `
 );
 
 extend({ DoorWipeMaterial });
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      doorWipeMaterial: any;
-    }
+declare module "@react-three/fiber" {
+  interface ThreeElements {
+    doorWipeMaterial: any;
   }
 }
 
@@ -70,6 +71,15 @@ export default function AnimatedDoor({
   const doorOpenTexture = useLoader(THREE.TextureLoader, "/textures/door_handle_open.png");
   const doorColoredTexture = useLoader(THREE.TextureLoader, "/textures/door_colored.png");
   const frameTexture = useLoader(THREE.TextureLoader, "/textures/door_frame.png");
+
+  // These are color/albedo textures. Without SRGBColorSpace three.js treats
+  // them as linear data, which makes image colors render noticeably washed out.
+  useEffect(() => {
+    [doorClosedTexture, doorOpenTexture, doorColoredTexture, frameTexture].forEach((texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+    });
+  }, [doorClosedTexture, doorOpenTexture, doorColoredTexture, frameTexture]);
 
   // Animate the wipe progress on hover (only when door is closed)
   useEffect(() => {
@@ -93,11 +103,22 @@ export default function AnimatedDoor({
     }
   }, [isOpen]);
 
-  // Dim everything at night
+  // Dim the door frame and the custom door shader at night.
   useEffect(() => {
     const targetColor = new THREE.Color(isNight ? "#888899" : "#ffffff");
+
     if (frameMaterialRef.current) {
       gsap.to(frameMaterialRef.current.color, {
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        duration: 1.5,
+        ease: "power2.inOut",
+      });
+    }
+
+    if (wipeMaterialRef.current?.tintColor) {
+      gsap.to(wipeMaterialRef.current.tintColor, {
         r: targetColor.r,
         g: targetColor.g,
         b: targetColor.b,

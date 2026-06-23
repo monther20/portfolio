@@ -9,11 +9,14 @@ import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import Corridor from "./Corridor";
+import { ShadowConfig } from "./ShadowDebugPanel";
 
 export default function RoomScene({
   onTransitionComplete,
+  shadowConfig,
 }: {
   onTransitionComplete: () => void;
+  shadowConfig: ShadowConfig;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -111,7 +114,7 @@ export default function RoomScene({
       />
 
       {/* Structural Room Components (These stay stationary) */}
-      <InteriorDetails isNight={isNight} toggleNight={toggleNight} />
+      <InteriorDetails isNight={isNight} toggleNight={toggleNight} shadowConfig={shadowConfig} />
       <ExteriorRoof />
       <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} />
 

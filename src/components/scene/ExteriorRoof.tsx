@@ -7,8 +7,12 @@ import PortalShader from "./PortalShader";
 
 export default function ExteriorRoof() {
   const bricksTexture = useLoader(THREE.TextureLoader, "/textures/wall_bricks_2.png");
+  // This is a color/albedo texture. Mark it as sRGB so it does not render
+  // lighter/washed out than the original image.
+  bricksTexture.colorSpace = THREE.SRGBColorSpace;
   // Set anisotropy for better quality when viewed at an angle
   bricksTexture.anisotropy = 16;
+  bricksTexture.needsUpdate = true;
 
   return (
     <>

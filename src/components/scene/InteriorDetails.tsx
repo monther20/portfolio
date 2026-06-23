@@ -7,20 +7,70 @@ import { Billboard } from "@react-three/drei";
 import gsap from "gsap";
 import SpotlightCone, { FloorGlow } from "./SpotlightCone";
 import Lantern from "./Lantern";
+import { ShadowConfig } from "./ShadowDebugPanel";
 
 // Billboard sprite — stands on the floor and always faces the camera
-function FloorDecal({
+function WallShadow({
   texture,
   position,
   scale = 1,
   aspect = 1,
   isNight,
+  maxOpacity = 0.35,
 }: {
   texture: THREE.Texture;
   position: [number, number, number];
   scale?: number;
   aspect?: number;
   isNight: boolean;
+  maxOpacity?: number;
+}) {
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const width = scale * aspect;
+  const height = scale;
+
+  useEffect(() => {
+    if (!materialRef.current) return;
+
+    gsap.to(materialRef.current, {
+      opacity: isNight ? maxOpacity : 0,
+      duration: 1.5,
+      ease: "power2.inOut",
+    });
+  }, [isNight, maxOpacity]);
+
+  return (
+    <mesh position={position} renderOrder={20}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial
+        ref={materialRef}
+        map={texture}
+        color="#000000"
+        transparent
+        opacity={0}
+        alphaTest={0.01}
+        depthWrite={false}
+        depthTest={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+function FloorDecal({
+  texture,
+  position,
+  scale = 1,
+  aspect = 1,
+  isNight,
+  renderOrder = 0,
+}: {
+  texture: THREE.Texture;
+  position: [number, number, number];
+  scale?: number;
+  aspect?: number;
+  isNight: boolean;
+  renderOrder?: number;
 }) {
   const width = scale * aspect;
   const height = scale;
@@ -60,7 +110,8 @@ function FloorDecal({
       lockY={true}
       lockZ={false}
     >
-      <mesh>
+      {/* renderOrder ensures furniture always paints on top of wall shadows */}
+      <mesh renderOrder={renderOrder}>
         <planeGeometry ref={geoRef} args={[width, height]} />
         <meshStandardMaterial
           ref={materialRef}
@@ -79,9 +130,11 @@ function FloorDecal({
 export default function InteriorDetails({
   isNight,
   toggleNight,
+  shadowConfig,
 }: {
   isNight: boolean;
   toggleNight: () => void;
+  shadowConfig: ShadowConfig;
 }) {
   const [lanternHovered, setLanternHovered] = useState(false);
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
@@ -125,6 +178,8 @@ export default function InteriorDetails({
   const stonePathTex = useLoader(THREE.TextureLoader, "/textures/stone-path.webp");
   const tableTex = useLoader(THREE.TextureLoader, "/textures/table.png");
   const chairTex = useLoader(THREE.TextureLoader, "/textures/chair.png");
+  const tableShadowTex = useLoader(THREE.TextureLoader, "/textures/table-shadow.png");
+  const chairShadowTex = useLoader(THREE.TextureLoader, "/textures/chair-shadow.png");
 
   // aspect ratios: rock-1 401x157, rock_and_herp 412x160, herp 490x262
   const ROCK1_ASPECT = 401 / 157; // ~2.55
@@ -133,6 +188,8 @@ export default function InteriorDetails({
   const TABLE_ASPECT = 1536 / 1024; // 1.5
   const CHAIR_ASPECT = 1254 / 1254; // 1.0
   const CUP_ASPECT = 1536 / 1024; // 1.5
+  const TABLE_SHADOW_ASPECT = TABLE_ASPECT;
+  const CHAIR_SHADOW_ASPECT = CHAIR_ASPECT;
 
   const decals = useMemo(
     () => [
@@ -161,8 +218,9 @@ export default function InteriorDetails({
       { tex: herpTex, pos: [7.0, -6.0, -5] as [number, number, number], s: 0.7, a: HERP_ASPECT },
       { tex: herpTex, pos: [9.0, -6.0, -13] as [number, number, number], s: 0.5, a: HERP_ASPECT },
       // New additions (Left side of the path, near the wall)
-      { tex: tableTex, pos: [-4.2, -6.0, -8.5] as [number, number, number], s: 3.2, a: TABLE_ASPECT },
-      { tex: chairTex, pos: [-6.8, -6.4, -8.5] as [number, number, number], s: 4.5, a: CHAIR_ASPECT },
+      // ro=30 so they render on top of the wall shadow (renderOrder=20)
+      { tex: tableTex, pos: [-4.2, -6.0, -8.5] as [number, number, number], s: 3.2, a: TABLE_ASPECT, ro: 30 },
+      { tex: chairTex, pos: [-6.8, -6.4, -8.5] as [number, number, number], s: 4.5, a: CHAIR_ASPECT, ro: 30 },
     ],
     [
       rock1Tex, rockHerpTex, herpTex, tableTex, chairTex, 
@@ -260,8 +318,26 @@ export default function InteriorDetails({
       </group>
 
       {decals.map((d, i) => (
-        <FloorDecal key={i} texture={d.tex} position={d.pos} scale={d.s} aspect={d.a} isNight={isNight} />
+        <FloorDecal key={i} texture={d.tex} position={d.pos} scale={d.s} aspect={d.a} isNight={isNight} renderOrder={d.ro ?? 0} />
       ))}
+
+      {/* Table/chair shadows projected onto the back wall during night mode. */}
+      <WallShadow
+        texture={tableShadowTex}
+        position={[shadowConfig.table.x, shadowConfig.table.y, shadowConfig.table.z]}
+        scale={shadowConfig.table.scale}
+        aspect={TABLE_SHADOW_ASPECT}
+        isNight={isNight}
+        maxOpacity={shadowConfig.table.maxOpacity}
+      />
+      <WallShadow
+        texture={chairShadowTex}
+        position={[shadowConfig.chair.x, shadowConfig.chair.y, shadowConfig.chair.z]}
+        scale={shadowConfig.chair.scale}
+        aspect={CHAIR_SHADOW_ASPECT}
+        isNight={isNight}
+        maxOpacity={shadowConfig.chair.maxOpacity}
+      />
 
       {/* Interior Ambient Light - Dim when night */}
       <ambientLight intensity={isNight ? 0.8 : 1.5} color="#ffffff" />

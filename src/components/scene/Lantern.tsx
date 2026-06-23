@@ -55,11 +55,9 @@ const LanternMaterial = shaderMaterial(
 
 extend({ LanternMaterial });
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      lanternMaterial: any;
-    }
+declare module "@react-three/fiber" {
+  interface ThreeElements {
+    lanternMaterial: any;
   }
 }
 
