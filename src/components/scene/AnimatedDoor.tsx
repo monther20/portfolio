@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
-import { useLoader, extend } from "@react-three/fiber";
+import { useLoader, extend, useThree, useFrame } from "@react-three/fiber";
 import { shaderMaterial } from "@react-three/drei";
 
 // Same wipe shader as the lanterns — blends from texBase to texOn top-to-bottom
@@ -13,22 +13,33 @@ const DoorWipeMaterial = shaderMaterial(
     texOn: null,
     progress: 0,
     tintColor: new THREE.Color("#ffffff"),
+    // Manual fog uniforms — synced each frame from the scene fog
+    fogColor: new THREE.Color(1, 1, 1),
+    fogNear: 5,
+    fogFar: 55,
   },
-  // Vertex
+  // Vertex — passes fog depth to fragment
   `
     varying vec2 vUv;
+    varying float vFogDepth;
     void main() {
       vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPos;
+      vFogDepth = -mvPos.z;
     }
   `,
-  // Fragment
+  // Fragment — applies manual linear fog after colour computation
   `
     varying vec2 vUv;
+    varying float vFogDepth;
     uniform sampler2D texBase;
     uniform sampler2D texOn;
     uniform float progress;
     uniform vec3 tintColor;
+    uniform vec3 fogColor;
+    uniform float fogNear;
+    uniform float fogFar;
 
     void main() {
       vec4 base = texture2D(texBase, vUv);
@@ -41,6 +52,10 @@ const DoorWipeMaterial = shaderMaterial(
 
       gl_FragColor = mix(base, on, mixVal) * vec4(tintColor, 1.0);
       #include <colorspace_fragment>
+
+      // Apply linear fog — blends output toward fogColor with distance
+      float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
     }
   `
 );
@@ -66,6 +81,7 @@ export default function AnimatedDoor({
   const frameMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
   const wipeMaterialRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
+  const { scene } = useThree();
 
   const doorClosedTexture = useLoader(THREE.TextureLoader, "/textures/door.png");
   const doorOpenTexture = useLoader(THREE.TextureLoader, "/textures/door_handle_open.png");
@@ -81,14 +97,24 @@ export default function AnimatedDoor({
     });
   }, [doorClosedTexture, doorOpenTexture, doorColoredTexture, frameTexture]);
 
+  // Sync the manual fog uniforms with the scene's live fog each frame
+  useFrame(() => {
+    if (wipeMaterialRef.current && scene.fog instanceof THREE.Fog) {
+      wipeMaterialRef.current.fogColor = scene.fog.color;
+      wipeMaterialRef.current.fogNear  = scene.fog.near;
+      wipeMaterialRef.current.fogFar   = scene.fog.far;
+    }
+  });
+
   // Animate the wipe progress on hover (only when door is closed)
   useEffect(() => {
     if (!wipeMaterialRef.current) return;
     const target = hovered && !isOpen ? 1 : 0;
     gsap.to(wipeMaterialRef.current, {
       progress: target,
-      duration: 0.7,
-      ease: "power2.inOut",
+      duration: 0.35,
+      ease: "power2.out",
+      overwrite: "auto",
     });
   }, [hovered, isOpen]);
 

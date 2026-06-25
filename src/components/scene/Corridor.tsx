@@ -11,6 +11,7 @@ import SideDoor from "./SideDoor";
 const CORRIDOR_HEIGHT = 3.5;
 const CORRIDOR_WIDTH = 7;
 const SEGMENT_LENGTH = 40; // Length of each generated block
+const CORRIDOR_ENTRY_Z = -15.9; // Matches the door plane Z position to remove the gap
 
 const FLOOR_Y = -1.5 - CORRIDOR_HEIGHT / 2;
 const CEILING_Y = -1.5 + CORRIDOR_HEIGHT / 2;
@@ -128,7 +129,7 @@ function CorridorSegment({
 
 // ─── Infinite Corridor Manager ─────────────────────────────────────────────
 export default function Corridor() {
-  const [segmentBase, setSegmentBase] = useState(-16); // Start just past the door
+  const [segmentBase, setSegmentBase] = useState(CORRIDOR_ENTRY_Z); // Start just past the door
 
   const baseFloorTex = useLoader(THREE.TextureLoader, "/textures/textures/corridor/floor_wood.webp");
   const baseWallTex  = useLoader(THREE.TextureLoader, "/textures/textures/corridor/wall_texture.webp");
@@ -219,9 +220,13 @@ export default function Corridor() {
     return t;
   }, [floorEdgeTex]);
 
-  // Dynamically update segmentBase to track camera
+  // Dynamically update segmentBase to track camera while keeping the segment grid
+  // anchored at the doorway. This prevents the entry segment from snapping back
+  // to z=-40 and exposing a gap as the camera walks through the door.
   useFrame(({ camera }) => {
-    const newBase = Math.floor(camera.position.z / SEGMENT_LENGTH) * SEGMENT_LENGTH;
+    const newBase =
+      Math.floor((camera.position.z - CORRIDOR_ENTRY_Z) / SEGMENT_LENGTH) * SEGMENT_LENGTH +
+      CORRIDOR_ENTRY_Z;
     if (newBase !== segmentBase) {
       setSegmentBase(newBase);
     }
@@ -231,7 +236,6 @@ export default function Corridor() {
   const segments = useMemo(() => {
     const result = [];
     for (let i = -2; i <= 2; i++) {
-      // Offset by -16 so the grid aligns with the door opening at z=-16
       result.push(segmentBase + i * SEGMENT_LENGTH);
     }
     return result;
@@ -240,8 +244,8 @@ export default function Corridor() {
   return (
     <group>
       {segments.map((zStart) => (
-        // Only render segments behind the door (z < -15)
-        zStart < -15 && (
+        // Only render segments behind the door, with a small overlap to cover the threshold seam
+        zStart <= CORRIDOR_ENTRY_Z && (
           <CorridorSegment
             key={zStart}
             zStart={zStart}

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
-import { useFrame, extend } from "@react-three/fiber";
+import { useFrame, extend, useThree } from "@react-three/fiber";
 import { shaderMaterial } from "@react-three/drei";
 import gsap from "gsap";
 
@@ -12,43 +12,57 @@ const LanternMaterial = shaderMaterial(
     texOn: null,
     progress: 0,
     tintColor: new THREE.Color("#ffffff"),
+    // Manual fog uniforms — synced each frame from the scene fog
+    fogColor: new THREE.Color(1, 1, 1),
+    fogNear: 5,
+    fogFar: 55,
   },
-  // Vertex Shader
+  // Vertex Shader — passes fog depth to fragment
   `
     varying vec2 vUv;
+    varying float vFogDepth;
     void main() {
       vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPos;
+      vFogDepth = -mvPos.z;
     }
   `,
-  // Fragment Shader
+  // Fragment Shader — applies manual linear fog after colour computation
   `
     varying vec2 vUv;
+    varying float vFogDepth;
     uniform sampler2D texBase;
     uniform sampler2D texOn;
     uniform float progress;
     uniform vec3 tintColor;
+    uniform vec3 fogColor;
+    uniform float fogNear;
+    uniform float fogFar;
 
     void main() {
       vec4 base = texture2D(texBase, vUv);
-      vec4 on = texture2D(texOn, vUv);
-      
-      // Map progress from [0, 1] to [-0.2, 1.2] to ensure the soft edge fully clears the top/bottom
-      float p = progress * 1.4 - 0.2; 
-      
-      // Top to bottom wipe: reveal line Y moves from 1.0 down to 0.0
+      vec4 on   = texture2D(texOn,   vUv);
+
+      // Map progress from [0, 1] to [-0.2, 1.2] to ensure the soft edge fully clears
+      float p = progress * 1.4 - 0.2;
+
+      // Top-to-bottom wipe: reveal line Y moves from 1.0 down to 0.0
       float Y = 1.0 - p;
-      
+
       // Smoothstep creates a soft gradient at the wipe edge
-      // If vUv.y is above the line, mixVal approaches 1 (showing 'on' texture)
       float mixVal = smoothstep(Y - 0.15, Y + 0.15, vUv.y);
 
       vec4 finalColor = mix(base, on, mixVal);
-      
-      // Alpha test threshold
+
+      // Alpha-test threshold
       if (finalColor.a < 0.01) discard;
-      
+
       gl_FragColor = finalColor * vec4(tintColor, 1.0);
+
+      // Apply linear fog — blends output toward fogColor with distance
+      float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
     }
   `
 );
@@ -81,20 +95,31 @@ export default function Lantern({
   onPointerOut?: (e: any) => void;
 }) {
   const materialRef = useRef<any>(null);
+  const { scene } = useThree();
+
+  // Sync the manual fog uniforms with the scene's live fog each frame
+  useFrame(() => {
+    if (materialRef.current && scene.fog instanceof THREE.Fog) {
+      materialRef.current.fogColor = scene.fog.color;
+      materialRef.current.fogNear  = scene.fog.near;
+      materialRef.current.fogFar   = scene.fog.far;
+    }
+  });
 
   // Animate the progress uniform when hover or night state changes
   useEffect(() => {
     // If it's night, or if we are hovering, the light image should be fully revealed
     const targetProgress = isNight || isHovered ? 1 : 0;
-    
+
     // Tint the lantern darker when it's night
     const targetTint = new THREE.Color(isNight ? "#EEEEEE" : "#ffffff");
-    
+
     if (materialRef.current) {
       gsap.to(materialRef.current, {
         progress: targetProgress,
-        duration: 0.6,
-        ease: "power2.inOut",
+        duration: 0.35,
+        ease: "power2.out",
+        overwrite: "auto",
       });
       gsap.to(materialRef.current.tintColor, {
         r: targetTint.r,

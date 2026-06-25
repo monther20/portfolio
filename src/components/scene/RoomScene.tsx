@@ -8,7 +8,6 @@ import ScrollCameraManager from "./ScrollCameraManager";
 import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
-import Corridor from "./Corridor";
 import { ShadowConfig } from "./ShadowDebugPanel";
 
 export default function RoomScene({
@@ -98,7 +97,7 @@ export default function RoomScene({
         decay={2}
       />
       <color attach="background" args={["#fff"]} />
-      <fog attach="fog" args={["#c0c0c0", 5, 40]} />
+      <fog attach="fog" args={["#c0c0c0", 5, 55]} />
 
       {/* 
         ENVIRONMENT MAP (HDRI)
@@ -117,9 +116,6 @@ export default function RoomScene({
       <InteriorDetails isNight={isNight} toggleNight={toggleNight} shadowConfig={shadowConfig} />
       <ExteriorRoof />
       <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} />
-
-      {/* Corridor — hidden behind the wall, revealed when door opens */}
-      <Corridor />
 
       {/* The Loose Items (These get sucked into the portal) */}
       <group ref={itemsGroupRef}>

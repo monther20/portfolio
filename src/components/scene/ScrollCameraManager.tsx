@@ -29,7 +29,7 @@ export default function ScrollCameraManager({ isOpen }: { isOpen: boolean }) {
       // Outside the room (isOpen === false)
       else {
         scrollTargetZ.current -= delta;
-        // Bound the outside scrolling between z=8 (start) and z=30 (far back)
+        // Bound the outside scrolling between z=8 (start) and z=30 (far back).
         scrollTargetZ.current = Math.max(8, Math.min(30, scrollTargetZ.current));
       }
 
