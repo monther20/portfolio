@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -25,96 +26,174 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ─── Torn Paper Loading ──────────────────────────────────────────────────── */
+/* ─── Sketch Preloader ────────────────────────────────────────────────── */
 
 /* Door-panel accent colours (kept for potential use elsewhere) */
 :root {
-  --door-blue:   #5b9fd4;
-  --door-green:  #8dc46a;
+  --door-blue: #5b9fd4;
+  --door-green: #8dc46a;
   --door-yellow: #f6c247;
   --door-orange: #e87d2a;
-  --door-red:    #e04a4a;
+  --door-red: #e04a4a;
   --door-purple: #9166b8;
 }
 
-/*
-  Both panels are fixed, full-viewport-height, pure white.
-  clip-path gives each one a jagged edge that meets at ~50 vh.
-  The two torn edges are exact vertical mirrors of each other so
-  they interlock perfectly before tearing apart.
-*/
-.torn-panel {
+
+
+.sketch-preloader {
+  --line-progress: 0;
   position: fixed;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background: #ffffff;
+  inset: 0;
   z-index: 50;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: default;
 }
 
-/* ── Top half — jagged bottom edge ───────────────────────────────────────── */
-.torn-top {
-  top: 0;
-  clip-path: polygon(
-    0% 0%, 100% 0%,
-    /* right side down to torn edge */
-    100% 47%,
-    /* torn teeth — right → left, base ≈ 50 vh */
-    97% 52%, 94% 47%, 91% 54%, 88% 47%, 85% 53%,
-    82% 46%, 79% 54%, 76% 48%, 73% 55%, 70% 47%,
-    67% 52%, 64% 47%, 61% 54%, 58% 48%, 55% 52%,
-    52% 46%, 49% 54%, 46% 48%, 43% 53%, 40% 46%,
-    37% 55%, 34% 48%, 31% 54%, 28% 46%, 25% 52%,
-    22% 47%, 19% 54%, 16% 48%, 13% 53%, 10% 46%,
-    7% 55%, 4% 48%, 0% 53%
-  );
-  /* shadow along the torn bottom edge */
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.22));
+.sketch-preloader__half {
+  position: absolute;
+  inset-block: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff; /* Clean white background */
+  will-change: transform;
 }
 
-/* ── Bottom half — jagged top edge (mirror of top) ───────────────────────── */
-.torn-bottom {
-  bottom: 0;
-  clip-path: polygon(
-    0% 100%, 100% 100%,
-    /* right side up to torn edge */
-    100% 53%,
-    /* torn teeth — right → left, EXACT mirror of .torn-top */
-    97% 48%, 94% 53%, 91% 46%, 88% 53%, 85% 47%,
-    82% 54%, 79% 46%, 76% 52%, 73% 45%, 70% 53%,
-    67% 48%, 64% 53%, 61% 46%, 58% 52%, 55% 48%,
-    52% 54%, 49% 46%, 46% 52%, 43% 47%, 40% 54%,
-    37% 45%, 34% 52%, 31% 46%, 28% 54%, 25% 48%,
-    22% 53%, 19% 46%, 16% 52%, 13% 47%, 10% 54%,
-    7% 45%, 4% 52%, 0% 47%
-  );
-  /* shadow along the torn top edge */
-  filter: drop-shadow(0 -10px 24px rgba(0, 0, 0, 0.22));
+.sketch-preloader__half--left {
+  left: 0;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05);
 }
 
-/* ── Auto-animated variant (loading.tsx — CSS delay, no JS) ──────────────── */
-.torn-auto.torn-top {
-  animation: tear-up 0.95s cubic-bezier(0.76, 0, 0.24, 1) 1.6s forwards;
-}
-.torn-auto.torn-bottom {
-  animation: tear-down 0.95s cubic-bezier(0.76, 0, 0.24, 1) 1.6s forwards;
+.sketch-preloader__half--right {
+  right: 0;
+  box-shadow: -2px 0 15px rgba(0, 0, 0, 0.05);
 }
 
-/* ── JS-triggered variant (page.tsx LoadingOverlay — class added via state) ─ */
-.torn-panel.is-tearing.torn-top {
-  animation: tear-up 0.95s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-}
-.torn-panel.is-tearing.torn-bottom {
-  animation: tear-down 0.95s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-}
-
-/* ── Keyframes ────────────────────────────────────────────────────────────── */
-
-@keyframes tear-up {
-  to { transform: translateY(-110%); }
+.sketch-preloader__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
 }
 
-@keyframes tear-down {
-  to { transform: translateY(110%); }
+.sketch-preloader__overlay path {
+  fill: none;
+  stroke: #222222; /* Pencil/Ink color */
+  stroke-width: 0.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--line-progress));
+  transition: stroke-dashoffset 220ms ease-out;
+}
+
+.sketch-preloader__content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222222;
+  font-family: 'Caveat', cursive, sans-serif;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 600;
+  text-align: center;
+}
+
+.sketch-preloader__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.sketch-preloader__ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid #222222;
+  border-radius: 45% 55% 40% 60% / 55% 45% 60% 40%;
+  animation: sketch-ring-spin 4s linear infinite;
+}
+
+.sketch-preloader__ring::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1.5px solid rgba(34, 34, 34, 0.6);
+  border-radius: 60% 40% 55% 45% / 40% 60% 45% 55%;
+  animation: sketch-ring-spin-inner 3s linear infinite reverse;
+}
+
+.sketch-preloader.is-sketching .sketch-preloader__half--left,
+.sketch-preloader--auto .sketch-preloader__half--left {
+  animation: sketch-left 1.6s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+}
+
+.sketch-preloader.is-sketching .sketch-preloader__half--right,
+.sketch-preloader--auto .sketch-preloader__half--right {
+  animation: sketch-right 1.6s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+}
+
+.sketch-preloader.is-sketching,
+.sketch-preloader--auto {
+  animation: sketch-preloader-fade 0.6s ease 1s forwards;
+}
+
+.sketch-preloader--auto {
+  --line-progress: 100;
+}
+
+.sketch-preloader--auto .sketch-preloader__overlay path {
+  animation: draw-sketch-line 1.2s ease-out forwards;
+}
+
+.sketch-preloader--auto .sketch-preloader__half--left,
+.sketch-preloader--auto .sketch-preloader__half--right {
+  animation-delay: 1.4s;
+}
+
+.sketch-preloader--auto.sketch-preloader {
+  animation-delay: 2.5s;
+}
+
+@keyframes draw-sketch-line {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes sketch-ring-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes sketch-ring-spin-inner {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes sketch-left {
+  to {
+    transform: translate(-100%, 0%);
+  }
+}
+
+@keyframes sketch-right {
+  to {
+    transform: translate(100%, 0%);
+  }
+}
+
+@keyframes sketch-preloader-fade {
+  to { opacity: 0; visibility: hidden; }
 }
 

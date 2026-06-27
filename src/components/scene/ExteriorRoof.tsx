@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
-import PortalShader from "./PortalShader";
 
 export default function ExteriorRoof() {
   const bricksTexture = useLoader(THREE.TextureLoader, "/textures/wall_bricks_2.png");

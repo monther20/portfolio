@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -8,6 +8,8 @@ import ScrollCameraManager from "./ScrollCameraManager";
 import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
+import JourneyScene from "./JourneyScene";
+import { primeWalkAudio } from "./walkAudio";
 import { ShadowConfig } from "./ShadowDebugPanel";
 
 export default function RoomScene({
@@ -47,6 +49,7 @@ export default function RoomScene({
 
   const handleDoorClick = () => {
     if (isTransitioning) return;
+    primeWalkAudio(); // unlock audio within this click gesture so footsteps work
     setIsOpen(true);
     setIsTransitioning(true);
 
@@ -60,17 +63,23 @@ export default function RoomScene({
       },
     });
 
-    // Walk the camera through the door and into the corridor
+    // Walk the camera through the door — stop just past it, facing the avatar.
     tl.to(
       camera.position,
       {
         x: 0,
         y: -1.5,
-        z: -50, // Walk through the door and deep into the corridor
+        z: -20,
         duration: 3.5,
         ease: "power2.inOut",
       },
       "+=0.5",
+    );
+    // Level the view to look straight down the journey (-z).
+    tl.to(
+      camera.rotation,
+      { x: 0, y: 0, z: 0, duration: 3.5, ease: "power2.inOut" },
+      "<",
     );
   };
 
@@ -97,7 +106,7 @@ export default function RoomScene({
         decay={2}
       />
       <color attach="background" args={["#fff"]} />
-      <fog attach="fog" args={["#c0c0c0", 5, 55]} />
+      <fog attach="fog" args={["#c0c0c0", 5, 45]} />
 
       {/* 
         ENVIRONMENT MAP (HDRI)
@@ -117,9 +126,16 @@ export default function RoomScene({
       <ExteriorRoof />
       <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} />
 
+      {/* The scroll-driven journey beyond the door (mounted once you enter). */}
+      {isOpen && (
+        <Suspense fallback={null}>
+          <JourneyScene />
+        </Suspense>
+      )}
+
       {/* The Loose Items (These get sucked into the portal) */}
       <group ref={itemsGroupRef}>
-        
+
       </group>
     </>
   );
