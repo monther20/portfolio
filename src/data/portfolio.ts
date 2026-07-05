@@ -31,9 +31,9 @@ export const about = {
   tagline: "Creative front-end & 3D web developer",
   /** Each string becomes a floating handwritten note in the About section. Edit freely. */
   blurbs: [
-    "I build playful, interactive web experiences.",
-    "I love turning ideas into things you can click, drag and explore.",
-    "Currently crafting 3D & motion-rich interfaces.",
+    "I build playful, interactive web experiences with React, Three.js and motion.",
+    "I love turning ideas into things you can click, drag, scroll and explore.",
+    "Currently crafting 3D, animation-rich interfaces for memorable digital products.",
   ],
   /** Decorative "islands" already in your assets — set show:false to hide. */
   islands: [
@@ -73,25 +73,25 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: "Monetune",
-    blurb: "— replace with a one-line description of Monetune —",
+    blurb: "A polished web project focused on clean interactions, responsive UI and product storytelling.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/monetuneprzod.webp`, painted: `${GALLERY_BASE}/monetuneprzod_painted.webp` },
   },
   {
     name: "TimberKitty",
-    blurb: "— replace with a one-line description of TimberKitty —",
+    blurb: "A playful interactive build combining character, motion and front-end craft.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/timberkittyprzod.webp`, painted: `${GALLERY_BASE}/timberkittyprzod_painted.webp` },
   },
   {
     name: "YoungMulti",
-    blurb: "— replace with a one-line description of YoungMulti —",
+    blurb: "A modern digital experience with bold visuals, smooth transitions and engaging UI.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/youngmultiprzod.webp`, painted: `${GALLERY_BASE}/youngmultiprzod_painted.webp` },
   },
   {
     name: "Bio",
-    blurb: "— replace with a one-line description of this project —",
+    blurb: "A personal profile-style project designed to present identity and links in a compact experience.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/bioprzod.webp`, painted: `${GALLERY_BASE}/bioprzod_painted.webp` },
   },

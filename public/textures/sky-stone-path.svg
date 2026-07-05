@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1536" viewBox="0 0 768 1536">
+  <defs>
+    <filter id="roughen" x="-6%" y="-6%" width="112%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="17" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <style>
+      .stone{fill:#f7f7f2;stroke:#171717;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;filter:url(#roughen)}
+      .inner{fill:none;stroke:#333;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.48}
+      .hatch{fill:none;stroke:#111;stroke-width:2;stroke-linecap:round;opacity:.18}
+      .chip{fill:#ededE8;stroke:#171717;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:url(#roughen);opacity:.95}
+      .shadow{fill:#000;opacity:.08;filter:url(#roughen)}
+    </style>
+  </defs>
+
+  <!-- transparent background: stones float in the sky -->
+  <g id="floating-stone-path">
+    <!-- small broken stones around the main walkway -->
+    <path class="chip" d="M143 109 L184 94 L222 121 L205 160 L158 158 Z"/>
+    <path class="chip" d="M581 224 L626 208 L656 244 L630 286 L585 270 Z"/>
+    <path class="chip" d="M106 447 L146 431 L177 456 L160 499 L112 490 Z"/>
+    <path class="chip" d="M605 575 L660 558 L689 602 L650 645 L600 622 Z"/>
+    <path class="chip" d="M91 853 L139 832 L174 864 L153 909 L103 902 Z"/>
+    <path class="chip" d="M610 1030 L654 1017 L687 1049 L665 1094 L618 1081 Z"/>
+    <path class="chip" d="M129 1250 L176 1232 L214 1264 L193 1312 L143 1297 Z"/>
+    <path class="chip" d="M566 1382 L622 1362 L659 1402 L628 1450 L574 1435 Z"/>
+
+    <!-- soft ink shadows under slabs -->
+    <path class="shadow" d="M245 51 C314 20 455 29 526 73 C557 93 548 151 514 173 C444 218 294 201 230 160 C193 136 198 74 245 51 Z"/>
+    <path class="shadow" d="M218 206 C302 168 488 176 563 222 C599 244 587 315 541 346 C459 401 284 384 201 331 C158 303 166 230 218 206 Z"/>
+    <path class="shadow" d="M192 390 C291 347 506 356 591 410 C635 438 620 520 568 554 C473 616 273 598 178 539 C128 508 139 414 192 390 Z"/>
+    <path class="shadow" d="M183 599 C290 553 510 563 601 621 C648 651 629 742 574 779 C474 846 268 825 171 761 C120 728 129 622 183 599 Z"/>
+    <path class="shadow" d="M173 826 C284 779 520 790 610 852 C656 884 642 986 580 1026 C474 1094 261 1071 158 1005 C106 972 115 850 173 826 Z"/>
+    <path class="shadow" d="M184 1075 C295 1027 512 1036 602 1097 C650 1130 635 1230 577 1270 C474 1341 265 1320 167 1253 C115 1218 127 1100 184 1075 Z"/>
+    <path class="shadow" d="M216 1320 C307 1276 485 1284 565 1336 C608 1364 592 1448 541 1484 C448 1547 281 1529 199 1470 C154 1438 165 1344 216 1320 Z"/>
+
+    <!-- main hand-drawn stone slabs -->
+    <path class="stone" d="M235 37 C303 5 451 13 522 58 C557 80 552 139 515 166 C440 220 287 197 224 151 C187 124 194 59 235 37 Z"/>
+    <path class="stone" d="M213 189 C296 146 492 156 566 205 C604 230 596 305 544 340 C456 399 279 377 196 318 C151 286 164 214 213 189 Z"/>
+    <path class="stone" d="M190 367 C289 322 514 335 594 391 C640 423 626 512 569 550 C471 616 266 588 174 524 C126 490 140 390 190 367 Z"/>
+    <path class="stone" d="M180 574 C290 528 518 540 606 601 C655 635 639 733 577 775 C473 846 263 815 166 747 C116 712 126 600 180 574 Z"/>
+    <path class="stone" d="M169 800 C284 752 526 766 613 830 C662 866 650 976 582 1020 C472 1092 255 1059 156 988 C103 951 111 825 169 800 Z"/>
+    <path class="stone" d="M179 1048 C296 1000 519 1011 606 1075 C655 1111 643 1219 578 1264 C470 1338 259 1305 164 1233 C112 1194 121 1072 179 1048 Z"/>
+    <path class="stone" d="M210 1295 C305 1249 490 1260 570 1316 C615 1348 603 1440 543 1481 C446 1549 274 1518 194 1454 C151 1419 159 1321 210 1295 Z"/>
+
+    <!-- internal cracks and pencil lines -->
+    <path class="inner" d="M286 79 C329 56 407 58 461 78"/>
+    <path class="inner" d="M277 123 C343 145 423 145 489 116"/>
+    <path class="hatch" d="M308 97 L351 82 M397 112 L455 96 M250 143 L310 154"/>
+
+    <path class="inner" d="M243 247 C322 214 464 220 535 256"/>
+    <path class="inner" d="M220 300 C314 332 446 334 537 298"/>
+    <path class="inner" d="M380 188 C365 238 366 293 384 351"/>
+    <path class="hatch" d="M258 280 L325 260 M417 249 L500 267 M301 326 L367 341"/>
+
+    <path class="inner" d="M226 439 C314 393 479 399 565 447"/>
+    <path class="inner" d="M211 505 C312 545 471 548 553 500"/>
+    <path class="inner" d="M393 369 C374 432 373 496 394 555"/>
+    <path class="hatch" d="M245 486 L327 459 M435 432 L540 455 M295 548 L384 563"/>
+
+    <path class="inner" d="M214 658 C310 607 492 616 579 671"/>
+    <path class="inner" d="M203 727 C315 772 475 775 563 719"/>
+    <path class="inner" d="M389 578 C370 644 371 721 399 780"/>
+    <path class="hatch" d="M242 701 L340 671 M443 649 L551 681 M281 765 L372 785"/>
+
+    <path class="inner" d="M206 887 C311 829 502 845 586 907"/>
+    <path class="inner" d="M197 963 C314 1012 480 1018 570 953"/>
+    <path class="inner" d="M397 805 C373 878 374 957 404 1021"/>
+    <path class="hatch" d="M237 933 L346 898 M452 879 L562 916 M276 1001 L390 1026"/>
+
+    <path class="inner" d="M218 1131 C318 1077 492 1089 579 1148"/>
+    <path class="inner" d="M201 1206 C318 1255 475 1261 560 1199"/>
+    <path class="inner" d="M395 1053 C372 1127 375 1202 403 1265"/>
+    <path class="hatch" d="M244 1175 L347 1141 M447 1124 L554 1159 M288 1241 L391 1262"/>
+
+    <path class="inner" d="M245 1374 C324 1331 464 1337 540 1386"/>
+    <path class="inner" d="M234 1440 C322 1478 450 1483 527 1433"/>
+    <path class="inner" d="M388 1300 C371 1360 375 1421 402 1482"/>
+    <path class="hatch" d="M269 1410 L349 1381 M431 1362 L515 1393 M301 1474 L390 1490"/>
+  </g>
+</svg>

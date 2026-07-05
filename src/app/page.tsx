@@ -12,6 +12,8 @@ import ShadowDebugPanel, {
   DEFAULT_SHADOW_CONFIG,
 } from "../components/scene/ShadowDebugPanel";
 
+const SHOW_SHADOW_DEBUG = process.env.NODE_ENV === "development";
+
 /**
  * LoadingOverlay — A sketch-style preloader: an off-white/white surface
  * split by a hand-drawn scribbled line, with hand-written details.
@@ -161,8 +163,10 @@ export default function MoodyHallwayScene() {
       <LoadingOverlay />
       <JourneyHud visible={entered} />
 
-      {/* HTML overlay — lives outside the Canvas so it receives normal DOM events */}
-      <ShadowDebugPanel config={shadowConfig} onChange={setShadowConfig} />
+      {/* Development-only overlay — lives outside the Canvas so it receives normal DOM events */}
+      {SHOW_SHADOW_DEBUG && (
+        <ShadowDebugPanel config={shadowConfig} onChange={setShadowConfig} />
+      )}
     </div>
   );
 }

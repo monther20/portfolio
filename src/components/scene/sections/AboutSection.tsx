@@ -1,80 +1,162 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Float } from "@react-three/drei";
 import PaintSprite from "../PaintSprite";
-import FloatingNote from "../FloatingNote";
+import PartingItem, { seededRange } from "../PartingItem";
+
 import { about } from "@/data/portfolio";
+
+type DebugSpriteItem = {
+  visible?: boolean;
+  x?: number;
+  y?: number;
+  z?: number;
+  spriteX?: number;
+  spriteY?: number;
+  spriteZ?: number;
+  scale?: number;
+  height?: number;
+  renderOrder?: number;
+  push?: number;
+  lift?: number;
+  forward?: number;
+  influenceDistance?: number;
+  lerp?: number;
+  floatSpeed?: number;
+  rotationIntensity?: number;
+  floatIntensity?: number;
+  floatMin?: number;
+  floatMax?: number;
+  revealNear?: number;
+  revealFar?: number;
+};
+
+type AboutSectionDebug = {
+  avatar?: DebugSpriteItem;
+  islands?: DebugSpriteItem[];
+};
+
+function debugHome(debug: DebugSpriteItem | undefined, fallback: [number, number, number]): [number, number, number] {
+  return [debug?.x ?? fallback[0], debug?.y ?? fallback[1], debug?.z ?? fallback[2]];
+}
+
+function debugSpritePosition(debug: DebugSpriteItem | undefined): [number, number, number] {
+  return [debug?.spriteX ?? 0, debug?.spriteY ?? 0, debug?.spriteZ ?? 0];
+}
+
+function debugFloatingRange(
+  debug: DebugSpriteItem | undefined,
+  fallback: [number, number],
+): [number, number] {
+  const min = debug?.floatMin ?? fallback[0];
+  const max = debug?.floatMax ?? fallback[1];
+  return [Math.min(min, max), Math.max(min, max)];
+}
 
 /**
  * AboutSection — the first thing you meet after walking through the door.
  * An avatar-on-a-cloud that paints itself in as you approach, surrounded by
  * hand-written welcome notes, followed by a few "about me" blurbs and islands.
  */
-export default function AboutSection({ zAvatar = -36 }: { zAvatar?: number }) {
+export default function AboutSection({
+  zAvatar = -36,
+  debug,
+}: {
+  zAvatar?: number;
+  debug?: AboutSectionDebug;
+}) {
+  const avatarHome = useMemo(
+    () => [seededRange("about-avatar-x", -0.45, 0.45), 0.4, zAvatar] as [number, number, number],
+    [zAvatar],
+  );
+  const islands = useMemo(() => {
+    return about.islands
+      .filter((isl) => isl.show)
+      .map((isl, i) => {
+        const side = seededRange(`about-island-${i}-side`, 0, 1) < 0.5 ? -1 : 1;
+        const x = side * seededRange(`about-island-${i}-x`, 2.4, 4.5);
+        const y = seededRange(`about-island-${i}-y`, -2.05, -1.3);
+        const z = zAvatar - 10 - i * 7 - seededRange(`about-island-${i}-z`, 0.4, 3.4);
+        return { isl, home: [x, y, z] as [number, number, number], side: side as -1 | 1 };
+      });
+  }, [zAvatar]);
+
+  const avatarDebug = debug?.avatar;
+
   return (
     <group>
       {/* ── Avatar welcome ── */}
-      <Float speed={1.4} rotationIntensity={0.12} floatIntensity={0.5} floatingRange={[-0.12, 0.2]}>
-        <PaintSprite
-          sketch="/textures/textures/about/awatarnachmurce.webp"
-          position={[0, 0.4, zAvatar]}
-          height={3.0}
-          revealNear={9}
-          revealFar={24}
-        />
-      </Float>
-
-      {/* Floating welcome text around the avatar */}
-      <FloatingNote position={[2.3, 2.3, zAvatar + 0.5]} fontSize={1.4} rotation={-4}>
-        {about.greeting}
-      </FloatingNote>
-      <FloatingNote position={[2.4, 1.45, zAvatar + 0.5]} fontSize={0.85} rotation={2} color="#4a4a4a">
-        {about.tagline}
-      </FloatingNote>
-      <FloatingNote position={[-2.7, 1.6, zAvatar + 0.5]} fontSize={0.8} rotation={5} color="#5a5a5a">
-        {"scroll to explore ↓"}
-      </FloatingNote>
-
-      {/* ── A few things about me ── */}
-      {about.blurbs.map((line, i) => {
-        const side = i % 2 === 0 ? -1 : 1;
-        return (
-          <FloatingNote
-            key={i}
-            position={[side * 2.6, 0.6, zAvatar - 9 - i * 7]}
-            fontSize={0.95}
-            rotation={side * 3}
-            maxWidth={260}
+      <PartingItem
+        home={debugHome(avatarDebug, avatarHome)}
+        push={avatarDebug?.push ?? 2.4}
+        lift={avatarDebug?.lift ?? 0.5}
+        forward={avatarDebug?.forward ?? 0.5}
+        influenceDistance={avatarDebug?.influenceDistance ?? 9.5}
+        lerp={avatarDebug?.lerp ?? 0.09}
+      >
+        <group
+          visible={avatarDebug?.visible ?? true}
+          scale={avatarDebug?.scale ?? 1}
+          renderOrder={avatarDebug?.renderOrder ?? 0}
+        >
+          <Float
+            speed={avatarDebug?.floatSpeed ?? 1.4}
+            rotationIntensity={avatarDebug?.rotationIntensity ?? 0.12}
+            floatIntensity={avatarDebug?.floatIntensity ?? 0.5}
+            floatingRange={debugFloatingRange(avatarDebug, [-0.12, 0.2])}
           >
-            {line}
-          </FloatingNote>
-        );
-      })}
+            <PaintSprite
+              sketch="/textures/textures/about/awatarnachmurce.webp"
+              position={debugSpritePosition(avatarDebug)}
+              height={avatarDebug?.height ?? 3.0}
+              renderOrder={avatarDebug?.renderOrder ?? 0}
+              revealNear={avatarDebug?.revealNear ?? 9}
+              revealFar={avatarDebug?.revealFar ?? 24}
+            />
+          </Float>
+        </group>
+      </PartingItem>
 
       {/* ── Islands (decorative milestones) ── */}
-      {about.islands
-        .filter((isl) => isl.show)
-        .map((isl, i) => {
-          const side = i % 2 === 0 ? -1 : 1;
-          const z = zAvatar - 12 - i * 7;
-          return (
-            <group key={isl.tex}>
-              <Float speed={1.1} floatIntensity={0.4} floatingRange={[-0.18, 0.18]}>
+      {islands.map(({ isl, home, side }, i) => {
+        const islandDebug = debug?.islands?.[i];
+
+        return (
+          <PartingItem
+            key={isl.tex}
+            home={debugHome(islandDebug, home)}
+            side={side}
+            push={islandDebug?.push ?? 2.8}
+            lift={islandDebug?.lift ?? 0.4}
+            forward={islandDebug?.forward ?? 0.45}
+            influenceDistance={islandDebug?.influenceDistance ?? 9.5}
+            lerp={islandDebug?.lerp ?? 0.09}
+          >
+            <group
+              visible={islandDebug?.visible ?? true}
+              scale={islandDebug?.scale ?? 1}
+              renderOrder={islandDebug?.renderOrder ?? 0}
+            >
+              <Float
+                speed={islandDebug?.floatSpeed ?? 1.1}
+                rotationIntensity={islandDebug?.rotationIntensity ?? 0}
+                floatIntensity={islandDebug?.floatIntensity ?? 0.4}
+                floatingRange={debugFloatingRange(islandDebug, [-0.18, 0.18])}
+              >
                 <PaintSprite
                   sketch={isl.tex}
-                  position={[side * 3.0, -1.8, z]}
-                  height={1.9}
-                  revealNear={8}
-                  revealFar={20}
+                  position={debugSpritePosition(islandDebug)}
+                  height={islandDebug?.height ?? 1.9}
+                  renderOrder={islandDebug?.renderOrder ?? 0}
+                  revealNear={islandDebug?.revealNear ?? 8}
+                  revealFar={islandDebug?.revealFar ?? 20}
                 />
               </Float>
-              <FloatingNote position={[side * 3.0, -3.0, z]} fontSize={0.75} rotation={side * 2} color="#5a5a5a">
-                {isl.label}
-              </FloatingNote>
             </group>
-          );
-        })}
+          </PartingItem>
+        );
+      })}
     </group>
   );
 }
