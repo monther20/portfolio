@@ -31,9 +31,9 @@ export const about = {
   tagline: "Creative front-end & 3D web developer",
   /** Each string becomes a floating handwritten note in the About section. Edit freely. */
   blurbs: [
-    "I build playful, interactive web experiences.",
-    "I love turning ideas into things you can click, drag and explore.",
-    "Currently crafting 3D & motion-rich interfaces.",
+    "I build playful, interactive web experiences with React, Three.js and motion.",
+    "I love turning ideas into things you can click, drag, scroll and explore.",
+    "Currently crafting 3D, animation-rich interfaces for memorable digital products.",
   ],
   /** Decorative "islands" already in your assets — set show:false to hide. */
   islands: [
@@ -73,25 +73,25 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: "Monetune",
-    blurb: "— replace with a one-line description of Monetune —",
+    blurb: "A polished web project focused on clean interactions, responsive UI and product storytelling.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/monetuneprzod.webp`, painted: `${GALLERY_BASE}/monetuneprzod_painted.webp` },
   },
   {
     name: "TimberKitty",
-    blurb: "— replace with a one-line description of TimberKitty —",
+    blurb: "A playful interactive build combining character, motion and front-end craft.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/timberkittyprzod.webp`, painted: `${GALLERY_BASE}/timberkittyprzod_painted.webp` },
   },
   {
     name: "YoungMulti",
-    blurb: "— replace with a one-line description of YoungMulti —",
+    blurb: "A modern digital experience with bold visuals, smooth transitions and engaging UI.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/youngmultiprzod.webp`, painted: `${GALLERY_BASE}/youngmultiprzod_painted.webp` },
   },
   {
     name: "Bio",
-    blurb: "— replace with a one-line description of this project —",
+    blurb: "A personal profile-style project designed to present identity and links in a compact experience.",
     link: "#",
     panel: { sketch: `${GALLERY_BASE}/bioprzod.webp`, painted: `${GALLERY_BASE}/bioprzod_painted.webp` },
   },
@@ -108,6 +108,86 @@ export const projectUI = {
 export const contact = {
   email: "haloufi@quratehealth.com",
   github: "https://github.com/monther20",
-  linkedin: "", // add your LinkedIn url
+  linkedin: "", // add your LinkedIn url — the beach crate opens this
   twitter: "", // add your X / Twitter url
 };
+
+// ── CORRIDOR ─────────────────────────────────────────────────────────────────
+const CORRIDOR_BASE = "/textures/textures/corridor";
+const GALLERY_LOGO = (name: string, paintedName = name): PaintPair => ({
+  sketch: `${GALLERY_BASE}/${name}.webp`,
+  painted: `${GALLERY_BASE}/${paintedName}_painted.webp`,
+});
+
+/**
+ * Everything shown inside the entrance corridor: the avatar greeting, the
+ * floating doodads around him, and the info stations along the walls.
+ * All copy is PLACEHOLDER — edit freely.
+ */
+export const corridor = {
+  greeting: about.greeting,
+  tagline: about.tagline,
+  /** Small hand-drawn doodles floating around the avatar. */
+  doodles: [
+    `${CORRIDOR_BASE}/decorations/coffee_cup.webp`,
+    `${CORRIDOR_BASE}/decorations/pencil.webp`,
+    `${CORRIDOR_BASE}/decorations/idea_process.webp`,
+    `${CORRIDOR_BASE}/decorations/while_true_loop.webp`,
+    `${CORRIDOR_BASE}/decorations/paper_ball.webp`,
+  ],
+  /** Tech logos floating near the avatar (sketch + painted pairs). */
+  logos: [GALLERY_LOGO("reactlogo"), GALLERY_LOGO("jslogo"), GALLERY_LOGO("csslogo", "css3logo")],
+  /** Info stations along the corridor walls. PLACEHOLDER text. */
+  stations: [
+    {
+      title: "Who am I",
+      lines: [
+        "Placeholder — a short line about who I am.",
+        "I turn ideas into playful, interactive experiences.",
+      ],
+      side: -1 as const, // left wall
+      art: `${CORRIDOR_BASE}/rysuneknaobraz1.webp`,
+    },
+    {
+      title: "What I do",
+      lines: [
+        "Placeholder — front-end, 3D and motion work.",
+        "React · Three.js · GSAP · Next.js",
+      ],
+      side: 1 as const, // right wall
+      art: `${CORRIDOR_BASE}/rysuneknaobrazek3.webp`,
+    },
+  ],
+  /** The note beside the window at the end of the corridor. PLACEHOLDER. */
+  windowNote: "…and this is where\nthe journey takes off ✈",
+};
+
+// ── JOURNEY (sky section) ────────────────────────────────────────────────────
+export type JourneyMilestone = {
+  year: string;
+  title: string;
+  text: string;
+  /** optional island artwork floating beside the note */
+  island?: string;
+};
+
+/** Milestones shown floating in the sky right after the window. PLACEHOLDER. */
+export const journeyMilestones: JourneyMilestone[] = [
+  {
+    year: "20XX",
+    title: "Started out",
+    text: "Placeholder — where my story begins.",
+    island: `${ABOUT_BASE}/uowyspa.webp`,
+  },
+  {
+    year: "20XX",
+    title: "Freelancing",
+    text: "Placeholder — building for clients and learning fast.",
+    island: `${ABOUT_BASE}/freelancewyspa.webp`,
+  },
+  {
+    year: "Now",
+    title: "Crafting 3D webs",
+    text: "Placeholder — interactive, animation-rich interfaces.",
+  },
+];

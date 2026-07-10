@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Munther Aloufi Portfolio
 
-## Getting Started
+An interactive 3D portfolio built with Next.js, React Three Fiber, Three.js, Drei, GSAP, Tailwind CSS, and TypeScript.
 
-First, run the development server:
+The site opens in a hand-drawn hallway scene. After clicking the door, the camera moves into a scroll-driven 3D journey with About, Skills, Projects, and Contact sections.
+
+## Getting started
 
 ```bash
 bun dev
 # or
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Main customization points
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/data/portfolio.ts` — edit portfolio content: about text, skills, projects, contact links, and texture paths.
+- `src/app/layout.tsx` — edit site metadata such as title, description, author, and creator.
+- `src/components/scene/JourneyScene.tsx` — adjust section positions along the 3D scroll path.
+- `src/app/page.tsx` — controls the Canvas, loader, room scene, HUD, and development-only debug panel.
+- `src/app/globals.css`, `src/app/loading.tsx` — customize the sketch-style loading screen.
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```txt
+src/app/                       Next.js app route files and global CSS
+src/components/scene/           3D room, door, camera, sprites, HUD, and debug tools
+src/components/scene/sections/  About, Skills, Projects, and Contact sections
+src/data/portfolio.ts           Editable portfolio data
+public/textures/                Hand-drawn and painted scene assets
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The shadow debug panel is shown only in development mode and hidden in production builds.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Before working on Next.js APIs in this project, read the local Next.js docs under `node_modules/next/dist/docs/` because this project uses a newer Next.js version with breaking changes.

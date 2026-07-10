@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { useLoader, useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";
 
+import { getFogFadeRange } from "./fogVisibility";
+
 /**
  * SketchPaintMaterial — blends a grayscale "pencil" look into the full-colour
  * "painted" texture with a soft top-to-bottom wipe driven by `reveal` (0→1).
@@ -20,6 +22,8 @@ const SketchPaintMaterial = shaderMaterial(
     fogColor: new THREE.Color(1, 1, 1),
     fogNear: 5,
     fogFar: 55,
+    fogFadeNear: 27.5,
+    fogFadeFar: 41,
   },
   /* glsl */ `
     varying vec2 vUv;
@@ -41,6 +45,8 @@ const SketchPaintMaterial = shaderMaterial(
     uniform vec3 fogColor;
     uniform float fogNear;
     uniform float fogFar;
+    uniform float fogFadeNear;
+    uniform float fogFadeFar;
 
     void main() {
       vec4 sketch = texture2D(texSketch, vUv);
@@ -60,7 +66,10 @@ const SketchPaintMaterial = shaderMaterial(
 
       if (a < 0.35) discard;
 
-      gl_FragColor = vec4(rgb, 1.0) * vec4(tintColor, 1.0);
+      float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
+      if (fogAlpha <= 0.01) discard;
+
+      gl_FragColor = vec4(rgb, fogAlpha) * vec4(tintColor, 1.0);
       #include <colorspace_fragment>
 
       // Manual linear fog, synced each frame from the scene fog.
@@ -84,6 +93,8 @@ export type PaintSpriteProps = {
   /** coloured texture cross-faded in (defaults to `sketch` → grayscale→colour reveal) */
   painted?: string;
   position?: [number, number, number];
+  /** readable label used by the runtime lil-gui scene debugger */
+  name?: string;
   /** target height in world units; width is derived from the image aspect ratio */
   height?: number;
   /** face the camera (default true) */
@@ -106,6 +117,7 @@ export default function PaintSprite({
   sketch,
   painted,
   position = [0, 0, 0],
+  name,
   height = 2,
   billboard = true,
   revealNear = 14,
@@ -143,6 +155,7 @@ export default function PaintSprite({
 
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const revealTarget = useRef(0);
+  const debugName = name ?? `PaintSprite ${sketch.split("/").pop() ?? sketch}`;
 
   useFrame(() => {
     const mat = matRef.current;
@@ -168,9 +181,12 @@ export default function PaintSprite({
 
     // Keep the custom shader's fog in step with the scene fog.
     if (scene.fog instanceof THREE.Fog) {
+      const { fadeNear, fadeFar } = getFogFadeRange(scene.fog);
       mat.fogColor = scene.fog.color;
       mat.fogNear = scene.fog.near;
       mat.fogFar = scene.fog.far;
+      mat.fogFadeNear = fadeNear;
+      mat.fogFadeFar = fadeFar;
     }
   });
 
@@ -194,14 +210,15 @@ export default function PaintSprite({
     : {};
 
   const plane = (
-    <group ref={scaleRef}>
-      <mesh renderOrder={renderOrder} {...handlers}>
+    <group ref={scaleRef} name={`${debugName} Scale`}>
+      <mesh name={`${debugName} Mesh`} renderOrder={renderOrder} {...handlers}>
         <planeGeometry args={[w, h]} />
         <sketchPaintMaterial
           ref={matRef}
           texSketch={texSketch}
           texPaint={texPaint}
-          transparent={false}
+          transparent
+          depthWrite={false}
         />
       </mesh>
     </group>
@@ -209,13 +226,13 @@ export default function PaintSprite({
 
   if (billboard) {
     return (
-      <Billboard ref={groupRef as any} position={position} follow lockX={false} lockY lockZ={false}>
+      <Billboard ref={groupRef as any} name={debugName} position={position} follow lockX={false} lockY lockZ={false}>
         {plane}
       </Billboard>
     );
   }
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} name={debugName} position={position}>
       {plane}
     </group>
   );

@@ -9,6 +9,7 @@ export default function SpotlightCone({
   position,
   targetPosition,
   isNight,
+  visible = true,
   intensity = 12,
   angle = Math.PI / 4,
   penumbra = 0.6,
@@ -19,6 +20,7 @@ export default function SpotlightCone({
   position: [number, number, number];
   targetPosition: [number, number, number];
   isNight: boolean;
+  visible?: boolean;
   intensity?: number;
   angle?: number;
   penumbra?: number;
@@ -40,23 +42,24 @@ export default function SpotlightCone({
         light.parent.remove(light.target);
       }
     };
-  }, [targetPosition]);
+  }, [targetPosition[0], targetPosition[1], targetPosition[2]]);
 
   // Animate intensity on day/night toggle
   useEffect(() => {
     if (lightRef.current) {
       gsap.to(lightRef.current, {
-        intensity: isNight ? intensity : 0,
+        intensity: isNight && visible ? intensity : 0,
         duration: 1.5,
         ease: "power2.inOut",
       });
     }
-  }, [isNight, intensity]);
+  }, [isNight, intensity, visible]);
 
   return (
     <spotLight
       ref={lightRef}
       position={position}
+      visible={visible}
       angle={angle}
       penumbra={penumbra}
       intensity={0}
@@ -71,13 +74,23 @@ export default function SpotlightCone({
 // Soft glowing pool of light on the floor where the beam lands
 export function FloorGlow({
   position,
+  rotation = [-Math.PI / 2, 0, 0],
+  scale = [1, 1, 1],
+  visible = true,
+  renderOrder = 0,
   isNight,
   radius = 2.0,
+  color = "#ffe4a0",
   maxOpacity = 0.55,
 }: {
   position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  visible?: boolean;
+  renderOrder?: number;
   isNight: boolean;
   radius?: number;
+  color?: string;
   maxOpacity?: number;
 }) {
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -85,19 +98,19 @@ export function FloorGlow({
   useEffect(() => {
     if (materialRef.current) {
       gsap.to(materialRef.current, {
-        opacity: isNight ? maxOpacity : 0,
+        opacity: isNight && visible ? maxOpacity : 0,
         duration: 1.5,
         ease: "power2.inOut",
       });
     }
-  }, [isNight, maxOpacity]);
+  }, [isNight, maxOpacity, visible]);
 
   return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={position} rotation={rotation} scale={scale} visible={visible} renderOrder={renderOrder}>
       <circleGeometry args={[radius, 32]} />
       <meshBasicMaterial
         ref={materialRef}
-        color="#ffe4a0"
+        color={color}
         transparent
         opacity={0}
         blending={THREE.AdditiveBlending}

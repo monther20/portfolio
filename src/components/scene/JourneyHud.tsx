@@ -38,7 +38,7 @@ export default function JourneyHud({ visible }: { visible: boolean }) {
     >
       <div style={{ fontSize: "1.6rem", fontWeight: 700 }}>scroll to explore</div>
       <div style={{ fontSize: "0.95rem", letterSpacing: "0.12em", color: "#6a6a6a", marginTop: "0.1rem" }}>
-        about · skills · projects · contact
+        journey · skills · projects · contact
       </div>
       <div style={{ fontSize: "1.8rem", animation: "journey-bob 1.4s ease-in-out infinite" }}>↓</div>
       <style>{`@keyframes journey-bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }`}</style>

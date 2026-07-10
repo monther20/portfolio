@@ -3,162 +3,69 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
-import { Billboard } from "@react-three/drei";
 import gsap from "gsap";
 import SpotlightCone, { FloorGlow } from "./SpotlightCone";
 import Lantern from "./Lantern";
 import { ShadowConfig } from "./ShadowDebugPanel";
-
-// Billboard sprite — stands on the floor and always faces the camera
-function WallShadow({
-  texture,
-  position,
-  scale = 1,
-  aspect = 1,
-  isNight,
-  maxOpacity = 0.35,
-}: {
-  texture: THREE.Texture;
-  position: [number, number, number];
-  scale?: number;
-  aspect?: number;
-  isNight: boolean;
-  maxOpacity?: number;
-}) {
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const width = scale * aspect;
-  const height = scale;
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-
-    gsap.to(materialRef.current, {
-      opacity: isNight ? maxOpacity : 0,
-      duration: 1.5,
-      ease: "power2.inOut",
-    });
-  }, [isNight, maxOpacity]);
-
-  return (
-    <mesh position={position} renderOrder={20}>
-      <planeGeometry args={[width, height]} />
-      <meshBasicMaterial
-        ref={materialRef}
-        map={texture}
-        color="#000000"
-        transparent
-        opacity={0}
-        alphaTest={0.01}
-        depthWrite={false}
-        depthTest={false}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
-
-function FloorDecal({
-  texture,
-  position,
-  scale = 1,
-  aspect = 1,
-  isNight,
-  renderOrder = 0,
-}: {
-  texture: THREE.Texture;
-  position: [number, number, number];
-  scale?: number;
-  aspect?: number;
-  isNight: boolean;
-  renderOrder?: number;
-}) {
-  const width = scale * aspect;
-  const height = scale;
-  const [x, y, z] = position;
-  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
-  const geoRef = useRef<THREE.PlaneGeometry>(null);
-
-  useEffect(() => {
-    if (geoRef.current) {
-      const normals = geoRef.current.attributes.normal;
-      for (let i = 0; i < normals.count; i++) {
-        // Point normals straight UP so they catch the overhead spotlights perfectly
-        normals.setXYZ(i, 0, 1, 0);
-      }
-      normals.needsUpdate = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (materialRef.current) {
-      const targetColor = new THREE.Color(isNight ? "#888899" : "#ffffff");
-      gsap.to(materialRef.current.color, {
-        r: targetColor.r,
-        g: targetColor.g,
-        b: targetColor.b,
-        duration: 1.5,
-        ease: "power2.inOut",
-      });
-    }
-  }, [isNight]);
-
-  return (
-    <Billboard
-      position={[x, y + height / 2, z]}
-      follow={true}
-      lockX={false}
-      lockY={true}
-      lockZ={false}
-    >
-      {/* renderOrder ensures furniture always paints on top of wall shadows */}
-      <mesh renderOrder={renderOrder}>
-        <planeGeometry ref={geoRef} args={[width, height]} />
-        <meshStandardMaterial
-          ref={materialRef}
-          map={texture}
-          transparent
-          alphaTest={0.01}
-          depthWrite={false}
-          roughness={1}
-          metalness={0}
-        />
-      </mesh>
-    </Billboard>
-  );
-}
+import { FloorDecal, WallShadow } from "./room/decals";
+import {
+  buildFloorDecals,
+  CHAIR_ASPECT,
+  TABLE_ASPECT,
+} from "./room/floorDecalLayout";
+import {
+  rotationTuple,
+  scaleTuple,
+  vector3Tuple,
+  type RoomDebugState,
+} from "./RoomDebugGui";
 
 export default function InteriorDetails({
   isNight,
   toggleNight,
   shadowConfig,
+  debug,
 }: {
   isNight: boolean;
   toggleNight: () => void;
   shadowConfig: ShadowConfig;
+  debug: RoomDebugState;
 }) {
   const [lanternHovered, setLanternHovered] = useState(false);
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const pathMatRef = useRef<THREE.MeshStandardMaterial>(null);
+  const { lights, materials, meshes } = debug;
+  const floorColor = isNight ? materials.floor.nightColor ?? materials.floor.color : materials.floor.color;
+  const pathColor = isNight ? materials.stonePath.nightColor ?? materials.stonePath.color : materials.stonePath.color;
 
   useEffect(() => {
-    const targetColor = new THREE.Color(isNight ? "#888899" : "#ffffff");
-    const mats = [floorMatRef.current, pathMatRef.current].filter(Boolean);
-    mats.forEach((mat) => {
-      if (mat) {
-        gsap.to(mat.color, {
-          r: targetColor.r,
-          g: targetColor.g,
-          b: targetColor.b,
-          duration: 1.5,
-          ease: "power2.inOut",
-        });
-      }
-    });
-  }, [isNight]);
+    const floorTargetColor = new THREE.Color(floorColor);
+    const pathTargetColor = new THREE.Color(pathColor);
+
+    if (floorMatRef.current) {
+      gsap.to(floorMatRef.current.color, {
+        r: floorTargetColor.r,
+        g: floorTargetColor.g,
+        b: floorTargetColor.b,
+        duration: 1.5,
+        ease: "power2.inOut",
+      });
+    }
+
+    if (pathMatRef.current) {
+      gsap.to(pathMatRef.current.color, {
+        r: pathTargetColor.r,
+        g: pathTargetColor.g,
+        b: pathTargetColor.b,
+        duration: 1.5,
+        ease: "power2.inOut",
+      });
+    }
+  }, [floorColor, pathColor]);
 
   const baseFloorTexture = useLoader(
     THREE.TextureLoader,
-    "/textures/floor.png",
+    "/textures/floor.webp",
   );
   const floorTexture = useMemo(() => {
     const t = baseFloorTexture.clone();
@@ -170,93 +77,68 @@ export default function InteriorDetails({
     return t;
   }, [baseFloorTexture]);
 
-  const lightTex = useLoader(THREE.TextureLoader, "/textures/light.png");
-  const lightOnTex = useLoader(THREE.TextureLoader, "/textures/light_on.png");
-  const rock1Tex = useLoader(THREE.TextureLoader, "/textures/rock-1.png");
-  const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/rock_and_herp.png");
-  const herpTex = useLoader(THREE.TextureLoader, "/textures/herp.png");
+  const lightTex = useLoader(THREE.TextureLoader, "/textures/light.webp");
+  const lightOnTex = useLoader(THREE.TextureLoader, "/textures/light_on.webp");
+  const rock1Tex = useLoader(THREE.TextureLoader, "/textures/rock-1.webp");
+  const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/rock_and_herp.webp");
+  const herpTex = useLoader(THREE.TextureLoader, "/textures/herp.webp");
   const stonePathTex = useLoader(THREE.TextureLoader, "/textures/stone-path.webp");
-  const tableTex = useLoader(THREE.TextureLoader, "/textures/table.png");
-  const chairTex = useLoader(THREE.TextureLoader, "/textures/chair.png");
-  const tableShadowTex = useLoader(THREE.TextureLoader, "/textures/table-shadow.png");
-  const chairShadowTex = useLoader(THREE.TextureLoader, "/textures/chair-shadow.png");
+  const tableTex = useLoader(THREE.TextureLoader, "/textures/table.webp");
+  const chairTex = useLoader(THREE.TextureLoader, "/textures/chair.webp");
+  const tableShadowTex = useLoader(THREE.TextureLoader, "/textures/table-shadow.webp");
+  const chairShadowTex = useLoader(THREE.TextureLoader, "/textures/chair-shadow.webp");
 
-  // aspect ratios: rock-1 401x157, rock_and_herp 412x160, herp 490x262
-  const ROCK1_ASPECT = 401 / 157; // ~2.55
-  const ROCKH_ASPECT = 412 / 160; // ~2.575
-  const HERP_ASPECT = 490 / 262; // ~1.87
-  const TABLE_ASPECT = 1536 / 1024; // 1.5
-  const CHAIR_ASPECT = 1254 / 1254; // 1.0
-  const CUP_ASPECT = 1536 / 1024; // 1.5
-  const TABLE_SHADOW_ASPECT = TABLE_ASPECT;
-  const CHAIR_SHADOW_ASPECT = CHAIR_ASPECT;
-
-  const decals = useMemo(
-    () => [
-      { tex: rock1Tex, pos: [-5.0, -6.0, -12] as [number, number, number], s: 1.6, a: ROCK1_ASPECT },
-      { tex: herpTex, pos: [-5.5, -6.0, -7] as [number, number, number], s: 1.8, a: HERP_ASPECT },
-      { tex: rockHerpTex, pos: [5.0, -6.0, -9] as [number, number, number], s: 1.5, a: ROCKH_ASPECT },
-      { tex: herpTex, pos: [5.5, -6.0, -4] as [number, number, number], s: 1.6, a: HERP_ASPECT },
-      { tex: rock1Tex, pos: [-4.0, -6.0, -14] as [number, number, number], s: 0.6, a: ROCK1_ASPECT },
-      { tex: rock1Tex, pos: [-6.5, -6.0, -9] as [number, number, number], s: 0.5, a: ROCK1_ASPECT },
-      { tex: rock1Tex, pos: [-4.5, -6.0, -5] as [number, number, number], s: 0.5, a: ROCK1_ASPECT },
-      { tex: rock1Tex, pos: [-7.0, -6.0, -2] as [number, number, number], s: 0.6, a: ROCK1_ASPECT },
-      { tex: rockHerpTex, pos: [-5.5, -6.0, -15] as [number, number, number], s: 0.6, a: ROCKH_ASPECT },
-      { tex: rockHerpTex, pos: [-4.0, -6.0, -3] as [number, number, number], s: 0.5, a: ROCKH_ASPECT },
-      { tex: rockHerpTex, pos: [-7.5, -6.0, -7] as [number, number, number], s: 0.6, a: ROCKH_ASPECT },
-      { tex: herpTex, pos: [-4.5, -6.0, -11] as [number, number, number], s: 0.8, a: HERP_ASPECT },
-      { tex: herpTex, pos: [-6.0, -6.0, -2] as [number, number, number], s: 0.5, a: HERP_ASPECT },
-      { tex: herpTex, pos: [-8.0, -6.0, -12] as [number, number, number], s: 0.6, a: HERP_ASPECT },
-      { tex: rock1Tex, pos: [4.0, -6.0, -13] as [number, number, number], s: 0.5, a: ROCK1_ASPECT },
-      { tex: rock1Tex, pos: [6.5, -6.0, -6] as [number, number, number], s: 0.7, a: ROCK1_ASPECT },
-      { tex: rock1Tex, pos: [4.5, -6.0, -2] as [number, number, number], s: 0.4, a: ROCK1_ASPECT },
-      { tex: rock1Tex, pos: [8.0, -6.0, -10] as [number, number, number], s: 0.5, a: ROCK1_ASPECT },
-      { tex: rockHerpTex, pos: [5.5, -6.0, -12] as [number, number, number], s: 0.7, a: ROCKH_ASPECT },
-      { tex: rockHerpTex, pos: [4.0, -6.0, -6] as [number, number, number], s: 0.5, a: ROCKH_ASPECT },
-      { tex: rockHerpTex, pos: [7.0, -6.0, -3] as [number, number, number], s: 0.6, a: ROCKH_ASPECT },
-      { tex: herpTex, pos: [4.5, -6.0, -8] as [number, number, number], s: 0.6, a: HERP_ASPECT },
-      { tex: herpTex, pos: [7.0, -6.0, -5] as [number, number, number], s: 0.7, a: HERP_ASPECT },
-      { tex: herpTex, pos: [9.0, -6.0, -13] as [number, number, number], s: 0.5, a: HERP_ASPECT },
-      // New additions (Left side of the path, near the wall)
-      // ro=30 so they render on top of the wall shadow (renderOrder=20)
-      { tex: tableTex, pos: [-4.2, -6.0, -8.5] as [number, number, number], s: 3.2, a: TABLE_ASPECT, ro: 30 },
-      { tex: chairTex, pos: [-6.8, -6.4, -8.5] as [number, number, number], s: 4.5, a: CHAIR_ASPECT, ro: 30 },
-    ],
-    [
-      rock1Tex, rockHerpTex, herpTex, tableTex, chairTex, 
-      ROCK1_ASPECT, ROCKH_ASPECT, HERP_ASPECT, TABLE_ASPECT, CHAIR_ASPECT, CUP_ASPECT
-    ],
+  const decals = buildFloorDecals(
+    {
+      rock1: rock1Tex,
+      rockHerp: rockHerpTex,
+      herp: herpTex,
+      table: tableTex,
+      chair: chairTex,
+    },
+    debug.interiorDetails.floorDecals,
   );
 
   return (
     <>
-      <mesh position={[0, -6.5, -1.15]}>
+      <mesh
+        position={vector3Tuple(meshes.floor.position)}
+        rotation={rotationTuple(meshes.floor.rotation)}
+        scale={scaleTuple(meshes.floor.scale)}
+        renderOrder={meshes.floor.renderOrder}
+        visible={meshes.floor.visible}
+      >
         <boxGeometry args={[100, 1, 30]} />
         <meshStandardMaterial
           ref={floorMatRef}
           map={floorTexture}
           bumpMap={floorTexture}
-          bumpScale={0.02}
-          roughness={1}
-          metalness={0}
-          color="#ffffff"
+          bumpScale={materials.floor.bumpScale}
+          roughness={materials.floor.roughness}
+          metalness={materials.floor.metalness}
+          color={floorColor}
+          wireframe={materials.floor.wireframe}
         />
       </mesh>
 
-      <mesh position={[0, 6.5, -1.15]}>
-        <boxGeometry args={[100, 1, 30]} />
-        <meshStandardMaterial color="#0a0a0a" />
-      </mesh>
 
-      <mesh position={[0, -5.99, -4.07]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        position={vector3Tuple(meshes.stonePath.position)}
+        rotation={rotationTuple(meshes.stonePath.rotation)}
+        scale={scaleTuple(meshes.stonePath.scale)}
+        renderOrder={meshes.stonePath.renderOrder}
+        visible={meshes.stonePath.visible}
+      >
         <planeGeometry args={[8, 26]} />
         <meshStandardMaterial
           ref={pathMatRef}
           map={stonePathTex}
           transparent
           alphaTest={0.01}
-          roughness={0.9}
-          metalness={0}
+          roughness={materials.stonePath.roughness}
+          metalness={materials.stonePath.metalness}
+          color={pathColor}
+          wireframe={materials.stonePath.wireframe}
         />
       </mesh>
 
@@ -264,7 +146,11 @@ export default function InteriorDetails({
       <group>
         {/* ─── LEFT LANTERN ─── */}
         <Lantern
-          position={[-4.5, 2, -16.1]}
+          position={vector3Tuple(meshes.leftLantern.position)}
+          rotation={rotationTuple(meshes.leftLantern.rotation)}
+          scale={scaleTuple(meshes.leftLantern.scale)}
+          visible={meshes.leftLantern.visible}
+          renderOrder={meshes.leftLantern.renderOrder}
           texBase={lightTex}
           texOn={lightOnTex}
           isNight={isNight}
@@ -273,25 +159,40 @@ export default function InteriorDetails({
           onPointerOver={() => setLanternHovered(true)}
           onPointerOut={() => setLanternHovered(false)}
         />
-        
+
         {/* Left lantern – SpotLight fans out to the LEFT */}
         <SpotlightCone
-          position={[-4.5, 2.7, -15.1]}
-          targetPosition={[-4.3, -4.9, -14.1]}
+          position={vector3Tuple(lights.leftLanternSpot.position)}
+          targetPosition={vector3Tuple(lights.leftLanternSpot.target)}
           isNight={isNight}
-          intensity={35}
-          angle={1.2}
-          penumbra={0.13}
-          distance={12.5}
-          decay={0.6}
-          color="#ffe4a8"
+          visible={lights.leftLanternSpot.visible}
+          intensity={lights.leftLanternSpot.intensity}
+          angle={lights.leftLanternSpot.angle}
+          penumbra={lights.leftLanternSpot.penumbra}
+          distance={lights.leftLanternSpot.distance}
+          decay={lights.leftLanternSpot.decay}
+          color={lights.leftLanternSpot.color}
         />
         {/* Floor glow under left lantern beam */}
-        <FloorGlow position={[-3.2, -4.8, -27.1]} isNight={isNight} radius={5.8} maxOpacity={0.35} />
+        <FloorGlow
+          position={vector3Tuple(meshes.leftFloorGlow.position)}
+          rotation={rotationTuple(meshes.leftFloorGlow.rotation)}
+          scale={scaleTuple(meshes.leftFloorGlow.scale)}
+          visible={meshes.leftFloorGlow.visible}
+          renderOrder={meshes.leftFloorGlow.renderOrder}
+          isNight={isNight}
+          radius={meshes.leftFloorGlow.radius}
+          color={meshes.leftFloorGlow.color}
+          maxOpacity={meshes.leftFloorGlow.maxOpacity}
+        />
 
         {/* ─── RIGHT LANTERN ─── */}
         <Lantern
-          position={[4.5, 2.0, -16.1]}
+          position={vector3Tuple(meshes.rightLantern.position)}
+          rotation={rotationTuple(meshes.rightLantern.rotation)}
+          scale={scaleTuple(meshes.rightLantern.scale)}
+          visible={meshes.rightLantern.visible}
+          renderOrder={meshes.rightLantern.renderOrder}
           texBase={lightTex}
           texOn={lightOnTex}
           isNight={isNight}
@@ -300,25 +201,36 @@ export default function InteriorDetails({
           onPointerOver={() => setLanternHovered(true)}
           onPointerOut={() => setLanternHovered(false)}
         />
-        
+
         {/* Right lantern – SpotLight fans out to the RIGHT */}
         <SpotlightCone
-          position={[4.5, 2.6, -15.1]}
-          targetPosition={[5.0, -18.1, -14.1]}
+          position={vector3Tuple(lights.rightLanternSpot.position)}
+          targetPosition={vector3Tuple(lights.rightLanternSpot.target)}
           isNight={isNight}
-          intensity={24}
-          angle={1.2}
-          penumbra={0.13}
-          distance={12.5}
-          decay={0.6}
-          color="#ffe4a8"
+          visible={lights.rightLanternSpot.visible}
+          intensity={lights.rightLanternSpot.intensity}
+          angle={lights.rightLanternSpot.angle}
+          penumbra={lights.rightLanternSpot.penumbra}
+          distance={lights.rightLanternSpot.distance}
+          decay={lights.rightLanternSpot.decay}
+          color={lights.rightLanternSpot.color}
         />
         {/* Floor glow under right lantern beam */}
-        <FloorGlow position={[4.7, -4.8, -22.6]} isNight={isNight} radius={2.5} maxOpacity={0.55} />
+        <FloorGlow
+          position={vector3Tuple(meshes.rightFloorGlow.position)}
+          rotation={rotationTuple(meshes.rightFloorGlow.rotation)}
+          scale={scaleTuple(meshes.rightFloorGlow.scale)}
+          visible={meshes.rightFloorGlow.visible}
+          renderOrder={meshes.rightFloorGlow.renderOrder}
+          isNight={isNight}
+          radius={meshes.rightFloorGlow.radius}
+          color={meshes.rightFloorGlow.color}
+          maxOpacity={meshes.rightFloorGlow.maxOpacity}
+        />
       </group>
 
-      {decals.map((d, i) => (
-        <FloorDecal key={i} texture={d.tex} position={d.pos} scale={d.s} aspect={d.a} isNight={isNight} renderOrder={d.ro ?? 0} />
+      {decals.map((d) => (
+        <FloorDecal key={d.id} texture={d.tex} position={d.pos} scale={d.s} aspect={d.a} isNight={isNight} renderOrder={d.ro ?? 0} />
       ))}
 
       {/* Table/chair shadows projected onto the back wall during night mode. */}
@@ -326,7 +238,7 @@ export default function InteriorDetails({
         texture={tableShadowTex}
         position={[shadowConfig.table.x, shadowConfig.table.y, shadowConfig.table.z]}
         scale={shadowConfig.table.scale}
-        aspect={TABLE_SHADOW_ASPECT}
+        aspect={TABLE_ASPECT}
         isNight={isNight}
         maxOpacity={shadowConfig.table.maxOpacity}
       />
@@ -334,13 +246,18 @@ export default function InteriorDetails({
         texture={chairShadowTex}
         position={[shadowConfig.chair.x, shadowConfig.chair.y, shadowConfig.chair.z]}
         scale={shadowConfig.chair.scale}
-        aspect={CHAIR_SHADOW_ASPECT}
+        aspect={CHAIR_ASPECT}
         isNight={isNight}
         maxOpacity={shadowConfig.chair.maxOpacity}
       />
 
       {/* Interior Ambient Light - Dim when night */}
-      <ambientLight intensity={isNight ? 0.8 : 1.5} color="#ffffff" />
+      {lights.interiorAmbient.visible && (
+        <ambientLight
+          intensity={isNight ? lights.interiorAmbient.nightIntensity : lights.interiorAmbient.dayIntensity}
+          color={lights.interiorAmbient.color}
+        />
+      )}
     </>
   );
 }

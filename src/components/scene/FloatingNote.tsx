@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
+import * as THREE from "three";
 import { Html } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+
+import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
 
 /**
  * FloatingNote — a hand-written (Caveat) note that floats in 3D space.
@@ -19,6 +23,7 @@ export default function FloatingNote({
   maxWidth = 320,
   distanceFactor = 9,
   align = "center",
+  name,
 }: {
   children: React.ReactNode;
   position?: [number, number, number];
@@ -30,34 +35,56 @@ export default function FloatingNote({
   maxWidth?: number;
   distanceFactor?: number;
   align?: "left" | "center" | "right";
+  name?: string;
 }) {
+  const groupRef = React.useRef<THREE.Group>(null);
+  const noteRef = React.useRef<HTMLDivElement>(null);
+  const tmp = React.useMemo(() => new THREE.Vector3(), []);
+  const { camera, scene } = useThree();
+
+  useFrame(() => {
+    const note = noteRef.current;
+    const group = groupRef.current;
+    if (!note || !group) return;
+
+    let opacity = 1;
+    if (scene.fog instanceof THREE.Fog) {
+      opacity = fogOpacityForDepth(fogDepthForObject(group, camera, tmp), scene.fog);
+    }
+
+    note.style.opacity = opacity.toFixed(3);
+    note.style.visibility = opacity <= 0.02 ? "hidden" : "visible";
+  });
+
   return (
-    <Html
-      transform
-      position={position}
-      distanceFactor={distanceFactor}
-      occlude={false}
-      pointerEvents="none"
-      zIndexRange={[20, 0]}
-      style={{ pointerEvents: "none", userSelect: "none" }}
-    >
-      <div
-        style={{
-          fontFamily: "var(--font-caveat), 'Caveat', cursive",
-          fontSize: `${fontSize}rem`,
-          fontWeight: weight,
-          color,
-          textAlign: align,
-          lineHeight: 1.15,
-          maxWidth: `${maxWidth}px`,
-          transform: `rotate(${rotation}deg)`,
-          textShadow:
-            "0 1px 0 rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.8)",
-          whiteSpace: "pre-wrap",
-        }}
+    <group ref={groupRef} name={name ?? "Floating Note"} position={position}>
+      <Html
+        transform
+        distanceFactor={distanceFactor}
+        occlude={false}
+        pointerEvents="none"
+        zIndexRange={[20, 0]}
+        style={{ pointerEvents: "none", userSelect: "none" }}
       >
-        {children}
-      </div>
-    </Html>
+        <div
+          ref={noteRef}
+          style={{
+            fontFamily: "var(--font-caveat), 'Caveat', cursive",
+            fontSize: `${fontSize}rem`,
+            fontWeight: weight,
+            color,
+            textAlign: align,
+            lineHeight: 1.15,
+            maxWidth: `${maxWidth}px`,
+            transform: `rotate(${rotation}deg)`,
+            textShadow:
+              "0 1px 0 rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.8)",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {children}
+        </div>
+      </Html>
+    </group>
   );
 }
