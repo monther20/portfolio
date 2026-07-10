@@ -11,7 +11,7 @@ import {
   scaleTuple,
   vector3Tuple,
   type RoomDebugState,
-} from "./RoomDebugGui";
+} from "./roomDebug/types";
 
 // Same wipe shader as the lanterns — blends from texBase to texOn top-to-bottom
 const DoorWipeMaterial = shaderMaterial(

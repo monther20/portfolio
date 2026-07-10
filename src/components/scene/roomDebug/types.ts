@@ -24,15 +24,6 @@ export type LightDebug = {
   nightIntensity: number;
 };
 
-export type PointLightDebug = {
-  visible: boolean;
-  position: Vector3Debug;
-  color: string;
-  intensity: number;
-  distance: number;
-  decay: number;
-};
-
 export type SpotLightDebug = {
   visible: boolean;
   position: Vector3Debug;
@@ -126,9 +117,6 @@ export type RoomDebugState = {
     };
   };
   lights: {
-    hallwayAmbient: LightDebug;
-    coolPortalPoint: PointLightDebug;
-    warmPortalPoint: PointLightDebug;
     interiorAmbient: LightDebug;
     leftLanternSpot: SpotLightDebug;
     rightLanternSpot: SpotLightDebug;

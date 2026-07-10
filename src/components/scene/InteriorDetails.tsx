@@ -18,7 +18,7 @@ import {
   scaleTuple,
   vector3Tuple,
   type RoomDebugState,
-} from "./RoomDebugGui";
+} from "./roomDebug/types";
 
 export default function InteriorDetails({
   isNight,

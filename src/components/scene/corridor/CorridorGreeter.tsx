@@ -46,6 +46,7 @@ export default function CorridorGreeter() {
       {doodles.map((doodle) => (
         <Float
           key={doodle.tex}
+          name={`Greeter Doodle Float: ${doodle.tex.split("/").pop() ?? doodle.tex}`}
           speed={doodle.speed}
           rotationIntensity={0.25}
           floatIntensity={0.5}
@@ -66,6 +67,7 @@ export default function CorridorGreeter() {
       {corridor.logos.map((logo, i) => (
         <Float
           key={logo.sketch}
+          name={`Greeter Logo Float ${i + 1}`}
           speed={1.2 + i * 0.25}
           rotationIntensity={0.2}
           floatIntensity={0.5}

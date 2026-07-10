@@ -72,28 +72,6 @@ export function createRoomDebugState(shadowConfig: ShadowConfig): RoomDebugState
       },
     },
     lights: {
-      hallwayAmbient: {
-        visible: true,
-        color: "#ffffff",
-        dayIntensity: 0.4,
-        nightIntensity: 0.3,
-      },
-      coolPortalPoint: {
-        visible: true,
-        position: createVector3(0, 30, -50),
-        intensity: 1500,
-        distance: 150,
-        color: "#aaccff",
-        decay: 2,
-      },
-      warmPortalPoint: {
-        visible: true,
-        position: createVector3(-11.33, -18.1, -31.62),
-        intensity: 2500,
-        distance: 200,
-        color: "#ff9955",
-        decay: 2,
-      },
       interiorAmbient: {
         visible: true,
         color: "#ffffff",

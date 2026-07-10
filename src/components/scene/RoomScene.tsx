@@ -1,4 +1,4 @@
-import { Suspense, useState, useRef, useEffect, type Dispatch, type SetStateAction } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -9,30 +9,22 @@ import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
 import { primeWalkAudio } from "./walkAudio";
-import { ShadowConfig } from "./ShadowDebugPanel";
-import {
-  createRoomDebugState,
-  useRoomDebugGui,
-  vector3Tuple,
-  type RoomDebugState,
-} from "./RoomDebugGui";
+import { DEFAULT_SHADOW_CONFIG } from "./ShadowDebugPanel";
+import { createRoomDebugState } from "./roomDebug/state";
+import type { RoomDebugState } from "./roomDebug/types";
 
 export default function RoomScene({
   onTransitionComplete,
-  shadowConfig,
-  onShadowConfigChange,
 }: {
   onTransitionComplete: () => void;
-  shadowConfig: ShadowConfig;
-  onShadowConfigChange: Dispatch<SetStateAction<ShadowConfig>>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isNight, setIsNight] = useState(false);
-  const [, forceRoomDebugUpdate] = useState(0);
   const itemsGroupRef = useRef<THREE.Group>(null);
   const debugRef = useRef<RoomDebugState>(null!);
-  const { camera, scene, gl } = useThree();
+  const { camera, scene } = useThree();
+  const shadowConfig = DEFAULT_SHADOW_CONFIG;
 
   if (!debugRef.current) {
     debugRef.current = createRoomDebugState(shadowConfig);
@@ -41,16 +33,6 @@ export default function RoomScene({
   const debug = debugRef.current;
   const sceneBackgroundColor = isNight ? debug.scene.nightBackgroundColor : debug.scene.dayBackgroundColor;
   const sceneFogColor = isNight ? debug.scene.nightFogColor : debug.scene.dayFogColor;
-
-  useRoomDebugGui({
-    debugRef,
-    camera,
-    scene,
-    gl,
-    setIsNight,
-    onShadowConfigChange,
-    forceUpdate: forceRoomDebugUpdate,
-  });
 
   const toggleNight = () => {
     setIsNight((current) => {
@@ -125,30 +107,6 @@ export default function RoomScene({
   return (
     <>
       {/* Lighting */}
-      {debug.lights.hallwayAmbient.visible && (
-        <ambientLight
-          intensity={isNight ? debug.lights.hallwayAmbient.nightIntensity : debug.lights.hallwayAmbient.dayIntensity}
-          color={debug.lights.hallwayAmbient.color}
-        />
-      )}
-      {debug.lights.coolPortalPoint.visible && (
-        <pointLight
-          position={vector3Tuple(debug.lights.coolPortalPoint.position)}
-          intensity={debug.lights.coolPortalPoint.intensity}
-          distance={debug.lights.coolPortalPoint.distance}
-          color={debug.lights.coolPortalPoint.color}
-          decay={debug.lights.coolPortalPoint.decay}
-        />
-      )}
-      {debug.lights.warmPortalPoint.visible && (
-        <pointLight
-          position={vector3Tuple(debug.lights.warmPortalPoint.position)}
-          intensity={debug.lights.warmPortalPoint.intensity}
-          distance={debug.lights.warmPortalPoint.distance}
-          color={debug.lights.warmPortalPoint.color}
-          decay={debug.lights.warmPortalPoint.decay}
-        />
-      )}
       <color attach="background" args={[sceneBackgroundColor]} />
       <fog attach="fog" args={[sceneFogColor, debug.scene.fogNear, debug.scene.fogFar]} />
 
