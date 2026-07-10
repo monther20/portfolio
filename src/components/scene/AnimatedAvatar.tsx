@@ -9,12 +9,12 @@ import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
 
 const FRAME_URLS = Array.from(
   { length: 9 },
-  (_, i) => `/textures/textures/corridor/avatar_anim/${i + 1}.webp`,
+  (_, i) => `/textures/textures/corridor/avatar_anim/${i + 1}.png`,
 );
 
 /**
  * AnimatedAvatar — the hand-drawn character that greets you in the corridor.
- * Plays the 9 sketch frames in a ping-pong loop by swapping the material map.
+ * Plays the generated avatar wave frames in a ping-pong loop.
  */
 export default function AnimatedAvatar({
   position,
@@ -40,7 +40,7 @@ export default function AnimatedAvatar({
     });
   }, [frames]);
 
-  // Plane size follows the first frame's natural aspect ratio.
+  // Plane size follows the first generated frame's natural aspect ratio.
   const [w, h] = useMemo(() => {
     const img = frames[0]?.image as HTMLImageElement | undefined;
     const aspect = img && img.height ? img.width / img.height : 1;
@@ -51,7 +51,7 @@ export default function AnimatedAvatar({
     const mat = materialRef.current;
     if (!mat) return;
 
-    // Ping-pong 1→9→1 so the idle never visibly restarts.
+    // Ping-pong 1→9→1 so the hand wave loops smoothly.
     const count = frames.length;
     const cycle = count * 2 - 2;
     const step = Math.floor(state.clock.elapsedTime * fps) % cycle;

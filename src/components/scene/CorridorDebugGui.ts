@@ -51,6 +51,25 @@ function serializeMaterial(material: THREE.Material) {
   return record;
 }
 
+function serializeLight(light: THREE.Light) {
+  const record: Record<string, unknown> = {
+    color: serializeColor(light.color),
+    intensity: round(light.intensity),
+  };
+
+  if (light instanceof THREE.PointLight || light instanceof THREE.SpotLight) {
+    record.distance = round(light.distance);
+    record.decay = round(light.decay);
+  }
+
+  if (light instanceof THREE.SpotLight) {
+    record.angle = round(light.angle);
+    record.penumbra = round(light.penumbra);
+  }
+
+  return record;
+}
+
 function serializeObject(object: THREE.Object3D) {
   const record: Record<string, unknown> = {
     uuid: object.uuid,
@@ -62,6 +81,10 @@ function serializeObject(object: THREE.Object3D) {
     rotation: serializeVector3(object.rotation),
     scale: serializeVector3(object.scale),
   };
+
+  if (object instanceof THREE.Light) {
+    record.light = serializeLight(object);
+  }
 
   if (object instanceof THREE.Mesh) {
     record.geometry = {
@@ -77,15 +100,19 @@ function serializeObject(object: THREE.Object3D) {
   return record;
 }
 
-function serializeCorridor(root: THREE.Object3D) {
-  const objects: Record<string, unknown>[] = [];
-  root.traverse((object) => {
-    objects.push(serializeObject(object));
-  });
-
+function serializeObjectTree(object: THREE.Object3D): Record<string, unknown> {
   return {
-    root: serializeObject(root),
-    objects,
+    ...serializeObject(object),
+    children: object.children.map(serializeObjectTree),
+  };
+}
+
+function serializeCorridor(root: THREE.Object3D) {
+  return {
+    name: root.name || "Corridor Items",
+    type: root.type,
+    wholeGroup: serializeObject(root),
+    itemGroups: root.children.map(serializeObjectTree),
   };
 }
 
@@ -131,6 +158,31 @@ function addTransformControls(folder: GuiLike, object: THREE.Object3D) {
   addVector3Controls(folder, object.position, "position", -120, 20, 0.01);
   addVector3Controls(folder, object.rotation, "rotation", -Math.PI * 2, Math.PI * 2, 0.001);
   addVector3Controls(folder, object.scale, "scale", 0.01, 20, 0.01);
+}
+
+function addLightControls(folder: GuiLike, light: THREE.Light) {
+  const lightFolder = folder.addFolder("light");
+  const proxy = { color: serializeColor(light.color) };
+
+  lightFolder
+    .addColor(proxy, "color")
+    .name("color")
+    .onChange((value: string) => {
+      light.color.set(value);
+    });
+  lightFolder.add(light, "intensity", 0, 30, 0.01).name("intensity").listen();
+
+  if (light instanceof THREE.PointLight || light instanceof THREE.SpotLight) {
+    lightFolder.add(light, "distance", 0, 50, 0.01).name("distance").listen();
+    lightFolder.add(light, "decay", 0, 5, 0.01).name("decay").listen();
+  }
+
+  if (light instanceof THREE.SpotLight) {
+    lightFolder.add(light, "angle", 0, Math.PI / 2, 0.001).name("angle").listen();
+    lightFolder.add(light, "penumbra", 0, 1, 0.01).name("penumbra").listen();
+  }
+
+  lightFolder.close();
 }
 
 function addMaterialControls(folder: GuiLike, material: THREE.Material, label: string) {
@@ -193,24 +245,45 @@ function addMaterialControls(folder: GuiLike, material: THREE.Material, label: s
   }
 
   if (typeof materialRecord.roughness === "number") {
-    materialFolder.add(materialRecord, "roughness", 0, 1, 0.01).name("roughness").listen();
+    materialFolder
+      .add(materialRecord, "roughness", 0, 1, 0.01)
+      .name("roughness")
+      .listen()
+      .onChange(() => {
+        material.needsUpdate = true;
+      });
   }
 
   if (typeof materialRecord.metalness === "number") {
-    materialFolder.add(materialRecord, "metalness", 0, 1, 0.01).name("metalness").listen();
+    materialFolder
+      .add(materialRecord, "metalness", 0, 1, 0.01)
+      .name("metalness")
+      .listen()
+      .onChange(() => {
+        material.needsUpdate = true;
+      });
   }
 
   materialFolder.close();
 }
 
 function getObjectLabel(object: THREE.Object3D, index: number) {
-  return `${object.name || object.type || "Object"} #${index}`;
+  const name = object.name?.trim();
+  return name || `${object.type || "Item"} ${index}`;
 }
 
-function addObjectFolder(folder: GuiLike, object: THREE.Object3D, index: number) {
-  const objectFolder = folder.addFolder(getObjectLabel(object, index));
-  addButton(objectFolder, "Copy Object Values", () => copyJsonToClipboard("Corridor Object Values", serializeObject(object)));
+function addObjectFolder(parentFolder: GuiLike, object: THREE.Object3D, index: number) {
+  const label = getObjectLabel(object, index);
+  const objectFolder = parentFolder.addFolder(label);
+  const isGroup = object.children.length > 0;
+  const copyLabel = isGroup ? `Copy ${label} Group Values` : `Copy ${label} Values`;
+
+  addButton(objectFolder, copyLabel, () => copyJsonToClipboard(`${label} Values`, serializeObjectTree(object)));
   addTransformControls(objectFolder, object);
+
+  if (object instanceof THREE.Light) {
+    addLightControls(objectFolder, object);
+  }
 
   if (object instanceof THREE.Mesh) {
     if (Array.isArray(object.material)) {
@@ -222,24 +295,40 @@ function addObjectFolder(folder: GuiLike, object: THREE.Object3D, index: number)
     }
   }
 
+  if (object.children.length > 0) {
+    const childrenFolder = objectFolder.addFolder("Individual Items");
+    object.children.forEach((child, childIndex) => {
+      addObjectFolder(childrenFolder, child, childIndex + 1);
+    });
+    childrenFolder.close();
+  }
+
   objectFolder.close();
   return objectFolder;
 }
 
 function buildCorridorFolders(gui: GuiLike, root: THREE.Object3D) {
-  addButton(gui, "Copy All Values", () => copyJsonToClipboard("Corridor Debug Values", serializeCorridor(root)));
+  addButton(gui, "Copy All Values", () => copyJsonToClipboard("All Corridor Item Values", serializeCorridor(root)));
 
   const itemsFolder = gui.addFolder("Corridor Items");
   addButton(itemsFolder, "Copy Corridor Items Values", () =>
-    copyJsonToClipboard("Corridor Items Values", serializeCorridor(root).objects),
+    copyJsonToClipboard("Corridor Items Values", serializeCorridor(root)),
   );
 
-  let index = 0;
-  root.traverse((object) => {
-    addObjectFolder(itemsFolder, object, ++index);
-  });
+  const wholeGroupFolder = itemsFolder.addFolder("Whole Corridor Group");
+  addButton(wholeGroupFolder, "Copy Whole Corridor Group Values", () =>
+    copyJsonToClipboard("Whole Corridor Group Values", serializeObjectTree(root)),
+  );
+  addTransformControls(wholeGroupFolder, root);
+  wholeGroupFolder.close();
 
-  itemsFolder.close();
+  const namedGroupsFolder = itemsFolder.addFolder("Named Item Groups");
+  root.children.forEach((object, index) => {
+    addObjectFolder(namedGroupsFolder, object, index + 1);
+  });
+  namedGroupsFolder.close();
+
+  itemsFolder.open();
 }
 
 export function useCorridorDebugGui(rootRef: RefObject<THREE.Group | null>) {
@@ -260,7 +349,7 @@ export function useCorridorDebugGui(rootRef: RefObject<THREE.Group | null>) {
       const { default: GUI } = await import("lil-gui");
       if (disposed) return;
 
-      gui = new GUI({ title: "Corridor Debug", width: 360 });
+      gui = new GUI({ title: "Corridor Items", width: 380 });
       gui.domElement.style.position = "fixed";
       gui.domElement.style.top = "0px";
       gui.domElement.style.right = "0px";

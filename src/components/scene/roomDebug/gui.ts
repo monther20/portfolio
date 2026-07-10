@@ -80,7 +80,6 @@ export function useRoomDebugGui({
       addColor,
       addVector3Controls,
       addTransformControls,
-      addPointLightControls,
       addLightControls,
       addSpotLightControls,
       addMaterialControls,
@@ -242,15 +241,6 @@ export function useRoomDebugGui({
       const lightsFolder = gui.addFolder("Lights");
       addButton(lightsFolder, "Copy Lights Values", "Lights Values", () => debug.lights);
       addRerenderButton(lightsFolder, "Rerender Lights");
-      const hallwayAmbientFolder = lightsFolder.addFolder("Hallway Ambient Light");
-      addLightControls(hallwayAmbientFolder, debug.lights.hallwayAmbient);
-      hallwayAmbientFolder.close();
-      const coolPointFolder = lightsFolder.addFolder("Cool Portal Point Light");
-      addPointLightControls(coolPointFolder, debug.lights.coolPortalPoint);
-      coolPointFolder.close();
-      const warmPointFolder = lightsFolder.addFolder("Warm Portal Point Light");
-      addPointLightControls(warmPointFolder, debug.lights.warmPortalPoint);
-      warmPointFolder.close();
       const interiorAmbientFolder = lightsFolder.addFolder("Interior Ambient Light");
       addLightControls(interiorAmbientFolder, debug.lights.interiorAmbient);
       interiorAmbientFolder.close();

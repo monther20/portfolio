@@ -8,10 +8,6 @@ import * as THREE from "three";
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
 import AssetPreloader from "../components/scene/AssetPreloader";
-import {
-  ShadowConfig,
-  DEFAULT_SHADOW_CONFIG,
-} from "../components/scene/ShadowDebugPanel";
 
 /**
  * LoadingOverlay — A sketch-style preloader: an off-white/white surface
@@ -139,9 +135,6 @@ function LoadingOverlay() {
 }
 
 export default function MoodyHallwayScene() {
-  const [shadowConfig, setShadowConfig] = useState<ShadowConfig>(
-    DEFAULT_SHADOW_CONFIG
-  );
   const [entered, setEntered] = useState(false);
 
   return (
@@ -152,11 +145,7 @@ export default function MoodyHallwayScene() {
         gl={{ toneMapping: THREE.NoToneMapping }}
       >
         <Suspense fallback={null}>
-          <RoomScene
-            shadowConfig={shadowConfig}
-            onShadowConfigChange={setShadowConfig}
-            onTransitionComplete={() => setEntered(true)}
-          />
+          <RoomScene onTransitionComplete={() => setEntered(true)} />
         </Suspense>
       </Canvas>
 
@@ -165,7 +154,7 @@ export default function MoodyHallwayScene() {
       {/* Warms the texture cache in the background (corridor → sky → beach). */}
       <AssetPreloader />
 
-      {/* Development-only Three.js controls now live in the hierarchical lil-gui panel. */}
+      {/* Development-only Three.js controls now live in the corridor-items lil-gui panel. */}
     </div>
   );
 }

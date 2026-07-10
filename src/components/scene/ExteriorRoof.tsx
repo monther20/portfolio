@@ -9,7 +9,7 @@ import {
   scaleTuple,
   vector3Tuple,
   type RoomDebugState,
-} from "./RoomDebugGui";
+} from "./roomDebug/types";
 
 export default function ExteriorRoof({ debug }: { debug: RoomDebugState }) {
   const bricksTexture = useLoader(THREE.TextureLoader, "/textures/wall_bricks_2.webp");

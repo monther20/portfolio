@@ -3,7 +3,6 @@ import type {
   GuiLike,
   LightDebug,
   MaterialDebug,
-  PointLightDebug,
   SpotLightDebug,
   TransformDebug,
   Vector3Debug,
@@ -108,15 +107,6 @@ export function makeControlHelpers(refreshScene: () => void) {
     addNumber(folder, transform, "renderOrder", -1000, 5000, 1, "renderOrder");
   };
 
-  const addPointLightControls = (folder: GuiLike, light: PointLightDebug) => {
-    addBoolean(folder, light, "visible", "visible");
-    addVector3Controls(folder, light.position, "position", -220, 220, 0.01);
-    addColor(folder, light, "color", "color");
-    addNumber(folder, light, "intensity", 0, 5000, 1, "intensity");
-    addNumber(folder, light, "distance", 0, 500, 1, "distance");
-    addNumber(folder, light, "decay", 0, 5, 0.01, "decay");
-  };
-
   const addLightControls = (folder: GuiLike, light: LightDebug) => {
     addBoolean(folder, light, "visible", "visible");
     addColor(folder, light, "color", "color");
@@ -168,7 +158,6 @@ export function makeControlHelpers(refreshScene: () => void) {
     addColor,
     addVector3Controls,
     addTransformControls,
-    addPointLightControls,
     addLightControls,
     addSpotLightControls,
     addMaterialControls,

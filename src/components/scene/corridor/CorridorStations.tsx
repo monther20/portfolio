@@ -25,6 +25,7 @@ function InfoStation({
       {/* Framed artwork flat on the wall, facing the corridor center */}
       <group name={`Corridor Station Frame: ${station.title}`} position={[side * (CORRIDOR.halfWidth - 0.08), -0.55, z]} rotation={[0, -side * (Math.PI / 2), 0]}>
         <PaintSprite
+          name={`Station Frame Border: ${station.title}`}
           sketch={`${C}/ramkanazdjecieduza.webp`}
           painted={`${C}/ramkanazdjecieduza_painted.webp`}
           billboard={false}
@@ -74,6 +75,7 @@ export default function CorridorStations() {
 
       {/* Props standing on the floor */}
       <PaintSprite
+        name="Corridor Potted Tree"
         sketch={`${C}/drzewkowdoniczce.webp`}
         position={[2.6, CORRIDOR.floorY + 0.95, -34]}
         height={1.9}
@@ -81,6 +83,7 @@ export default function CorridorStations() {
         revealFar={16}
       />
       <PaintSprite
+        name="Corridor Potted Flower"
         sketch={`${C}/kwiatekwdoniczce.webp`}
         position={[-2.7, CORRIDOR.floorY + 0.55, -49]}
         height={1.1}
@@ -88,6 +91,7 @@ export default function CorridorStations() {
         revealFar={16}
       />
       <PaintSprite
+        name="Corridor Cabinet"
         sketch={`${C}/szafkaprzod.webp`}
         position={[2.7, CORRIDOR.floorY + 0.8, -55]}
         height={1.6}
@@ -104,6 +108,7 @@ export default function CorridorStations() {
       {[-24, -36, -48, -60].map((z) => (
         <group key={z} name={`Corridor Ceiling Lamp ${z}`} position={[0, 0, z]}>
           <PaintSprite
+            name={`Corridor Ceiling Lamp Shade ${z}`}
             sketch={`${C}/bokilampy.webp`}
             position={[0, CORRIDOR.ceilY - 0.5, 0]}
             height={0.9}
@@ -126,7 +131,7 @@ export default function CorridorStations() {
       <FloatingNote name="Corridor Window Note" position={[-1.5, 0.6, -63.5]} fontSize={1.5} weight={600} rotation={-2}>
         {corridor.windowNote}
       </FloatingNote>
-      <Float speed={1.4} rotationIntensity={0.15} floatIntensity={0.5} floatingRange={[-0.1, 0.15]}>
+      <Float name="Corridor Window Arrow Float" speed={1.4} rotationIntensity={0.15} floatIntensity={0.5} floatingRange={[-0.1, 0.15]}>
         <PaintSprite
           name="Corridor Window Arrow"
           sketch={`${C}/strzalka.webp`}
