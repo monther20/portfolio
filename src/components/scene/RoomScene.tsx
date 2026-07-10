@@ -1,51 +1,88 @@
-import { Suspense, useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect, type Dispatch, type SetStateAction } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
 import { Environment } from "@react-three/drei";
-import ScrollCameraManager from "./ScrollCameraManager";
 import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
 import { primeWalkAudio } from "./walkAudio";
 import { ShadowConfig } from "./ShadowDebugPanel";
+import {
+  createRoomDebugState,
+  useRoomDebugGui,
+  vector3Tuple,
+  type RoomDebugState,
+} from "./RoomDebugGui";
 
 export default function RoomScene({
   onTransitionComplete,
   shadowConfig,
+  onShadowConfigChange,
 }: {
   onTransitionComplete: () => void;
   shadowConfig: ShadowConfig;
+  onShadowConfigChange: Dispatch<SetStateAction<ShadowConfig>>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isNight, setIsNight] = useState(false);
+  const [, forceRoomDebugUpdate] = useState(0);
   const itemsGroupRef = useRef<THREE.Group>(null);
-  const { camera, scene } = useThree();
+  const debugRef = useRef<RoomDebugState>(null!);
+  const { camera, scene, gl } = useThree();
 
-  const toggleNight = () => setIsNight(!isNight);
+  if (!debugRef.current) {
+    debugRef.current = createRoomDebugState(shadowConfig);
+  }
+
+  const debug = debugRef.current;
+  const sceneBackgroundColor = isNight ? debug.scene.nightBackgroundColor : debug.scene.dayBackgroundColor;
+  const sceneFogColor = isNight ? debug.scene.nightFogColor : debug.scene.dayFogColor;
+
+  useRoomDebugGui({
+    debugRef,
+    camera,
+    scene,
+    gl,
+    setIsNight,
+    onShadowConfigChange,
+    forceUpdate: forceRoomDebugUpdate,
+  });
+
+  const toggleNight = () => {
+    setIsNight((current) => {
+      const next = !current;
+      debugRef.current.interaction.nightMode = next;
+      return next;
+    });
+  };
 
   useEffect(() => {
-      const targetColor = new THREE.Color(isNight ? "#555566" : "#fff");
+    const targetBackgroundColor = new THREE.Color(sceneBackgroundColor);
+    const targetFogColor = new THREE.Color(sceneFogColor);
+
     if (scene.background instanceof THREE.Color) {
       gsap.to(scene.background, {
-        r: targetColor.r,
-        g: targetColor.g,
-        b: targetColor.b,
+        r: targetBackgroundColor.r,
+        g: targetBackgroundColor.g,
+        b: targetBackgroundColor.b,
         duration: 1.5,
       });
     }
     if (scene.fog instanceof THREE.Fog) {
+      scene.fog.near = debug.scene.fogNear;
+      scene.fog.far = debug.scene.fogFar;
       gsap.to(scene.fog.color, {
-        r: targetColor.r,
-        g: targetColor.g,
-        b: targetColor.b,
+        r: targetFogColor.r,
+        g: targetFogColor.g,
+        b: targetFogColor.b,
         duration: 1.5,
       });
     }
-  }, [isNight, scene]);
+  }, [debug.scene.fogFar, debug.scene.fogNear, scene, sceneBackgroundColor, sceneFogColor]);
 
   const handleDoorClick = () => {
     if (isTransitioning) return;
@@ -83,30 +120,37 @@ export default function RoomScene({
     );
   };
 
-  // We only mount ScrollCameraManager if we are NOT transitioning,
-  // so GSAP can take over the camera completely.
+  // RoomScene itself does not respond to scroll; JourneyScene enables scrolling
+  // only after the door transition finishes.
   return (
     <>
-      {!isTransitioning && <ScrollCameraManager isOpen={isOpen} />}
-
       {/* Lighting */}
-      <ambientLight intensity={isNight ? 0.3 : 0.4} />
-      <pointLight
-        position={[0, 30, -50]}
-        intensity={1500}
-        distance={150}
-        color="#aaccff"
-        decay={2}
-      />
-      <pointLight
-        position={[0, -10, -100]}
-        intensity={2500}
-        distance={200}
-        color="#ff9955"
-        decay={2}
-      />
-      <color attach="background" args={["#fff"]} />
-      <fog attach="fog" args={["#c0c0c0", 5, 45]} />
+      {debug.lights.hallwayAmbient.visible && (
+        <ambientLight
+          intensity={isNight ? debug.lights.hallwayAmbient.nightIntensity : debug.lights.hallwayAmbient.dayIntensity}
+          color={debug.lights.hallwayAmbient.color}
+        />
+      )}
+      {debug.lights.coolPortalPoint.visible && (
+        <pointLight
+          position={vector3Tuple(debug.lights.coolPortalPoint.position)}
+          intensity={debug.lights.coolPortalPoint.intensity}
+          distance={debug.lights.coolPortalPoint.distance}
+          color={debug.lights.coolPortalPoint.color}
+          decay={debug.lights.coolPortalPoint.decay}
+        />
+      )}
+      {debug.lights.warmPortalPoint.visible && (
+        <pointLight
+          position={vector3Tuple(debug.lights.warmPortalPoint.position)}
+          intensity={debug.lights.warmPortalPoint.intensity}
+          distance={debug.lights.warmPortalPoint.distance}
+          color={debug.lights.warmPortalPoint.color}
+          decay={debug.lights.warmPortalPoint.decay}
+        />
+      )}
+      <color attach="background" args={[sceneBackgroundColor]} />
+      <fog attach="fog" args={[sceneFogColor, debug.scene.fogNear, debug.scene.fogFar]} />
 
       {/* 
         ENVIRONMENT MAP (HDRI)
@@ -116,22 +160,29 @@ export default function RoomScene({
         1. Place your .hdr file in the public folder (e.g., public/my-env.hdr).
         2. Replace the line below with: <Environment files="/my-env.hdr" />
       */}
-      <Environment
-        files="/monochrome_studio_02_2k.hdr"
-        environmentIntensity={0.2}
-      />
+      {debug.environment.studioHdri.visible && (
+        <Environment
+          files="/monochrome_studio_02_1k.hdr"
+          environmentIntensity={debug.environment.studioHdri.environmentIntensity}
+        />
+      )}
 
       {/* Structural Room Components (These stay stationary) */}
-      <InteriorDetails isNight={isNight} toggleNight={toggleNight} shadowConfig={shadowConfig} />
-      <ExteriorRoof />
-      <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} />
+      <InteriorDetails
+        isNight={isNight}
+        toggleNight={toggleNight}
+        shadowConfig={shadowConfig}
+        debug={debug}
+      />
+      <ExteriorRoof debug={debug} />
+      <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} debug={debug} />
 
-      {/* The scroll-driven journey beyond the door (mounted once you enter). */}
-      {isOpen && (
-        <Suspense fallback={null}>
-          <JourneyScene />
-        </Suspense>
-      )}
+      {/* Keep the journey mounted so corridor debug controls are always available. */}
+      <Suspense fallback={null}>
+        <group visible={isOpen}>
+          <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
+        </group>
+      </Suspense>
 
       {/* The Loose Items (These get sucked into the portal) */}
       <group ref={itemsGroupRef}>

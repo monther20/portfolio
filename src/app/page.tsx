@@ -7,12 +7,11 @@ import * as THREE from "three";
 
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
-import ShadowDebugPanel, {
+import AssetPreloader from "../components/scene/AssetPreloader";
+import {
   ShadowConfig,
   DEFAULT_SHADOW_CONFIG,
 } from "../components/scene/ShadowDebugPanel";
-
-const SHOW_SHADOW_DEBUG = process.env.NODE_ENV === "development";
 
 /**
  * LoadingOverlay — A sketch-style preloader: an off-white/white surface
@@ -148,13 +147,14 @@ export default function MoodyHallwayScene() {
   return (
     <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
       <Canvas
-        camera={{ position: [0, -2, 8], fov: 32 }}
-        onCreated={({ camera }) => camera.lookAt(0, -1.285, -15.9)}
+        camera={{ position: [0.370000000000005, 1.06, 5.62], fov: 32, near: 0.1, far: 770 }}
+        onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
         gl={{ toneMapping: THREE.NoToneMapping }}
       >
         <Suspense fallback={null}>
           <RoomScene
             shadowConfig={shadowConfig}
+            onShadowConfigChange={setShadowConfig}
             onTransitionComplete={() => setEntered(true)}
           />
         </Suspense>
@@ -162,11 +162,10 @@ export default function MoodyHallwayScene() {
 
       <LoadingOverlay />
       <JourneyHud visible={entered} />
+      {/* Warms the texture cache in the background (corridor → sky → beach). */}
+      <AssetPreloader />
 
-      {/* Development-only overlay — lives outside the Canvas so it receives normal DOM events */}
-      {SHOW_SHADOW_DEBUG && (
-        <ShadowDebugPanel config={shadowConfig} onChange={setShadowConfig} />
-      )}
+      {/* Development-only Three.js controls now live in the hierarchical lil-gui panel. */}
     </div>
   );
 }

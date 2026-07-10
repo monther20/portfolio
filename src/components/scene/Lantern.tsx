@@ -77,6 +77,10 @@ declare module "@react-three/fiber" {
 
 export default function Lantern({
   position,
+  rotation = [0, 0, 0],
+  scale = [1, 1, 1],
+  visible = true,
+  renderOrder = 0,
   texBase,
   texOn,
   isNight,
@@ -86,6 +90,10 @@ export default function Lantern({
   onPointerOut,
 }: {
   position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  visible?: boolean;
+  renderOrder?: number;
   texBase: THREE.Texture;
   texOn: THREE.Texture;
   isNight: boolean;
@@ -134,6 +142,10 @@ export default function Lantern({
   return (
     <mesh
       position={position}
+      rotation={rotation}
+      scale={scale}
+      visible={visible}
+      renderOrder={renderOrder}
       onClick={(e) => {
         e.stopPropagation();
         if (onClick) onClick();

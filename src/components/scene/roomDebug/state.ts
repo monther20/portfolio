@@ -1,0 +1,248 @@
+import type { ShadowConfig } from "../ShadowDebugPanel";
+import {
+  CHAIR_ASPECT,
+  HERP_ASPECT,
+  ROCK1_ASPECT,
+  ROCKH_ASPECT,
+  TABLE_ASPECT,
+} from "../room/floorDecalLayout";
+import {
+  cloneShadowConfig,
+  createTransform,
+  createVector3,
+  type FloorDecalGroupDebug,
+  type FloorDecalItemDebug,
+  type RoomDebugState,
+} from "./types";
+
+const createFloorDecalGroup = (): FloorDecalGroupDebug => ({
+  visible: true,
+  position: createVector3(),
+  scale: 1,
+});
+
+const createFloorDecalItem = (
+  id: string,
+  label: string,
+  textureKey: FloorDecalItemDebug["textureKey"],
+  aspect: number,
+  position: [number, number, number],
+  scale: number,
+  renderOrder = 0,
+): FloorDecalItemDebug => ({
+  id,
+  label,
+  textureKey,
+  aspect,
+  visible: true,
+  position: createVector3(...position),
+  scale,
+  renderOrder,
+});
+
+/** All default coordinates/colors of the room scene, editable via the GUI. */
+export function createRoomDebugState(shadowConfig: ShadowConfig): RoomDebugState {
+  return {
+    interaction: {
+      nightMode: false,
+    },
+    scene: {
+      dayBackgroundColor: "#ffffff",
+      nightBackgroundColor: "#555566",
+      dayFogColor: "#ffffff",
+      nightFogColor: "#555566",
+      fogNear: 5,
+      fogFar: 45,
+    },
+    renderer: {
+      toneMappingExposure: 1,
+      clearColor: "#000000",
+    },
+    camera: {
+      position: createVector3(0.370000000000005, 1.06, 5.62),
+      lookAt: createVector3(0, 0.719, -15.9),
+      fov: 32,
+      near: 0.1,
+      far: 770,
+    },
+    environment: {
+      studioHdri: {
+        visible: true,
+        environmentIntensity: 0.2,
+      },
+    },
+    lights: {
+      hallwayAmbient: {
+        visible: true,
+        color: "#ffffff",
+        dayIntensity: 0.4,
+        nightIntensity: 0.3,
+      },
+      coolPortalPoint: {
+        visible: true,
+        position: createVector3(0, 30, -50),
+        intensity: 1500,
+        distance: 150,
+        color: "#aaccff",
+        decay: 2,
+      },
+      warmPortalPoint: {
+        visible: true,
+        position: createVector3(-11.33, -18.1, -31.62),
+        intensity: 2500,
+        distance: 200,
+        color: "#ff9955",
+        decay: 2,
+      },
+      interiorAmbient: {
+        visible: true,
+        color: "#ffffff",
+        dayIntensity: 2.5,
+        nightIntensity: 1,
+      },
+      leftLanternSpot: {
+        visible: true,
+        position: createVector3(-2.84, 2.59, -15.2),
+        target: createVector3(-3.08, -4.76, -14.1),
+        intensity: 20,
+        angle: 1.2,
+        penumbra: 0.13,
+        distance: 12.5,
+        decay: 0.6,
+        color: "#ffe4a8",
+      },
+      rightLanternSpot: {
+        visible: true,
+        position: createVector3(2.58, 2.53, -15.1),
+        target: createVector3(4.56, -18.08, -14.1),
+        intensity: 24,
+        angle: 1.2,
+        penumbra: 0.13,
+        distance: 12.5,
+        decay: 0.6,
+        color: "#ffe4a8",
+      },
+    },
+    meshes: {
+      floor: {
+        ...createTransform([0, -3.52, -1.15]),
+        visible: true,
+      },
+      stonePath: {
+        ...createTransform([0, -3.01, -4.07], [-Math.PI / 2, 0, 0]),
+        visible: true,
+      },
+      exteriorWall: createTransform([0.0500000000000043, 1.75, -16.15], [0, 0, 0], [0.84, 0.67, 1]),
+      doorRoot: createTransform([0, -0.18, -15.9], [0, 0, 0], [0.6, 0.6, 0.6]),
+      doorFrame: createTransform([0, 0, 0.2]),
+      doorPanelPivot: createTransform([-2.555, -0.22, 0]),
+      doorPanelSurface: createTransform([0, -0.1, 0]),
+      leftLantern: createTransform([-2.85, 1.83, -16.05], [0, 0, 0], [0.75, 0.75, 0.75]),
+      rightLantern: createTransform([2.77, 1.84, -16.05], [0, 0, 0], [0.75, 0.75, 0.75]),
+      leftFloorGlow: {
+        ...createTransform([-3.2, -4.79, -27.1], [-Math.PI / 2, 0, 0]),
+        radius: 5.8,
+        color: "#ffe4a0",
+        maxOpacity: 0.35,
+      },
+      rightFloorGlow: {
+        ...createTransform([4.7, -4.8, -22.6], [-Math.PI / 2, 0, 0]),
+        radius: 2.5,
+        color: "#ffe4a0",
+        maxOpacity: 0.55,
+      },
+    },
+    interiorDetails: {
+      floorDecals: {
+        all: {
+          ...createFloorDecalGroup(),
+          position: createVector3(0, 2.79, 0),
+        },
+        stones: {
+          group: createFloorDecalGroup(),
+          items: [
+            createFloorDecalItem("stone-01", "Stone 01", "rock1", ROCK1_ASPECT, [-5.0, -6.0, -12], 1.6),
+            createFloorDecalItem("stone-02", "Stone + Herp 02", "rockHerp", ROCKH_ASPECT, [5.0, -6.0, -9], 1.5),
+            createFloorDecalItem("stone-03", "Stone 03", "rock1", ROCK1_ASPECT, [-4.0, -6.0, -14], 0.6),
+            createFloorDecalItem("stone-04", "Stone 04", "rock1", ROCK1_ASPECT, [-6.5, -6.0, -9], 0.5),
+            createFloorDecalItem("stone-05", "Stone 05", "rock1", ROCK1_ASPECT, [-4.5, -6.0, -5], 0.5),
+            createFloorDecalItem("stone-06", "Stone 06", "rock1", ROCK1_ASPECT, [-7.0, -6.0, -2], 0.6),
+            createFloorDecalItem("stone-07", "Stone + Herp 07", "rockHerp", ROCKH_ASPECT, [-5.5, -6.0, -15], 0.6),
+            createFloorDecalItem("stone-08", "Stone + Herp 08", "rockHerp", ROCKH_ASPECT, [-4.0, -6.0, -3], 0.5),
+            createFloorDecalItem("stone-09", "Stone + Herp 09", "rockHerp", ROCKH_ASPECT, [-7.5, -6.0, -7], 0.6),
+            createFloorDecalItem("stone-10", "Stone 10", "rock1", ROCK1_ASPECT, [4.0, -6.0, -13], 0.5),
+            createFloorDecalItem("stone-11", "Stone 11", "rock1", ROCK1_ASPECT, [6.5, -6.0, -6], 0.7),
+            createFloorDecalItem("stone-12", "Stone 12", "rock1", ROCK1_ASPECT, [4.5, -6.0, -2], 0.4),
+            createFloorDecalItem("stone-13", "Stone 13", "rock1", ROCK1_ASPECT, [8.0, -6.0, -10], 0.5),
+            createFloorDecalItem("stone-14", "Stone + Herp 14", "rockHerp", ROCKH_ASPECT, [5.5, -6.0, -12], 0.7),
+            createFloorDecalItem("stone-15", "Stone + Herp 15", "rockHerp", ROCKH_ASPECT, [4.0, -6.0, -6], 0.5),
+            createFloorDecalItem("stone-16", "Stone + Herp 16", "rockHerp", ROCKH_ASPECT, [7.0, -6.0, -3], 0.6),
+          ],
+        },
+        herps: {
+          group: createFloorDecalGroup(),
+          items: [
+            createFloorDecalItem("herp-01", "Herp 01", "herp", HERP_ASPECT, [-5.5, -6.0, -7], 1.8),
+            createFloorDecalItem("herp-02", "Herp 02", "herp", HERP_ASPECT, [5.5, -6.0, -4], 1.6),
+            createFloorDecalItem("herp-03", "Herp 03", "herp", HERP_ASPECT, [-4.5, -6.0, -11], 0.8),
+            createFloorDecalItem("herp-04", "Herp 04", "herp", HERP_ASPECT, [-6.0, -6.0, -2], 0.5),
+            createFloorDecalItem("herp-05", "Herp 05", "herp", HERP_ASPECT, [-8.0, -6.0, -12], 0.6),
+            createFloorDecalItem("herp-06", "Herp 06", "herp", HERP_ASPECT, [4.5, -6.0, -8], 0.6),
+            createFloorDecalItem("herp-07", "Herp 07", "herp", HERP_ASPECT, [7.0, -6.0, -5], 0.7),
+            createFloorDecalItem("herp-08", "Herp 08", "herp", HERP_ASPECT, [9.0, -6.0, -13], 0.5),
+          ],
+        },
+        table: {
+          group: createFloorDecalGroup(),
+          items: [
+            createFloorDecalItem("table-01", "Table", "table", TABLE_ASPECT, [-4.2, -6.0, -8.5], 3.2, 30),
+          ],
+        },
+        chair: {
+          group: createFloorDecalGroup(),
+          items: [
+            createFloorDecalItem("chair-01", "Chair", "chair", CHAIR_ASPECT, [-6.8, -6.4, -8.5], 4.5, 30),
+          ],
+        },
+      },
+    },
+    materials: {
+      floor: {
+        color: "#ffffff",
+        nightColor: "#888899",
+        roughness: 1,
+        metalness: 0,
+        bumpScale: 0.02,
+        wireframe: false,
+      },
+      stonePath: {
+        color: "#ffffff",
+        nightColor: "#888899",
+        roughness: 0.9,
+        metalness: 0,
+        wireframe: false,
+      },
+      exteriorWall: {
+        color: "#ffffff",
+        roughness: 0.9,
+        metalness: 0,
+        wireframe: false,
+      },
+      doorFrame: {
+        color: "#ffffff",
+        nightColor: "#888899",
+        roughness: 1,
+        metalness: 0,
+        wireframe: false,
+      },
+      doorPanel: {
+        color: "#ffffff",
+        nightColor: "#888899",
+        roughness: 1,
+        metalness: 0,
+        wireframe: false,
+      },
+    },
+    shadows: cloneShadowConfig(shadowConfig),
+  };
+}

@@ -25,6 +25,7 @@ export function seededRange(seed: string | number, min: number, max: number) {
 type PartingItemProps = {
   home: [number, number, number];
   children: ReactNode;
+  name?: string;
   side?: -1 | 1;
   push?: number;
   lift?: number;
@@ -41,6 +42,7 @@ type PartingItemProps = {
 export default function PartingItem({
   home,
   children,
+  name,
   side,
   push = 2.6,
   lift = 0.45,
@@ -78,7 +80,7 @@ export default function PartingItem({
   });
 
   return (
-    <group ref={groupRef} position={home}>
+    <group ref={groupRef} name={name ?? "Parting Item"} position={home}>
       {children}
     </group>
   );

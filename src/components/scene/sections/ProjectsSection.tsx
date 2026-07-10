@@ -134,6 +134,7 @@ function ProjectPaper({
   return (
     <group
       ref={groupRef}
+      name={`Project Paper: ${project.name}`}
       position={home}
       visible={debug?.visible ?? true}
       scale={debug?.scale ?? 1}
@@ -141,6 +142,7 @@ function ProjectPaper({
     >
       {/* The paper itself */}
       <PaintSprite
+        name={`Project Panel: ${project.name}`}
         sketch={project.panel.sketch}
         painted={project.panel.painted}
         position={debugSpritePosition(debug)}
@@ -159,6 +161,7 @@ function ProjectPaper({
         <>
           {project.link && project.link !== "#" && (debug?.buttonVisible ?? true) ? (
             <PaintSprite
+              name={`Open Live Button: ${project.name}`}
               sketch={projectUI.openLive}
               position={[
                 debug?.buttonX ?? 0,
@@ -208,7 +211,7 @@ export default function ProjectsSection({
   }, [zStart]);
 
   return (
-    <group>
+    <group name="Projects Section">
       {placed.map(({ project, home, phase, i }) => {
         const itemDebug = debug?.items?.[i];
         const debuggedHome = debugHome(itemDebug, home);

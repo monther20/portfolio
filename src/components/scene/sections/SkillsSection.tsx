@@ -88,13 +88,14 @@ export default function SkillsSection({
   }, [zStart]);
 
   return (
-    <group>
+    <group name="Skills Section">
       {placed.map(({ skill, pos, speed, side }, i) => {
         const itemDebug = debug?.items?.[i];
 
         return (
           <PartingItem
             key={skill.label}
+            name={`Skill Balloon: ${skill.label}`}
             home={debugHome(itemDebug, pos)}
             side={side}
             push={itemDebug?.push ?? 2.7}
@@ -104,6 +105,7 @@ export default function SkillsSection({
             lerp={itemDebug?.lerp ?? 0.09}
           >
             <group
+              name={`Skill Balloon Body: ${skill.label}`}
               visible={itemDebug?.visible ?? true}
               scale={itemDebug?.scale ?? 1}
               renderOrder={itemDebug?.renderOrder ?? 0}
@@ -115,6 +117,7 @@ export default function SkillsSection({
                 floatingRange={debugFloatingRange(itemDebug, [-0.3, 0.3])}
               >
                 <PaintSprite
+                  name={`Skill Sprite: ${skill.label}`}
                   sketch={skill.balloon.sketch}
                   painted={skill.balloon.painted}
                   position={debugSpritePosition(itemDebug)}
