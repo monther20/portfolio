@@ -24,6 +24,7 @@ export default function FloatingNote({
   distanceFactor = 9,
   align = "center",
   name,
+  depthOcclude = false,
 }: {
   children: React.ReactNode;
   position?: [number, number, number];
@@ -36,6 +37,8 @@ export default function FloatingNote({
   distanceFactor?: number;
   align?: "left" | "center" | "right";
   name?: string;
+  /** Hide the DOM note when a 3D object is physically in front of it. */
+  depthOcclude?: boolean | "raycast" | "blending";
 }) {
   const groupRef = React.useRef<THREE.Group>(null);
   const noteRef = React.useRef<HTMLDivElement>(null);
@@ -61,7 +64,7 @@ export default function FloatingNote({
       <Html
         transform
         distanceFactor={distanceFactor}
-        occlude={false}
+        occlude={depthOcclude}
         pointerEvents="none"
         zIndexRange={[20, 0]}
         style={{ pointerEvents: "none", userSelect: "none" }}

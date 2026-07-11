@@ -106,6 +106,10 @@ export type PaintSpriteProps = {
   /** if false the sprite only paints on hover (not by proximity) */
   autoReveal?: boolean;
   renderOrder?: number;
+  /** write the cutout silhouette into the depth buffer so nearer sprites occlude farther ones */
+  depthWrite?: boolean;
+  /** test this sprite against already-rendered depth */
+  depthTest?: boolean;
   onClick?: (e: any) => void;
   /** show a pointer cursor + scale-up on hover */
   interactive?: boolean;
@@ -124,6 +128,8 @@ export default function PaintSprite({
   revealFar = 34,
   autoReveal = true,
   renderOrder = 0,
+  depthWrite = true,
+  depthTest = true,
   onClick,
   interactive = false,
   hoverScale = 1.04,
@@ -218,7 +224,8 @@ export default function PaintSprite({
           texSketch={texSketch}
           texPaint={texPaint}
           transparent
-          depthWrite={false}
+          depthWrite={depthWrite}
+          depthTest={depthTest}
         />
       </mesh>
     </group>

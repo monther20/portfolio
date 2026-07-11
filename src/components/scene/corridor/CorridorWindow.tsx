@@ -16,7 +16,6 @@ type WindowImagePlaneProps = {
   textureUrl: string;
   height: number;
   position?: [number, number, number];
-  renderOrder?: number;
 };
 
 function WindowImagePlane({
@@ -24,7 +23,6 @@ function WindowImagePlane({
   textureUrl,
   height,
   position = [0, 0, 0],
-  renderOrder = 0,
 }: WindowImagePlaneProps) {
   const texture = useLoader(THREE.TextureLoader, textureUrl);
 
@@ -41,14 +39,15 @@ function WindowImagePlane({
   }, [height, texture]);
 
   return (
-    <mesh name={name} position={position} renderOrder={renderOrder}>
+    <mesh name={name} position={position}>
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         map={texture}
         transparent
         alphaTest={0.01}
         side={THREE.DoubleSide}
-        depthWrite={false}
+        depthWrite
+        depthTest
       />
     </mesh>
   );
@@ -105,7 +104,6 @@ export default function CorridorWindow() {
         textureUrl={WINDOW_FRAME_TEXTURE}
         height={win.height + 0.5}
         position={[0, 0, 0.09]}
-        renderOrder={12}
       />
 
       {/* Image-based casement sides, hinged at the outer edges. */}
@@ -115,7 +113,6 @@ export default function CorridorWindow() {
           textureUrl={WINDOW_LEFT_SIDE_TEXTURE}
           height={win.height}
           position={[paneW / 2, 0, 0]}
-          renderOrder={10}
         />
       </group>
       <group ref={rightPivot} name="Corridor Window Right Pivot" position={[win.width / 2, 0, 0.04]}>
@@ -124,7 +121,6 @@ export default function CorridorWindow() {
           textureUrl={WINDOW_RIGHT_SIDE_TEXTURE}
           height={win.height}
           position={[-paneW / 2, 0, 0]}
-          renderOrder={10}
         />
       </group>
     </group>

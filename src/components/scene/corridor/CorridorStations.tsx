@@ -45,7 +45,7 @@ function InfoStation({
       </group>
 
       {/* Title + placeholder copy floating beside the frame */}
-      <FloatingNote name={`Corridor Station Title: ${station.title}`} position={[side * 1.55, 0.45, z]} fontSize={1.7} weight={700} rotation={side * -2}>
+      <FloatingNote name={`Corridor Station Title: ${station.title}`} position={[side * 1.55, 0.45, z]} fontSize={1.7} weight={700} rotation={side * -2} depthOcclude>
         {station.title}
       </FloatingNote>
       <FloatingNote
@@ -55,6 +55,7 @@ function InfoStation({
         color="#4a4a4a"
         maxWidth={260}
         rotation={side * -1}
+        depthOcclude
       >
         {station.lines.join("\n")}
       </FloatingNote>
@@ -128,7 +129,7 @@ export default function CorridorStations() {
       />
 
       {/* End vignette — a note and an arrow pointing at the window */}
-      <FloatingNote name="Corridor Window Note" position={[-1.5, 0.6, -63.5]} fontSize={1.5} weight={600} rotation={-2}>
+      <FloatingNote name="Corridor Window Note" position={[-1.5, 0.6, -63.5]} fontSize={1.5} weight={600} rotation={-2} depthOcclude>
         {corridor.windowNote}
       </FloatingNote>
       <Float name="Corridor Window Arrow Float" speed={1.4} rotationIntensity={0.15} floatIntensity={0.5} floatingRange={[-0.1, 0.15]}>

@@ -7,19 +7,26 @@ import { Billboard } from "@react-three/drei";
 
 import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
 
+const FRAME_COUNT = 33;
 const FRAME_URLS = Array.from(
-  { length: 9 },
-  (_, i) => `/textures/textures/corridor/avatar_anim/${i + 1}.png`,
+  { length: FRAME_COUNT },
+  (_, i) => `/textures/textures/corridor/avatar_anim_warp/${String(i + 1).padStart(3, "0")}.png`,
 );
+
+function pingPongFrameIndex(step: number, count: number) {
+  if (count <= 1) return 0;
+
+  return step < count ? step : count * 2 - 2 - step;
+}
 
 /**
  * AnimatedAvatar — the hand-drawn character that greets you in the corridor.
- * Plays the generated avatar wave frames in a ping-pong loop.
+ * Plays a generated 33-frame wave sequence in a ping-pong loop.
  */
 export default function AnimatedAvatar({
   position,
   height = 2.7,
-  fps = 7,
+  fps = 28,
 }: {
   position: [number, number, number];
   height?: number;
@@ -27,18 +34,25 @@ export default function AnimatedAvatar({
 }) {
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
   const billboardRef = useRef<THREE.Group>(null);
-  const lastFrame = useRef(0);
+  const lastFrame = useRef(-1);
   const tmp = useMemo(() => new THREE.Vector3(), []);
-  const { camera, scene } = useThree();
+  const { camera, scene, gl } = useThree();
   const frames = useLoader(THREE.TextureLoader, FRAME_URLS);
 
   useEffect(() => {
+    const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
+
     frames.forEach((texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = 8;
+      texture.anisotropy = Math.min(8, maxAnisotropy);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
       texture.needsUpdate = true;
+
+      // Upload every generated frame once so playback does not hitch.
+      gl.initTexture(texture);
     });
-  }, [frames]);
+  }, [frames, gl]);
 
   // Plane size follows the first generated frame's natural aspect ratio.
   const [w, h] = useMemo(() => {
@@ -51,11 +65,10 @@ export default function AnimatedAvatar({
     const mat = materialRef.current;
     if (!mat) return;
 
-    // Ping-pong 1→9→1 so the hand wave loops smoothly.
     const count = frames.length;
-    const cycle = count * 2 - 2;
+    const cycle = count > 1 ? count * 2 - 2 : 1;
     const step = Math.floor(state.clock.elapsedTime * fps) % cycle;
-    const index = step < count ? step : cycle - step;
+    const index = pingPongFrameIndex(step, count);
 
     if (index !== lastFrame.current) {
       lastFrame.current = index;
@@ -76,7 +89,7 @@ export default function AnimatedAvatar({
     <Billboard ref={billboardRef as any} name="Animated Avatar" position={position} follow lockX={false} lockY lockZ={false}>
       <mesh name="Animated Avatar Mesh">
         <planeGeometry args={[w, h]} />
-        <meshBasicMaterial ref={materialRef} map={frames[0]} alphaTest={0.4} transparent depthWrite={false} />
+        <meshBasicMaterial ref={materialRef} map={frames[0]} alphaTest={0.02} transparent depthWrite depthTest toneMapped={false} />
       </mesh>
     </Billboard>
   );
