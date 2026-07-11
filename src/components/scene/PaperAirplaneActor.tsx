@@ -5,16 +5,25 @@ import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 
-import { AIRPLANE_CAMERA_OFFSET, CORRIDOR, JOURNEY, windowProgressAt } from "./journeyConfig";
-import { getJourneyState, setJourneyState, useJourneyState } from "./journeyState";
+import { AIRPLANE_CAMERA_OFFSET, CORRIDOR, JOURNEY } from "./journeyConfig";
+import {
+  getJourneyState,
+  setJourneyState,
+  useJourneyState,
+} from "./journeyState";
 import {
   AIRPLANE_LOOK,
   AIRPLANE_WOBBLE,
   createAirplaneGeometry,
   FOLD_LINE_POINTS,
 } from "./airplane/airplaneGeometry";
-import { useAirplaneModeEffects, type ModeAnim } from "./airplane/useAirplaneModeEffects";
-import ContactLetterForm, { type LetterFields } from "./airplane/ContactLetterForm";
+import {
+  useAirplaneModeEffects,
+  type ModeAnim,
+} from "./airplane/useAirplaneModeEffects";
+import ContactLetterForm, {
+  type LetterFields,
+} from "./airplane/ContactLetterForm";
 import { contact, projectUI } from "@/data/portfolio";
 
 /** The plane's resting pose once it has landed on the boardwalk. */
@@ -53,6 +62,7 @@ export default function PaperAirplaneActor() {
       curvePos: new THREE.Vector3(),
       tangent: new THREE.Vector3(),
       lookTarget: new THREE.Vector3(),
+      curveQuat: new THREE.Quaternion(),
       landedQuat: new THREE.Quaternion().setFromEuler(LANDED_EULER),
       modeAnim: {
         curve: null,
@@ -80,16 +90,29 @@ export default function PaperAirplaneActor() {
   const computeLockedPose = useCallback(
     (elapsed: number) => {
       scratch.offset
-        .set(AIRPLANE_CAMERA_OFFSET.x, AIRPLANE_CAMERA_OFFSET.y, AIRPLANE_CAMERA_OFFSET.z)
+        .set(
+          AIRPLANE_CAMERA_OFFSET.x,
+          AIRPLANE_CAMERA_OFFSET.y,
+          AIRPLANE_CAMERA_OFFSET.z,
+        )
         .applyQuaternion(camera.quaternion);
       scratch.lockPos.copy(camera.position).add(scratch.offset);
 
       const w = AIRPLANE_WOBBLE;
-      const flightDistance = Math.max(0, JOURNEY.windowExitZ - camera.position.z);
-      const roll = Math.sin(flightDistance * w.rollFrequency + elapsed * w.rollSpeed) * w.rollStrength;
+      const flightDistance = Math.max(
+        0,
+        JOURNEY.windowExitZ - camera.position.z,
+      );
+      const roll =
+        Math.sin(flightDistance * w.rollFrequency + elapsed * w.rollSpeed) *
+        w.rollStrength;
       const pitch =
-        w.pitchBase + Math.sin(flightDistance * w.pitchFrequency + elapsed * w.pitchSpeed) * w.pitchStrength;
-      const yaw = Math.sin(flightDistance * w.yawFrequency + elapsed * w.yawSpeed) * w.yawStrength;
+        w.pitchBase +
+        Math.sin(flightDistance * w.pitchFrequency + elapsed * w.pitchSpeed) *
+          w.pitchStrength;
+      const yaw =
+        Math.sin(flightDistance * w.yawFrequency + elapsed * w.yawSpeed) *
+        w.yawStrength;
 
       scratch.wobbleEuler.set(pitch, yaw, roll);
       scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
@@ -113,13 +136,36 @@ export default function PaperAirplaneActor() {
       scratch.lookTarget.copy(scratch.curvePos).sub(scratch.tangent);
       root.lookAt(scratch.lookTarget);
 
+      if (anim.kind === "launch") {
+        // A tiny hand-made bank keeps the launch from feeling mechanically straight.
+        const bankFade = 1 - THREE.MathUtils.smoothstep(t, 0.25, 0.85);
+        scratch.wobbleEuler.set(
+          0,
+          0,
+          Math.sin(t * Math.PI * 2.4) * 0.12 * bankFade,
+        );
+        scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
+        root.quaternion.multiply(scratch.wobbleQuat);
+      }
+
+      if (t < 0.18) {
+        // Avoid the initial snap when switching from the resting pose to curve-following.
+        scratch.curveQuat.copy(root.quaternion);
+        root.quaternion
+          .copy(anim.startQuaternion)
+          .slerp(scratch.curveQuat, THREE.MathUtils.smoothstep(t, 0, 0.18));
+      }
+
       if (anim.kind === "launch" && t > 0.75) {
         // Blend into the camera-locked pose so the handoff is seamless.
         const blend = (t - 0.75) / 0.25;
         computeLockedPose(elapsed);
         root.position.lerp(scratch.lockPos, blend);
         root.quaternion.slerp(scratch.lockQuat, blend);
-      } else if ((anim.kind === "landing" || anim.kind === "sendoffReturn") && t > 0.8) {
+      } else if (
+        (anim.kind === "landing" || anim.kind === "sendoffReturn") &&
+        t > 0.8
+      ) {
         // Settle from flight orientation into the landed rest pose.
         root.quaternion.slerp(scratch.landedQuat, (t - 0.8) / 0.2);
       }
@@ -144,16 +190,7 @@ export default function PaperAirplaneActor() {
         break;
       }
 
-      case "launching": {
-        scratch.modeAnim.t = windowProgressAt(camera.position.z);
-        applyCurveFrame(root, t);
-
-        if (scratch.modeAnim.t >= 0.995) {
-          setJourneyState({ airplaneMode: "locked" });
-        }
-        break;
-      }
-
+      case "launching":
       case "landing":
       case "sendoff": {
         applyCurveFrame(root, t);
@@ -168,12 +205,19 @@ export default function PaperAirplaneActor() {
           root.position.copy(scratch.lockPos);
           root.quaternion.copy(scratch.lockQuat);
         } else {
-          root.position.lerpVectors(scratch.relock.from, scratch.lockPos, blend);
+          root.position.lerpVectors(
+            scratch.relock.from,
+            scratch.lockPos,
+            blend,
+          );
           root.quaternion.slerp(scratch.lockQuat, Math.min(1, blend + 0.15));
         }
 
         const journey = getJourneyState();
-        if (camera.position.z < JOURNEY.landingTriggerZ && !journey.contactOpen) {
+        if (
+          camera.position.z < JOURNEY.landingTriggerZ &&
+          !journey.contactOpen
+        ) {
           setJourneyState({ airplaneMode: "landing" });
         }
         break;
@@ -201,8 +245,13 @@ export default function PaperAirplaneActor() {
   const handleSend = useCallback((fields: LetterFields) => {
     sendRequested.current = true;
     const subject = encodeURIComponent("Hello Munther — from your portfolio");
-    const body = encodeURIComponent(`${fields.message}\n\n— ${fields.name} (${fields.email})`);
-    window.open(`mailto:${contact.email}?subject=${subject}&body=${body}`, "_self");
+    const body = encodeURIComponent(
+      `${fields.message}\n\n— ${fields.name} (${fields.email})`,
+    );
+    window.open(
+      `mailto:${contact.email}?subject=${subject}&body=${body}`,
+      "_self",
+    );
     setJourneyState({ airplaneMode: "folding" });
   }, []);
 
@@ -212,7 +261,9 @@ export default function PaperAirplaneActor() {
   }, []);
 
   const letterOpen =
-    airplaneMode === "unfolding" || airplaneMode === "unfolded" || airplaneMode === "folding";
+    airplaneMode === "unfolding" ||
+    airplaneMode === "unfolded" ||
+    airplaneMode === "folding";
 
   return (
     <group
@@ -222,7 +273,12 @@ export default function PaperAirplaneActor() {
       rotation={[0, CORRIDOR.airplaneRestYaw, 0]}
     >
       {/* The folded origami plane */}
-      <group ref={planeRef} name="Folded Airplane" scale={AIRPLANE_LOOK.scale} renderOrder={AIRPLANE_LOOK.renderOrder}>
+      <group
+        ref={planeRef}
+        name="Folded Airplane"
+        scale={AIRPLANE_LOOK.scale}
+        renderOrder={AIRPLANE_LOOK.renderOrder}
+      >
         <mesh name="Folded Airplane Mesh" geometry={geometry}>
           <meshStandardMaterial
             color={AIRPLANE_LOOK.paperColor}
@@ -238,20 +294,31 @@ export default function PaperAirplaneActor() {
         </mesh>
         <line name="Fold Line">
           <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[FOLD_LINE_POINTS, 3]} />
+            <bufferAttribute
+              attach="attributes-position"
+              args={[FOLD_LINE_POINTS, 3]}
+            />
           </bufferGeometry>
           <lineBasicMaterial color={AIRPLANE_LOOK.lineColor} />
         </line>
       </group>
 
       {/* The unfolded letter with the contact form */}
-      <group ref={letterRef} name="Contact Letter" visible={false} position={[0, 0.06, 0]} rotation={[-Math.PI / 2 + 0.38, 0, 0]}>
+      <group
+        ref={letterRef}
+        name="Contact Letter"
+        visible={false}
+        position={[0, 0.06, 0]}
+        rotation={[-Math.PI / 2 + 0.38, 0, 0]}
+      >
         <mesh name="Contact Letter Paper">
           <planeGeometry args={[1.7, 2.3]} />
-          <meshBasicMaterial map={paperTex} color="#ffffff" side={THREE.DoubleSide} />
-          <Edges color="#111111" />
+          <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} />
+          <Edges color="#8e8a82" />
         </mesh>
-        {letterOpen && <ContactLetterForm onSend={handleSend} onClose={handleClose} />}
+        {letterOpen && (
+          <ContactLetterForm onSend={handleSend} onClose={handleClose} />
+        )}
       </group>
     </group>
   );
