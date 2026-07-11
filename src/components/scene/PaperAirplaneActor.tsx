@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 
-import { AIRPLANE_CAMERA_OFFSET, CORRIDOR, JOURNEY } from "./journeyConfig";
+import { AIRPLANE_CAMERA_OFFSET, CORRIDOR, JOURNEY, windowProgressAt } from "./journeyConfig";
 import { getJourneyState, setJourneyState, useJourneyState } from "./journeyState";
 import {
   AIRPLANE_LOOK,
@@ -54,7 +54,12 @@ export default function PaperAirplaneActor() {
       tangent: new THREE.Vector3(),
       lookTarget: new THREE.Vector3(),
       landedQuat: new THREE.Quaternion().setFromEuler(LANDED_EULER),
-      modeAnim: { curve: null, t: 0, kind: null } as ModeAnim,
+      modeAnim: {
+        curve: null,
+        t: 0,
+        kind: null,
+        startQuaternion: new THREE.Quaternion(),
+      } as ModeAnim,
       relock: { from: new THREE.Vector3(), t: 1 },
     }),
     [],
@@ -139,7 +144,16 @@ export default function PaperAirplaneActor() {
         break;
       }
 
-      case "launching":
+      case "launching": {
+        scratch.modeAnim.t = windowProgressAt(camera.position.z);
+        applyCurveFrame(root, t);
+
+        if (scratch.modeAnim.t >= 0.995) {
+          setJourneyState({ airplaneMode: "locked" });
+        }
+        break;
+      }
+
       case "landing":
       case "sendoff": {
         applyCurveFrame(root, t);
@@ -234,8 +248,8 @@ export default function PaperAirplaneActor() {
       <group ref={letterRef} name="Contact Letter" visible={false} position={[0, 0.06, 0]} rotation={[-Math.PI / 2 + 0.38, 0, 0]}>
         <mesh name="Contact Letter Paper">
           <planeGeometry args={[1.7, 2.3]} />
-          <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} />
-          <Edges color="#8e8a82" />
+          <meshBasicMaterial map={paperTex} color="#ffffff" side={THREE.DoubleSide} />
+          <Edges color="#111111" />
         </mesh>
         {letterOpen && <ContactLetterForm onSend={handleSend} onClose={handleClose} />}
       </group>

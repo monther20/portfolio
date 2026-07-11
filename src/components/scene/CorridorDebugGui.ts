@@ -107,9 +107,9 @@ function serializeObjectTree(object: THREE.Object3D): Record<string, unknown> {
   };
 }
 
-function serializeCorridor(root: THREE.Object3D) {
+function serializeCorridor(root: THREE.Object3D, rootLabel = "Corridor Items") {
   return {
-    name: root.name || "Corridor Items",
+    name: root.name || rootLabel,
     type: root.type,
     wholeGroup: serializeObject(root),
     itemGroups: root.children.map(serializeObjectTree),
@@ -307,17 +307,17 @@ function addObjectFolder(parentFolder: GuiLike, object: THREE.Object3D, index: n
   return objectFolder;
 }
 
-function buildCorridorFolders(gui: GuiLike, root: THREE.Object3D) {
-  addButton(gui, "Copy All Values", () => copyJsonToClipboard("All Corridor Item Values", serializeCorridor(root)));
+function buildCorridorFolders(gui: GuiLike, root: THREE.Object3D, rootLabel = "Corridor Items") {
+  addButton(gui, "Copy All Values", () => copyJsonToClipboard(`All ${rootLabel} Values`, serializeCorridor(root, rootLabel)));
 
-  const itemsFolder = gui.addFolder("Corridor Items");
-  addButton(itemsFolder, "Copy Corridor Items Values", () =>
-    copyJsonToClipboard("Corridor Items Values", serializeCorridor(root)),
+  const itemsFolder = gui.addFolder(rootLabel);
+  addButton(itemsFolder, `Copy ${rootLabel} Values`, () =>
+    copyJsonToClipboard(`${rootLabel} Values`, serializeCorridor(root, rootLabel)),
   );
 
-  const wholeGroupFolder = itemsFolder.addFolder("Whole Corridor Group");
-  addButton(wholeGroupFolder, "Copy Whole Corridor Group Values", () =>
-    copyJsonToClipboard("Whole Corridor Group Values", serializeObjectTree(root)),
+  const wholeGroupFolder = itemsFolder.addFolder(`Whole ${rootLabel} Group`);
+  addButton(wholeGroupFolder, `Copy Whole ${rootLabel} Group Values`, () =>
+    copyJsonToClipboard(`Whole ${rootLabel} Group Values`, serializeObjectTree(root)),
   );
   addTransformControls(wholeGroupFolder, root);
   wholeGroupFolder.close();
@@ -331,9 +331,18 @@ function buildCorridorFolders(gui: GuiLike, root: THREE.Object3D) {
   itemsFolder.open();
 }
 
-export function useCorridorDebugGui(rootRef: RefObject<THREE.Group | null>) {
+export function useCorridorDebugGui(
+  rootRef: RefObject<THREE.Group | null>,
+  options: { title?: string; rootLabel?: string; top?: string; width?: number; side?: "left" | "right" } = {},
+) {
   useEffect(() => {
     if (!ENABLE_CORRIDOR_DEBUG_GUI) return;
+
+    const title = options.title ?? "Corridor Items";
+    const rootLabel = options.rootLabel ?? "Corridor Items";
+    const top = options.top ?? "0px";
+    const width = options.width ?? 380;
+    const side = options.side ?? "right";
 
     let gui: GuiLike | null = null;
     let disposed = false;
@@ -349,13 +358,13 @@ export function useCorridorDebugGui(rootRef: RefObject<THREE.Group | null>) {
       const { default: GUI } = await import("lil-gui");
       if (disposed) return;
 
-      gui = new GUI({ title: "Corridor Items", width: 380 });
+      gui = new GUI({ title, width });
       gui.domElement.style.position = "fixed";
-      gui.domElement.style.top = "0px";
-      gui.domElement.style.right = "0px";
-      gui.domElement.style.left = "auto";
+      gui.domElement.style.top = top;
+      gui.domElement.style.right = side === "right" ? "0px" : "auto";
+      gui.domElement.style.left = side === "left" ? "0px" : "auto";
       gui.domElement.style.zIndex = "10000";
-      buildCorridorFolders(gui, root);
+      buildCorridorFolders(gui, root, rootLabel);
     };
 
     frameId = window.requestAnimationFrame(setupGui);
@@ -365,5 +374,5 @@ export function useCorridorDebugGui(rootRef: RefObject<THREE.Group | null>) {
       if (frameId !== null) window.cancelAnimationFrame(frameId);
       gui?.destroy();
     };
-  }, [rootRef]);
+  }, [rootRef, options.title, options.rootLabel, options.top, options.width, options.side]);
 }

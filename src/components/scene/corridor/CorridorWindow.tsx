@@ -3,19 +3,29 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import gsap from "gsap";
-import { CORRIDOR, JOURNEY } from "../journeyConfig";
-import { setJourneyState, useJourneyState } from "../journeyState";
+import { CORRIDOR, JOURNEY, windowProgressAt } from "../journeyConfig";
+import { getJourneyState, setJourneyState } from "../journeyState";
 
 const WINDOW_FRAME_TEXTURE = "/textures/textures/entrance/window_frame.png";
-const WINDOW_LEFT_SIDE_TEXTURE = "/textures/textures/entrance/window_left_side.png";
-const WINDOW_RIGHT_SIDE_TEXTURE = "/textures/textures/entrance/window_right_side.png";
+const WINDOW_LEFT_SIDE_TEXTURE =
+  "/textures/textures/entrance/window_left_side.png";
+const WINDOW_RIGHT_SIDE_TEXTURE =
+  "/textures/textures/entrance/window_right_side.png";
+const WINDOW_FRAME_SCALE = [1.34, 0.96, 1] as const;
+const WINDOW_LEFT_PIVOT_X = -1.28;
+const WINDOW_RIGHT_PIVOT_X = 1.27;
+const WINDOW_PANE_OFFSET_X = 0.6;
+
+const WINDOW_OPEN_ANGLE = 2.1;
+/** The panes finish opening early in the window section, while the plane keeps flying. */
+const WINDOW_FULLY_OPEN_AT_PROGRESS = 0.42;
 
 type WindowImagePlaneProps = {
   name: string;
   textureUrl: string;
   height: number;
   position?: [number, number, number];
+  scale?: [number, number, number] | readonly [number, number, number];
 };
 
 function WindowImagePlane({
@@ -23,6 +33,7 @@ function WindowImagePlane({
   textureUrl,
   height,
   position = [0, 0, 0],
+  scale = [1, 1, 1],
 }: WindowImagePlaneProps) {
   const texture = useLoader(THREE.TextureLoader, textureUrl);
 
@@ -39,7 +50,7 @@ function WindowImagePlane({
   }, [height, texture]);
 
   return (
-    <mesh name={name} position={position}>
+    <mesh name={name} position={position} scale={scale}>
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         map={texture}
@@ -54,47 +65,39 @@ function WindowImagePlane({
 }
 
 /**
- * CorridorWindow — the window in the corridor's end wall. When the camera
- * crosses the launch trigger the casement panes swing open and the paper
- * airplane is told to take off. Back-scrolling into the corridor closes it
- * so the launch can be replayed.
+ * CorridorWindow — the window in the corridor's end wall. The panes are driven
+ * by scroll position: stopping the scroll freezes them where they are, and the
+ * airplane uses the same window progress to fly out through the opening.
  */
 export default function CorridorWindow() {
   const leftPivot = useRef<THREE.Group>(null);
   const rightPivot = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const { windowLaunched } = useJourneyState();
 
   useFrame(() => {
-    if (windowLaunched) return;
+    const progress = windowProgressAt(camera.position.z);
+    const openProgress = THREE.MathUtils.smoothstep(
+      progress,
+      0,
+      WINDOW_FULLY_OPEN_AT_PROGRESS,
+    );
+
+    if (leftPivot.current) {
+      leftPivot.current.rotation.y = -WINDOW_OPEN_ANGLE * openProgress;
+    }
+    if (rightPivot.current) {
+      rightPivot.current.rotation.y = WINDOW_OPEN_ANGLE * openProgress;
+    }
+
     if (camera.position.z > JOURNEY.launchTriggerZ) return;
 
-    setJourneyState({ windowLaunched: true, airplaneMode: "launching" });
+    const journey = getJourneyState();
+    if (!journey.windowLaunched || journey.airplaneMode === "resting") {
+      setJourneyState({ windowLaunched: true, airplaneMode: "launching" });
+    }
   });
 
-  useEffect(() => {
-    if (!leftPivot.current || !rightPivot.current) return;
-
-    const leftTween = gsap.to(leftPivot.current.rotation, {
-      y: windowLaunched ? -2.1 : 0,
-      duration: windowLaunched ? 1.5 : 1,
-      ease: "power2.inOut",
-    });
-    const rightTween = gsap.to(rightPivot.current.rotation, {
-      y: windowLaunched ? 2.1 : 0,
-      duration: windowLaunched ? 1.5 : 1,
-      ease: "power2.inOut",
-      delay: windowLaunched ? 0.08 : 0,
-    });
-
-    return () => {
-      leftTween.kill();
-      rightTween.kill();
-    };
-  }, [windowLaunched]);
-
   const win = CORRIDOR.window;
-  const paneW = win.width / 2;
 
   return (
     <group name="Corridor Window" position={[win.x, win.y, win.z]}>
@@ -104,23 +107,32 @@ export default function CorridorWindow() {
         textureUrl={WINDOW_FRAME_TEXTURE}
         height={win.height + 0.5}
         position={[0, 0, 0.09]}
+        scale={WINDOW_FRAME_SCALE}
       />
 
       {/* Image-based casement sides, hinged at the outer edges. */}
-      <group ref={leftPivot} name="Corridor Window Left Pivot" position={[-win.width / 2, 0, 0.04]}>
+      <group
+        ref={leftPivot}
+        name="Corridor Window Left Pivot"
+        position={[WINDOW_LEFT_PIVOT_X, 0, 0.04]}
+      >
         <WindowImagePlane
           name="Corridor Window Left Side"
           textureUrl={WINDOW_LEFT_SIDE_TEXTURE}
           height={win.height}
-          position={[paneW / 2, 0, 0]}
+          position={[WINDOW_PANE_OFFSET_X, 0, 0]}
         />
       </group>
-      <group ref={rightPivot} name="Corridor Window Right Pivot" position={[win.width / 2, 0, 0.04]}>
+      <group
+        ref={rightPivot}
+        name="Corridor Window Right Pivot"
+        position={[WINDOW_RIGHT_PIVOT_X, 0, 0.04]}
+      >
         <WindowImagePlane
           name="Corridor Window Right Side"
           textureUrl={WINDOW_RIGHT_SIDE_TEXTURE}
           height={win.height}
-          position={[-paneW / 2, 0, 0]}
+          position={[-WINDOW_PANE_OFFSET_X, 0, 0]}
         />
       </group>
     </group>

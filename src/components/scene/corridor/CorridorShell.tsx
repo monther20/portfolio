@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import * as THREE from "three";
-import { useLoader } from "@react-three/fiber";
 
 import { CORRIDOR } from "../journeyConfig";
 import { useTiledTexture } from "./useTiledTexture";
@@ -22,12 +21,6 @@ export default function CorridorShell() {
   const ceilTex = useTiledTexture(`${C}/ceiling_texture.webp`, 2, 10);
   const wallTex = useTiledTexture(`${C}/wall_texture.webp`, 10, 1.4);
   const endWallTex = useTiledTexture(`${C}/wall_texture.webp`, 1.6, 1.2);
-  const skyTex = useLoader(THREE.TextureLoader, "/textures/textures/entrance/window_bg.webp");
-
-  useEffect(() => {
-    skyTex.colorSpace = THREE.SRGBColorSpace;
-    skyTex.needsUpdate = true;
-  }, [skyTex]);
 
   const length = CORRIDOR.startZ - CORRIDOR.endWallZ;
   const centerZ = (CORRIDOR.startZ + CORRIDOR.endWallZ) / 2;
@@ -87,12 +80,6 @@ export default function CorridorShell() {
           <meshBasicMaterial map={endWallTex} side={THREE.DoubleSide} />
         </mesh>
       </group>
-
-      {/* Glimpse of sky behind the opening */}
-      <mesh name="Corridor Window Sky Backdrop" position={[0, CORRIDOR.window.y + 0.6, CORRIDOR.endWallZ - 4]}>
-        <planeGeometry args={[12, 8]} />
-        <meshBasicMaterial map={skyTex} />
-      </mesh>
     </group>
   );
 }

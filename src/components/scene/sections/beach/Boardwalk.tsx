@@ -12,14 +12,14 @@ import { BEACH } from "../../journeyConfig";
  * touches down. Slightly irregular placement keeps the sketchbook feel.
  */
 export default function Boardwalk() {
-  const plankGeometry = useMemo(() => new THREE.BoxGeometry(BEACH.boardwalk.width, 0.1, 0.5), []);
-  const plankMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#e6d9bd" }), []);
+  const plankGeometry = useMemo(() => new THREE.BoxGeometry(BEACH.boardwalk.width, 0.12, 0.68), []);
+  const plankMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f8f8f3" }), []);
   const postGeometry = useMemo(() => new THREE.BoxGeometry(0.14, 1.3, 0.14), []);
-  const postMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#d9c9a8" }), []);
+  const postMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#eeeeea" }), []);
 
   const planks = useMemo(() => {
     const out: { z: number; y: number; tilt: number }[] = [];
-    for (let z = BEACH.boardwalk.startZ; z >= BEACH.boardwalk.endZ; z -= 0.72) {
+    for (let z = BEACH.boardwalk.startZ; z >= BEACH.boardwalk.endZ; z -= 0.62) {
       out.push({
         z,
         y: BEACH.boardwalk.topY - 0.05 + seededRange(`plank-${z}-y`, -0.012, 0.012),
@@ -31,9 +31,10 @@ export default function Boardwalk() {
 
   const posts = useMemo(() => {
     const out: { z: number; x: number }[] = [];
+    const railX = BEACH.boardwalk.width / 2 - 0.12;
     for (let z = BEACH.boardwalk.startZ - 0.6; z >= BEACH.boardwalk.endZ; z -= 3.6) {
-      out.push({ z, x: BEACH.boardwalk.x - 1.25 });
-      out.push({ z, x: BEACH.boardwalk.x + 1.25 });
+      out.push({ z, x: BEACH.boardwalk.x - railX });
+      out.push({ z, x: BEACH.boardwalk.x + railX });
     }
     return out;
   }, []);
@@ -49,7 +50,7 @@ export default function Boardwalk() {
           position={[BEACH.boardwalk.x, plank.y, plank.z]}
           rotation={[0, plank.tilt, 0]}
         >
-          <Edges color="#8e8a82" />
+          <Edges color="#111111" />
         </mesh>
       ))}
       {posts.map((post, index) => (
@@ -60,7 +61,7 @@ export default function Boardwalk() {
           material={postMaterial}
           position={[post.x, BEACH.boardwalk.topY - 0.75, post.z]}
         >
-          <Edges color="#8e8a82" />
+          <Edges color="#111111" />
         </mesh>
       ))}
     </group>

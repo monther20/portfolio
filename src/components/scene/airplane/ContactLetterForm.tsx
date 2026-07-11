@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Html } from "@react-three/drei";
 
-const inkColor = "#3a372f";
+const inkColor = "#111111";
 
 const fieldStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "rgba(255,255,255,0.55)",
-  border: "1.6px dashed #8e8a82",
+  background: "rgba(255,255,255,0.92)",
+  border: "1.6px dashed #111111",
   borderRadius: 6,
   padding: "6px 8px",
   fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
@@ -45,6 +45,16 @@ export default function ContactLetterForm({
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const sendTimeout = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (sendTimeout.current !== null) {
+        window.clearTimeout(sendTimeout.current);
+      }
+    },
+    [],
+  );
 
   // Escape closes the letter (same as the ✕).
   useEffect(() => {
@@ -60,7 +70,7 @@ export default function ContactLetterForm({
     if (sent) return;
     setSent(true);
     // Brief "sent ✓" beat before the letter folds itself back up.
-    window.setTimeout(() => onSend({ name, email, message }), 800);
+    sendTimeout.current = window.setTimeout(() => onSend({ name, email, message }), 800);
   };
 
   return (
@@ -75,7 +85,7 @@ export default function ContactLetterForm({
         onSubmit={handleSend}
         onWheel={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        style={{ width: 250, padding: "10px 14px", position: "relative", userSelect: "none" }}
+        style={{ width: 250, padding: "10px 14px", position: "relative", userSelect: "none", color: inkColor }}
       >
         <button
           type="button"
@@ -149,11 +159,12 @@ export default function ContactLetterForm({
             fontSize: 18,
             fontWeight: 700,
             color: inkColor,
-            background: "#fff8e8",
-            border: "2px solid #5a5751",
+            background: "#ffffff",
+            border: "2px solid #111111",
             borderRadius: 10,
             padding: "6px 0",
             cursor: "pointer",
+            boxShadow: "2px 2px 0 #111111",
             transition: "transform 160ms ease",
             transform: sent ? "scale(0.98)" : undefined,
           }}

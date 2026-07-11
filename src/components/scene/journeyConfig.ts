@@ -21,7 +21,7 @@ export const JOURNEY = {
   corridorEndWallZ: -66,
 
   // ── Window / airplane launch ───────────────────────────────────────────
-  /** Crossing this z opens the window and launches the paper airplane. */
+  /** Crossing this z starts the window/airplane launch cinematic. */
   launchTriggerZ: -56,
   /** Back-scroll past this point resets the window/airplane so the corridor can be revisited. */
   corridorReturnResetZ: -54.75,
@@ -38,7 +38,8 @@ export const JOURNEY = {
   /** Airplane detaches from the camera and glides down to the boardwalk. */
   landingTriggerZ: -176,
   beachZ: -184,
-  farBound: -190,
+  /** Stop scrolling at the far end of the boardwalk. */
+  farBound: -192,
 
   // ── Camera Y profile keys ──────────────────────────────────────────────
   walkY: -1.5,
@@ -116,19 +117,19 @@ export const BEACH = {
   seaY: -3.55,
   seaZ: -188,
 
-  /** The wooden boardwalk the camera arrives over. */
-  boardwalk: { x: 0.35, topY: -2.35, startZ: -172, endZ: -192, width: 2.7 },
+  /** The wooden boardwalk the camera arrives over. Wide enough for the camera path and airplane landing. */
+  boardwalk: { x: 0.35, topY: -2.35, startZ: -172, endZ: -192, width: 3.4 },
 
   /** Where the paper airplane touches down on the boardwalk. */
   landing: [0.35, -2.08, -186.0] as [number, number, number],
 
-  /** Floating crates on the sea, one per contact action. */
+  /** Contact barrels floating on the sea just beyond the end of the boardwalk. */
   crates: [
-    { key: "message" as const, label: "message", x: -2.35, z: -184.5 },
-    { key: "github" as const, label: "github", x: -3.15, z: -187.4 },
-    { key: "linkedin" as const, label: "linkedin", x: 2.95, z: -186.2 },
+    { key: "message" as const, label: "message", x: -1.25, z: -196.2 },
+    { key: "github" as const, label: "github", x: 0.35, z: -196.8 },
+    { key: "linkedin" as const, label: "linkedin", x: 1.95, z: -196.2 },
   ],
-  crateY: -3.0,
+  crateY: -2.72,
 
   /** Distant hand-drawn mountains on the horizon behind the sea. */
   mountainZ: -206,

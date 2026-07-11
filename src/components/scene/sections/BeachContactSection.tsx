@@ -38,7 +38,7 @@ function Sea() {
   return (
     <mesh name="Beach Sea" position={[0, BEACH.seaY, BEACH.seaZ]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[80, 70]} />
-      <meshBasicMaterial map={tiled} color="#bcd3e0" transparent opacity={0.85} />
+      <meshBasicMaterial map={tiled} color="#ffffff" transparent opacity={0.72} />
     </mesh>
   );
 }
@@ -54,45 +54,21 @@ export default function BeachContactSection() {
       <Boardwalk />
       <ContactCrates />
 
-      {/* Distant hand-drawn mountains on the horizon */}
-      <PaintSprite
-        name="Beach Mountains"
-        sketch="/textures/mountain.webp"
-        billboard={false}
-        position={[0, 0.4, BEACH.mountainZ]}
-        height={9}
-        revealNear={24}
-        revealFar={44}
-      />
-
       {/* Shore scenery */}
       <PartingItem name="Beach Lighthouse" home={[-7, BEACH.seaY + 2.3, -196]} push={2.9} lift={0.45}>
         <Float speed={1} rotationIntensity={0.05} floatIntensity={0.3} floatingRange={[-0.1, 0.15]}>
-          <PaintSprite name="Beach Lighthouse Sprite" sketch={`${C}/latarnia.webp`} height={4.6} revealNear={14} revealFar={32} />
+          <PaintSprite name="Beach Lighthouse Sprite" sketch={`${C}/latarnia.webp`} height={4.6} revealNear={14} revealFar={32} autoReveal={false} />
         </Float>
       </PartingItem>
-      <PartingItem name="Beach Ship" home={[5.5, BEACH.seaY + 1.15, -195]} push={2.9} lift={0.45}>
-        <Float speed={1.3} rotationIntensity={0.1} floatIntensity={0.5} floatingRange={[-0.15, 0.15]}>
-          <PaintSprite name="Beach Ship Sprite" sketch={`${C}/statek.webp`} height={2.3} revealNear={13} revealFar={28} />
+      <PartingItem name="Beach Ship" home={[5.8, BEACH.seaY + 0.55, -191]} push={1.2} lift={0.15}>
+        <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.25} floatingRange={[-0.05, 0.08]}>
+          <PaintSprite name="Beach Ship Sprite" sketch={`${C}/statek.webp`} height={1.1} revealNear={13} revealFar={28} autoReveal={false} />
         </Float>
       </PartingItem>
-      <PartingItem name="Beach Pier Sprite Wrapper" home={[2.6, BEACH.seaY + 0.9, -181]} push={2.3} lift={0.35}>
-        <PaintSprite name="Beach Pier Sprite" sketch={`${C}/molo.webp`} height={1.8} revealNear={12} revealFar={26} />
-      </PartingItem>
-      <PaintSprite
-        name="Beach Barrel"
-        sketch={`${C}/beczka.webp`}
-        painted={`${C}/beczka_painted.webp`}
-        position={[1.15, BEACH.boardwalk.topY + 0.55, -183.2]}
-        height={1.1}
-        revealNear={10}
-        revealFar={22}
-      />
-
       {/* Arrival note — placeholder copy */}
       <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.4} floatingRange={[-0.1, 0.12]}>
-        <FloatingNote position={[0, 0.9, -178]} fontSize={1.6} weight={700} rotation={-2}>
-          welcome to my shore — say hi!
+        <FloatingNote position={[0, 0.9, -178]} fontSize={1.6} weight={700} color="#111111" rotation={-2} depthOcclude>
+          leave a note — or find me here
         </FloatingNote>
       </Float>
     </group>

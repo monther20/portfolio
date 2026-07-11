@@ -23,6 +23,8 @@ export type ModeAnim = {
   curve: THREE.CatmullRomCurve3 | null;
   t: number;
   kind: "launch" | "landing" | "sendoffOut" | "sendoffReturn" | null;
+  /** Orientation at the moment a curve starts, used to ease into tangent-following. */
+  startQuaternion: THREE.Quaternion;
 };
 
 type Refs = {
@@ -80,17 +82,12 @@ export function useAirplaneModeEffects({
 
     switch (airplaneMode) {
       case "launching": {
+        // Scroll owns launch progress. The frame loop updates modeAnim.t from
+        // camera z, so stopping the scroll freezes the airplane in place.
+        modeAnim.startQuaternion.copy(root.quaternion);
         modeAnim.curve = createLaunchCurve(root.position);
         modeAnim.kind = "launch";
         modeAnim.t = 0;
-        track(
-          gsap.to(modeAnim, {
-            t: 1,
-            duration: 2.8,
-            ease: "power2.inOut",
-            onComplete: () => setJourneyState({ airplaneMode: "locked" }),
-          }),
-        );
         break;
       }
 
@@ -102,6 +99,7 @@ export function useAirplaneModeEffects({
       }
 
       case "landing": {
+        modeAnim.startQuaternion.copy(root.quaternion);
         modeAnim.curve = createLandingCurve(root.position.clone());
         modeAnim.kind = "landing";
         modeAnim.t = 0;
@@ -176,6 +174,7 @@ export function useAirplaneModeEffects({
         );
         // Climb away over the sea while the camera watches it go…
         sendoff.call(() => {
+          modeAnim.startQuaternion.copy(root.quaternion);
           modeAnim.curve = createSendoffCurve();
           modeAnim.kind = "sendoffOut";
           modeAnim.t = 0;
@@ -184,6 +183,7 @@ export function useAirplaneModeEffects({
         sendoff.to(camera.rotation, { x: -0.05, duration: 2.2, ease: "power2.inOut" }, 0.4);
         // …then swoop back in and land, ready for the next message.
         sendoff.call(() => {
+          modeAnim.startQuaternion.copy(root.quaternion);
           modeAnim.curve = createReturnCurve();
           modeAnim.kind = "sendoffReturn";
           modeAnim.t = 0;

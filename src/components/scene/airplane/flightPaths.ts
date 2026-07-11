@@ -9,12 +9,21 @@ import { BEACH, CORRIDOR } from "../journeyConfig";
 
 /** Off the corridor table, through the window, out into the sky. */
 export function createLaunchCurve(from: THREE.Vector3): THREE.CatmullRomCurve3 {
-  return new THREE.CatmullRomCurve3([
-    from.clone(),
-    from.clone().add(new THREE.Vector3(0, 0.55, -0.6)),
-    new THREE.Vector3(CORRIDOR.window.x, CORRIDOR.window.y, CORRIDOR.window.z),
-    new THREE.Vector3(0, 0.2, CORRIDOR.window.z - 4.5),
-  ]);
+  return new THREE.CatmullRomCurve3(
+    [
+      from.clone(),
+      // A small lift off the table before committing to the window.
+      from.clone().add(new THREE.Vector3(0.12, 0.25, -0.35)),
+      new THREE.Vector3(1.35, -0.88, CORRIDOR.window.z + 1.65),
+      new THREE.Vector3(0.62, -0.58, CORRIDOR.window.z + 0.75),
+      // Pass through the real opening, then climb into the sky.
+      new THREE.Vector3(CORRIDOR.window.x, CORRIDOR.window.y - 0.04, CORRIDOR.window.z - 0.25),
+      new THREE.Vector3(-0.18, 0.05, CORRIDOR.window.z - 3.25),
+      new THREE.Vector3(0, 0.34, CORRIDOR.window.z - 6.4),
+    ],
+    false,
+    "centripetal",
+  );
 }
 
 /** A gentle glide down onto the boardwalk. */
