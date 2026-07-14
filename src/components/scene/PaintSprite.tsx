@@ -93,7 +93,7 @@ export type PaintSpriteProps = {
   /** coloured texture cross-faded in (defaults to `sketch` → grayscale→colour reveal) */
   painted?: string;
   position?: [number, number, number];
-  /** readable label used by the runtime lil-gui scene debugger */
+  /** readable scene/object label */
   name?: string;
   /** target height in world units; width is derived from the image aspect ratio */
   height?: number;

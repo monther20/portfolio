@@ -1,9 +1,6 @@
 import { CORRIDOR } from "../journeyConfig";
 
-/**
- * Mutable values shared by the corridor hinged mini-walls and the debug GUI.
- * lil-gui edits this object directly; the wall components read it every frame.
- */
+/** Shared values read every frame by the corridor hinged mini-walls. */
 export const corridorHingedWallSettings = {
   // Wall layout
   x: CORRIDOR.halfWidth - 0.04,

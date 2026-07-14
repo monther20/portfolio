@@ -8,7 +8,6 @@ import PaintSprite from "../../PaintSprite";
 import { seededRange } from "../../PartingItem";
 import { BEACH } from "../../journeyConfig";
 import { getJourneyState, setJourneyState } from "../../journeyState";
-import { useCorridorDebugGui as useSceneDebugGui } from "../../CorridorDebugGui";
 import { contact } from "@/data/portfolio";
 import { CONTACT_BUTTON_PAINTED_TEXTURES, CONTACT_BUTTON_TEXTURES } from "../../assetPaths";
 
@@ -42,7 +41,7 @@ function ContactBarrel({ crate }: { crate: (typeof BEACH.crates)[number] }) {
     if (!bob) return;
     const t = state.clock.elapsedTime;
 
-    // Local bobbing only; the parent position stays editable in lil-gui.
+    // Local bobbing only; the parent position stays anchored.
     bob.position.y = Math.sin(t * 1.15 + phase) * 0.065;
     bob.rotation.z = Math.sin(t * 0.9 + phase) * 0.035;
     bob.rotation.x = Math.cos(t * 0.75 + phase) * 0.025;
@@ -71,17 +70,8 @@ function ContactBarrel({ crate }: { crate: (typeof BEACH.crates)[number] }) {
 
 /** ContactCrates — message / github / linkedin as pre-labeled floating barrel buttons. */
 export default function ContactCrates() {
-  const debugRootRef = useRef<THREE.Group>(null);
-
-  useSceneDebugGui(debugRootRef, {
-    title: "Contact Barrels",
-    rootLabel: "Contact Barrel Buttons",
-    top: "0px",
-    side: "left",
-  });
-
   return (
-    <group ref={debugRootRef} name="Contact Barrel Buttons">
+    <group name="Contact Barrel Buttons">
       {BEACH.crates
         .filter((crate) => crate.key !== "linkedin" || Boolean(contact.linkedin))
         .map((crate) => (

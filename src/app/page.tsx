@@ -86,7 +86,6 @@ export default function MoodyHallwayScene() {
       {/* Warms the texture cache in the background (corridor → sky → beach). */}
       <AssetPreloader />
 
-      {/* Development-only Three.js controls now live in the corridor-items lil-gui panel. */}
     </div>
   );
 }
