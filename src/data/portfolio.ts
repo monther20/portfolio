@@ -78,22 +78,16 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    name: "Bassita",
-    blurb: "Real-time collaborative task management platform built with Next.js, Firestore, Kanban boards, authentication, drag-and-drop tasks, and custom labels.",
+    name: "Reachlet",
+    blurb: "React Native mobile frontend for an advertisement display app with dynamic multimedia content, auto-scrolling image/video ads, and QR-code external links.",
     link: "#",
-    panel: PROJECT_PANEL("bassitaprzod"),
+    panel: PROJECT_PANEL("reachlet"),
   },
   {
     name: "eZorro",
     blurb: "Financial trading platform frontend using React with real-time market analysis, portfolio management, AI-powered trading assistance, streaming chat, and interactive dashboards.",
     link: "#",
-    panel: PROJECT_PANEL("ezorroprzod"),
-  },
-  {
-    name: "Rechlet",
-    blurb: "React Native mobile frontend for an advertisement display app with dynamic multimedia content, auto-scrolling image/video ads, and QR-code external links.",
-    link: "#",
-    panel: PROJECT_PANEL("rechletprzod"),
+    panel: PROJECT_PANEL("ezorro"),
   },
 ];
 
