@@ -1,7 +1,4 @@
-import type { ShadowConfig } from "../ShadowDebugPanel";
-
-/** lil-gui is imported dynamically, so folders/controllers stay untyped. */
-export type GuiLike = any;
+import type { ShadowConfig } from "../shadowConfig";
 
 export type Vector3Debug = {
   x: number;
@@ -88,9 +85,6 @@ export type InteriorDetailsDebug = {
 };
 
 export type RoomDebugState = {
-  interaction: {
-    nightMode: boolean;
-  };
   scene: {
     dayBackgroundColor: string;
     nightBackgroundColor: string;
@@ -98,17 +92,6 @@ export type RoomDebugState = {
     nightFogColor: string;
     fogNear: number;
     fogFar: number;
-  };
-  renderer: {
-    toneMappingExposure: number;
-    clearColor: string;
-  };
-  camera: {
-    position: Vector3Debug;
-    lookAt: Vector3Debug;
-    fov: number;
-    near: number;
-    far: number;
   };
   environment: {
     studioHdri: {
@@ -181,8 +164,4 @@ export function rotationTuple(vector: Vector3Debug): [number, number, number] {
 
 export function scaleTuple(vector: Vector3Debug): [number, number, number] {
   return [vector.x, vector.y, vector.z];
-}
-
-export function serializeRoomDebugState(debug: RoomDebugState) {
-  return JSON.parse(JSON.stringify(debug)) as RoomDebugState;
 }

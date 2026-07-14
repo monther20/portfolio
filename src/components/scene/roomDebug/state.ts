@@ -1,4 +1,4 @@
-import type { ShadowConfig } from "../ShadowDebugPanel";
+import type { ShadowConfig } from "../shadowConfig";
 import {
   CHAIR_ASPECT,
   HERP_ASPECT,
@@ -40,12 +40,9 @@ const createFloorDecalItem = (
   renderOrder,
 });
 
-/** All default coordinates/colors of the room scene, editable via the GUI. */
+/** All default coordinates/colors of the room scene. */
 export function createRoomDebugState(shadowConfig: ShadowConfig): RoomDebugState {
   return {
-    interaction: {
-      nightMode: false,
-    },
     scene: {
       dayBackgroundColor: "#ffffff",
       nightBackgroundColor: "#555566",
@@ -53,17 +50,6 @@ export function createRoomDebugState(shadowConfig: ShadowConfig): RoomDebugState
       nightFogColor: "#555566",
       fogNear: 5,
       fogFar: 45,
-    },
-    renderer: {
-      toneMappingExposure: 1,
-      clearColor: "#000000",
-    },
-    camera: {
-      position: createVector3(0.370000000000005, 1.06, 5.62),
-      lookAt: createVector3(0, 0.719, -15.9),
-      fov: 32,
-      near: 0.1,
-      far: 770,
     },
     environment: {
       studioHdri: {

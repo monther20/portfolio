@@ -9,7 +9,6 @@
 
 let ctx: AudioContext | null = null;
 let lastPlay = 0;
-let muted = false;
 
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -22,10 +21,6 @@ function getCtx(): AudioContext | null {
   return ctx;
 }
 
-export function setWalkMuted(value: boolean) {
-  muted = value;
-}
-
 /** Create/resume the audio context from within a user gesture (e.g. door click). */
 export function primeWalkAudio() {
   getCtx();
@@ -33,7 +28,6 @@ export function primeWalkAudio() {
 
 /** Play one soft footstep. Rate-limited so fast scrolls don't machine-gun. */
 export function playFootstep(volume = 0.16) {
-  if (muted) return;
   const ac = getCtx();
   if (!ac) return;
 

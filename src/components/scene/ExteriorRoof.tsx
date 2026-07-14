@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 

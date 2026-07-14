@@ -1,4 +1,4 @@
-import { Suspense, useState, useRef, useEffect } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -10,7 +10,7 @@ import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
 import { JOURNEY } from "./journeyConfig";
 import { primeWalkAudio } from "./walkAudio";
-import { DEFAULT_SHADOW_CONFIG } from "./ShadowDebugPanel";
+import { DEFAULT_SHADOW_CONFIG } from "./shadowConfig";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 
@@ -22,7 +22,6 @@ export default function RoomScene({
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isNight, setIsNight] = useState(false);
-  const itemsGroupRef = useRef<THREE.Group>(null);
   const debugRef = useRef<RoomDebugState>(null!);
   const { camera, scene } = useThree();
   const shadowConfig = DEFAULT_SHADOW_CONFIG;
@@ -36,11 +35,7 @@ export default function RoomScene({
   const sceneFogColor = isNight ? debug.scene.nightFogColor : debug.scene.dayFogColor;
 
   const toggleNight = () => {
-    setIsNight((current) => {
-      const next = !current;
-      debugRef.current.interaction.nightMode = next;
-      return next;
-    });
+    setIsNight((current) => !current);
   };
 
   useEffect(() => {
@@ -143,10 +138,6 @@ export default function RoomScene({
         </group>
       </Suspense>
 
-      {/* The Loose Items (These get sucked into the portal) */}
-      <group ref={itemsGroupRef}>
-
-      </group>
     </>
   );
 }

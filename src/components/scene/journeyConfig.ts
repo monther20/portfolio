@@ -157,10 +157,6 @@ export const BEACH = {
     { key: "github" as const, label: "github", x: 0.35, z: extendCorridorZ(-196.8) },
     { key: "linkedin" as const, label: "linkedin", x: 1.95, z: extendCorridorZ(-196.2) },
   ],
-  crateY: -2.72,
-
-  /** Distant hand-drawn mountains on the horizon behind the sea. */
-  mountainZ: extendCorridorZ(-206),
 } as const;
 
 /** The airplane's camera-locked offset during the sky flight (from the old debug defaults). */

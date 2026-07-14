@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
@@ -10,21 +10,10 @@ import { BEACH } from "../../journeyConfig";
 import { getJourneyState, setJourneyState } from "../../journeyState";
 import { useCorridorDebugGui as useSceneDebugGui } from "../../CorridorDebugGui";
 import { contact } from "@/data/portfolio";
+import { CONTACT_BUTTON_PAINTED_TEXTURES, CONTACT_BUTTON_TEXTURES } from "../../assetPaths";
 
 const CONTACT_BUTTON_HEIGHT = 1.65;
 const CONTACT_BUTTON_Y = BEACH.seaY + CONTACT_BUTTON_HEIGHT / 2;
-
-const BUTTON_TEXTURES: Record<string, string> = {
-  message: "/textures/textures/contact/maillink.webp",
-  github: "/textures/textures/contact/githublink.webp",
-  linkedin: "/textures/textures/contact/linkedinlink.webp",
-};
-
-const BUTTON_PAINTED_TEXTURES: Record<string, string> = {
-  message: "/textures/textures/contact/maillink_painted.webp",
-  github: "/textures/textures/contact/githublink_painted.webp",
-  linkedin: "/textures/textures/contact/linkedinlink_painted.webp",
-};
 
 function crateAction(key: string) {
   if (key === "message") {
@@ -64,8 +53,8 @@ function ContactBarrel({ crate }: { crate: (typeof BEACH.crates)[number] }) {
       <group ref={bobRef} name={`Contact Barrel Button Bob: ${crate.label}`}>
         <PaintSprite
           name={`Contact Barrel Button Sprite: ${crate.label}`}
-          sketch={BUTTON_TEXTURES[crate.key]}
-          painted={BUTTON_PAINTED_TEXTURES[crate.key]}
+          sketch={CONTACT_BUTTON_TEXTURES[crate.key]}
+          painted={CONTACT_BUTTON_PAINTED_TEXTURES[crate.key]}
           position={[0, 0, 0]}
           height={CONTACT_BUTTON_HEIGHT}
           revealNear={8}

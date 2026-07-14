@@ -1,6 +1,6 @@
 "use client";
 
-import React, { type ReactNode, useMemo, useRef } from "react";
+import { type ReactNode, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 

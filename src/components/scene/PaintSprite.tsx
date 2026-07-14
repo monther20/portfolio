@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLoader, useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";

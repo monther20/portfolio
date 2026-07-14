@@ -101,7 +101,6 @@ export const projects: Project[] = [
 export const projectUI = {
   paperTexture: "/textures/textures/paper-texture.webp",
   openLive: `${GALLERY_BASE}/openliveproject.webp`,
-  clip: `${GALLERY_BASE}/klamerka.webp`,
 };
 
 // ── CONTACT ──────────────────────────────────────────────────────────────────

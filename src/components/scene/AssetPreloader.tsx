@@ -4,29 +4,24 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 
-import { corridor, journeyMilestones, projects, projectUI, skills } from "@/data/portfolio";
+import { contact, corridor, journeyMilestones, projects, projectUI, skills } from "@/data/portfolio";
+import {
+  AVATAR_FRAME_URLS,
+  CLOUD_TEXTURE_URLS,
+  CONTACT_BUTTON_PAINTED_TEXTURES,
+  CONTACT_BUTTON_TEXTURES,
+  CONTACT_TEXTURES,
+  CORRIDOR_TEXTURES,
+} from "./assetPaths";
 
-const CORRIDOR_TEX = "/textures/textures/corridor";
-const CONTACT_TEX = "/textures/textures/contact";
-const CLOUD_TEX = "/textures/textures/clouds";
-
-const CLOUD_FILES = [
-  "1131c3eb-dfae-423f-924b-ff39d8ccd6dc",
-  "254b8ec8-d6f7-4275-956f-7bab65b2ce2d",
-  "2cc88dd1-483c-466d-b07e-f8308c61ccbe",
-  "5606fcc0-3252-447d-a58a-7bcbac73229a",
-  "7882dc72-3d01-41fb-ac0e-d07b0184ebc1",
-  "9b2ca72f-7bd0-473b-ba6e-dd9e0eb79d35",
-  "c83293c6-d90c-4a32-8d9d-5ac9af7e2296",
-  "f6e358bc-d27c-41dd-95f4-6787a835c41e",
-];
+const CORRIDOR_TEX = CORRIDOR_TEXTURES.base;
 
 /** Everything visible while walking the corridor. */
 const CORRIDOR_ASSETS: (string | undefined)[] = [
-  ...Array.from({ length: 9 }, (_, i) => `${CORRIDOR_TEX}/avatar_anim/${i + 1}.webp`),
-  `${CORRIDOR_TEX}/floor_wood.webp`,
-  `${CORRIDOR_TEX}/wall_texture.webp`,
-  `${CORRIDOR_TEX}/ceiling_texture.webp`,
+  ...AVATAR_FRAME_URLS,
+  CORRIDOR_TEXTURES.floor,
+  CORRIDOR_TEXTURES.wall,
+  CORRIDOR_TEXTURES.ceiling,
   `${CORRIDOR_TEX}/bokilampy.webp`,
   `${CORRIDOR_TEX}/drzewkowdoniczce.webp`,
   `${CORRIDOR_TEX}/kwiatekwdoniczce.webp`,
@@ -35,8 +30,6 @@ const CORRIDOR_ASSETS: (string | undefined)[] = [
   `${CORRIDOR_TEX}/strzalka.webp`,
   `${CORRIDOR_TEX}/ramkanazdjecieduza.webp`,
   `${CORRIDOR_TEX}/ramkanazdjecieduza_painted.webp`,
-  "/textures/textures/entrance/window_sketch.webp",
-  "/textures/textures/entrance/window_bg.webp",
   "/textures/table.webp",
   ...corridor.stations.map((station) => station.art),
   ...corridor.doodles,
@@ -45,7 +38,7 @@ const CORRIDOR_ASSETS: (string | undefined)[] = [
 
 /** Everything in the sky flight (clouds, milestones, skills, projects). */
 const SKY_ASSETS: (string | undefined)[] = [
-  ...CLOUD_FILES.map((file) => `${CLOUD_TEX}/${file}.webp`),
+  ...CLOUD_TEXTURE_URLS,
   ...journeyMilestones.map((milestone) => milestone.island),
   "/textures/lantern.webp",
   ...skills.flatMap((skill) => [skill.balloon.sketch, skill.balloon.painted]),
@@ -56,16 +49,15 @@ const SKY_ASSETS: (string | undefined)[] = [
 
 /** The beach landing + contact scene. */
 const BEACH_ASSETS: (string | undefined)[] = [
-  `${CONTACT_TEX}/faletopdown.webp`,
-  `${CONTACT_TEX}/latarnia.webp`,
-  `${CONTACT_TEX}/statek.webp`,
-  `${CONTACT_TEX}/molo.webp`,
-  `${CONTACT_TEX}/beczka.webp`,
-  `${CONTACT_TEX}/beczka_painted.webp`,
-  `${CONTACT_TEX}/backups/maillink.webp`,
-  `${CONTACT_TEX}/backups/githublink.webp`,
-  `${CONTACT_TEX}/backups/linkedinlink.webp`,
-  "/textures/mountain.webp",
+  CONTACT_TEXTURES.waves,
+  CONTACT_TEXTURES.lighthouse,
+  CONTACT_TEXTURES.ship,
+  ...Object.entries(CONTACT_BUTTON_TEXTURES)
+    .filter(([key]) => key !== "linkedin" || Boolean(contact.linkedin))
+    .map(([, texture]) => texture),
+  ...Object.entries(CONTACT_BUTTON_PAINTED_TEXTURES)
+    .filter(([key]) => key !== "linkedin" || Boolean(contact.linkedin))
+    .map(([, texture]) => texture),
 ];
 
 function preloadAll(urls: (string | undefined)[]) {

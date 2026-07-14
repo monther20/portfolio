@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * JourneyHud — a small handwritten "scroll to explore" hint that fades in once

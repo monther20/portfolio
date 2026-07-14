@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Float } from "@react-three/drei";
 import PaintSprite from "../PaintSprite";
 import PartingItem, { seededRange } from "../PartingItem";

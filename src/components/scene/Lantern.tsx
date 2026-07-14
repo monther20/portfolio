@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { useFrame, extend, useThree } from "@react-three/fiber";
 import { shaderMaterial } from "@react-three/drei";

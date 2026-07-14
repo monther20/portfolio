@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import * as THREE from "three";
 
 import { CORRIDOR } from "../journeyConfig";

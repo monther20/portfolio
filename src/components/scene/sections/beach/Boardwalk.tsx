@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import * as THREE from "three";
 import { Edges } from "@react-three/drei";
 

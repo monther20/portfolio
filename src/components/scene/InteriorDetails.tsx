@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import gsap from "gsap";
 import SpotlightCone, { FloorGlow } from "./SpotlightCone";
 import Lantern from "./Lantern";
-import { ShadowConfig } from "./ShadowDebugPanel";
+import type { ShadowConfig } from "./shadowConfig";
 import { FloorDecal, WallShadow } from "./room/decals";
 import {
   buildFloorDecals,
