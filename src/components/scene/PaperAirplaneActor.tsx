@@ -6,6 +6,7 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 
 import { AIRPLANE_CAMERA_OFFSET, CORRIDOR, JOURNEY } from "./journeyConfig";
+import { useFogFade } from "./useFogFade";
 import {
   getJourneyState,
   setJourneyState,
@@ -74,6 +75,8 @@ export default function PaperAirplaneActor() {
     }),
     [],
   );
+
+  useFogFade(rootRef);
 
   useAirplaneModeEffects({
     airplaneMode,
@@ -285,11 +288,13 @@ export default function PaperAirplaneActor() {
             roughness={AIRPLANE_LOOK.roughness}
             metalness={AIRPLANE_LOOK.metalness}
             side={THREE.DoubleSide}
+            fog
           />
           <Edges
             linewidth={AIRPLANE_LOOK.edgeLinewidth}
             threshold={AIRPLANE_LOOK.edgeThreshold}
             color={AIRPLANE_LOOK.edgeColor}
+            fog
           />
         </mesh>
         <line name="Fold Line">
@@ -299,7 +304,7 @@ export default function PaperAirplaneActor() {
               args={[FOLD_LINE_POINTS, 3]}
             />
           </bufferGeometry>
-          <lineBasicMaterial color={AIRPLANE_LOOK.lineColor} />
+          <lineBasicMaterial color={AIRPLANE_LOOK.lineColor} fog />
         </line>
       </group>
 
@@ -313,8 +318,8 @@ export default function PaperAirplaneActor() {
       >
         <mesh name="Contact Letter Paper">
           <planeGeometry args={[1.7, 2.3]} />
-          <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} />
-          <Edges color="#8e8a82" />
+          <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} fog />
+          <Edges color="#8e8a82" fog />
         </mesh>
         {letterOpen && (
           <ContactLetterForm onSend={handleSend} onClose={handleClose} />

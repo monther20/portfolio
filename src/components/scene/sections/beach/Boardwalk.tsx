@@ -1,11 +1,37 @@
 "use client";
 
-import { useMemo } from "react";
+import { type ReactNode, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Edges } from "@react-three/drei";
 
 import { seededRange } from "../../PartingItem";
 import { BEACH } from "../../journeyConfig";
+import { useFogFade } from "../../useFogFade";
+
+type FogFadedMeshProps = {
+  children: ReactNode;
+  geometry: THREE.BufferGeometry;
+  name: string;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+};
+
+function FogFadedMesh({
+  children,
+  geometry,
+  name,
+  position,
+  rotation,
+}: FogFadedMeshProps) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFogFade(ref);
+
+  return (
+    <mesh ref={ref} name={name} geometry={geometry} position={position} rotation={rotation}>
+      {children}
+    </mesh>
+  );
+}
 
 /**
  * Boardwalk — hand-made wooden planks over the sea, where the paper airplane
@@ -13,9 +39,7 @@ import { BEACH } from "../../journeyConfig";
  */
 export default function Boardwalk() {
   const plankGeometry = useMemo(() => new THREE.BoxGeometry(BEACH.boardwalk.width, 0.12, 0.68), []);
-  const plankMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f8f8f3" }), []);
   const postGeometry = useMemo(() => new THREE.BoxGeometry(0.14, 1.3, 0.14), []);
-  const postMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#eeeeea" }), []);
 
   const planks = useMemo(() => {
     const out: { z: number; y: number; tilt: number }[] = [];
@@ -42,27 +66,27 @@ export default function Boardwalk() {
   return (
     <group name="Beach Boardwalk">
       {planks.map((plank, index) => (
-        <mesh
+        <FogFadedMesh
           key={`plank-${plank.z}`}
           name={`Boardwalk Plank ${index + 1}`}
           geometry={plankGeometry}
-          material={plankMaterial}
           position={[BEACH.boardwalk.x, plank.y, plank.z]}
           rotation={[0, plank.tilt, 0]}
         >
-          <Edges color="#111111" />
-        </mesh>
+          <meshBasicMaterial color="#f8f8f3" fog />
+          <Edges color="#111111" fog />
+        </FogFadedMesh>
       ))}
       {posts.map((post, index) => (
-        <mesh
+        <FogFadedMesh
           key={`post-${post.x}-${post.z}`}
           name={`Boardwalk Post ${index + 1}`}
           geometry={postGeometry}
-          material={postMaterial}
           position={[post.x, BEACH.boardwalk.topY - 0.75, post.z]}
         >
-          <Edges color="#111111" />
-        </mesh>
+          <meshBasicMaterial color="#eeeeea" fog />
+          <Edges color="#111111" fog />
+        </FogFadedMesh>
       ))}
     </group>
   );
