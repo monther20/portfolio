@@ -8,6 +8,7 @@ import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
+import { JOURNEY } from "./journeyConfig";
 import { primeWalkAudio } from "./walkAudio";
 import { DEFAULT_SHADOW_CONFIG } from "./ShadowDebugPanel";
 import { createRoomDebugState } from "./roomDebug/state";
@@ -88,7 +89,7 @@ export default function RoomScene({
       {
         x: 0,
         y: -1.5,
-        z: -20,
+        z: JOURNEY.corridorStart,
         duration: 3.5,
         ease: "power2.inOut",
       },

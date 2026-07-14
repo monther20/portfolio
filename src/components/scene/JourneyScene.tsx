@@ -28,7 +28,7 @@ const CLOUDS = [
 ];
 
 // Sky clouds live between the corridor window and the beach descent.
-const CLOUD_START_Z = -76;
+const CLOUD_START_Z = JOURNEY.windowExitZ - 2;
 const CLOUD_CHUNKS = 8;
 const CLOUD_ITEMS_PER_CHUNK = 3;
 const CLOUD_CHUNK_DEPTH = 10.5;

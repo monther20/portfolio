@@ -38,8 +38,9 @@ function crateAction(key: string) {
     window.open(contact.github, "_blank", "noopener,noreferrer");
     return;
   }
-  // Placeholder link until the real profile url is filled into portfolio.ts.
-  window.open(contact.linkedin || "https://www.linkedin.com", "_blank", "noopener,noreferrer");
+  if (contact.linkedin) {
+    window.open(contact.linkedin, "_blank", "noopener,noreferrer");
+  }
 }
 
 /** One clickable pre-labeled wooden contact barrel floating on the sea. */
@@ -92,9 +93,11 @@ export default function ContactCrates() {
 
   return (
     <group ref={debugRootRef} name="Contact Barrel Buttons">
-      {BEACH.crates.map((crate) => (
-        <ContactBarrel key={crate.key} crate={crate} />
-      ))}
+      {BEACH.crates
+        .filter((crate) => crate.key !== "linkedin" || Boolean(contact.linkedin))
+        .map((crate) => (
+          <ContactBarrel key={crate.key} crate={crate} />
+        ))}
     </group>
   );
 }

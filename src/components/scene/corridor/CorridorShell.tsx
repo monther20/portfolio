@@ -17,12 +17,12 @@ const HOLE_MARGIN = 0.15;
  * (the camera flies through it after the launch).
  */
 export default function CorridorShell() {
-  const floorTex = useTiledTexture(`${C}/floor_wood.webp`, 2, 12);
-  const ceilTex = useTiledTexture(`${C}/ceiling_texture.webp`, 2, 10);
-  const wallTex = useTiledTexture(`${C}/wall_texture.webp`, 10, 1.4);
+  const length = CORRIDOR.startZ - CORRIDOR.endWallZ;
+  const floorTex = useTiledTexture(`${C}/floor_wood.webp`, 2, length / 4.15);
+  const ceilTex = useTiledTexture(`${C}/ceiling_texture.webp`, 2, length / 5);
+  const wallTex = useTiledTexture(`${C}/wall_texture.webp`, length / 5, 1.4);
   const endWallTex = useTiledTexture(`${C}/wall_texture.webp`, 1.6, 1.2);
 
-  const length = CORRIDOR.startZ - CORRIDOR.endWallZ;
   const centerZ = (CORRIDOR.startZ + CORRIDOR.endWallZ) / 2;
   const width = CORRIDOR.halfWidth * 2;
   const wallHeight = CORRIDOR.ceilY - CORRIDOR.floorY;

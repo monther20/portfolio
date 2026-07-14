@@ -244,7 +244,7 @@ export default function PaperAirplaneActor() {
 
   const handleSend = useCallback((fields: LetterFields) => {
     sendRequested.current = true;
-    const subject = encodeURIComponent("Hello Munther — from your portfolio");
+    const subject = encodeURIComponent("Hello Monther — from your portfolio");
     const body = encodeURIComponent(
       `${fields.message}\n\n— ${fields.name} (${fields.email})`,
     );

@@ -9,6 +9,10 @@
  *   (journey → skills → projects) → descent → beach boardwalk (contact)
  */
 
+/** Extra depth added before the window so the entrance corridor feels longer. */
+const CORRIDOR_LENGTH_EXTENSION = 16;
+const extendCorridorZ = (z: number) => z - CORRIDOR_LENGTH_EXTENSION;
+
 export const JOURNEY = {
   /** Where the camera lands after walking through the door. */
   corridorStart: -20,
@@ -18,28 +22,28 @@ export const JOURNEY = {
   corridorFloorY: -3.2,
   corridorCeilY: 2.8,
   /** The far wall that holds the window + table. */
-  corridorEndWallZ: -66,
+  corridorEndWallZ: extendCorridorZ(-66),
 
   // ── Window / airplane launch ───────────────────────────────────────────
   /** Crossing this z starts the window/airplane launch cinematic. */
-  launchTriggerZ: -56,
+  launchTriggerZ: extendCorridorZ(-56),
   /** Back-scroll past this point resets the window/airplane so the corridor can be revisited. */
-  corridorReturnResetZ: -54.75,
+  corridorReturnResetZ: extendCorridorZ(-54.75),
   /** Camera fully out of the window, flying in the sky. */
-  windowExitZ: -74,
+  windowExitZ: extendCorridorZ(-74),
 
   // ── Sky section anchors ────────────────────────────────────────────────
-  journeyAnchorZ: -88,
-  skillsAnchorZ: -116,
-  projectsAnchorZ: -144,
+  journeyAnchorZ: extendCorridorZ(-88),
+  skillsAnchorZ: extendCorridorZ(-116),
+  projectsAnchorZ: extendCorridorZ(-144),
 
   // ── Descent + beach ────────────────────────────────────────────────────
-  descentStartZ: -160,
+  descentStartZ: extendCorridorZ(-160),
   /** Airplane detaches from the camera and glides down to the boardwalk. */
-  landingTriggerZ: -176,
-  beachZ: -184,
+  landingTriggerZ: extendCorridorZ(-176),
+  beachZ: extendCorridorZ(-184),
   /** Stop scrolling at the far end of the boardwalk. */
-  farBound: -192,
+  farBound: extendCorridorZ(-192),
 
   // ── Camera Y profile keys ──────────────────────────────────────────────
   walkY: -1.5,
@@ -48,6 +52,30 @@ export const JOURNEY = {
 } as const;
 
 export type JourneyPhase = "corridor" | "window" | "sky" | "descent" | "beach";
+
+export const CORRIDOR_INFO_STATIONS = {
+  /** z of the first wall-mounted info station. */
+  firstZ: -42,
+  /** Distance between station centres down the corridor. */
+  spacing: 16,
+  /** Camera starts turning toward a station inside this z radius. */
+  focusRadius: 8.1,
+  /** Aim a little before each panel so the visitor reads it while approaching. */
+  focusLead: 3.4,
+  /** Maximum side glance while reading a station — just a gentle lean, not a direct look. */
+  focusYaw: 0.18,
+  /** Small upward glance so the framed art/title sit in view. */
+  focusPitch: 0.045,
+  /** A subtle look toward the final wall note before the window launch. */
+  windowFocusZ: extendCorridorZ(-53.35),
+  windowFocusRadius: 4.8,
+  windowFocusYaw: 0.055,
+  windowFocusPitch: 0.04,
+} as const;
+
+export function corridorStationZ(index: number): number {
+  return CORRIDOR_INFO_STATIONS.firstZ - index * CORRIDOR_INFO_STATIONS.spacing;
+}
 
 export function journeyPhaseAt(z: number): JourneyPhase {
   if (z > JOURNEY.launchTriggerZ) return "corridor";
@@ -102,37 +130,37 @@ export const CORRIDOR = {
   avatar: { x: -1.35, z: -27.5 },
 
   /** Window in the end wall — the wall has a real hole here so the camera can fly through. */
-  window: { x: 0, y: -0.35, z: -65.9, width: 2.4, height: 2.5 },
+  window: { x: 0, y: -0.35, z: JOURNEY.corridorEndWallZ + 0.1, width: 2.4, height: 2.5 },
 
   /** Table beside the window (billboard decal standing on the floor). */
-  table: { x: 1.95, z: -63.8 },
+  table: { x: 1.95, z: JOURNEY.corridorEndWallZ + 2.2 },
 
   /** Where the paper airplane rests above the table, nose angled toward the window. */
-  airplaneRest: [1.9, -1.12, -63.6] as [number, number, number],
+  airplaneRest: [1.9, -1.12, JOURNEY.corridorEndWallZ + 2.4] as [number, number, number],
   airplaneRestYaw: 0.55,
 } as const;
 
 // ── Beach layout anchors (shared by BeachContactSection + PaperAirplaneActor) ──
 export const BEACH = {
   seaY: -3.55,
-  seaZ: -188,
+  seaZ: extendCorridorZ(-188),
 
   /** The wooden boardwalk the camera arrives over. Wide enough for the camera path and airplane landing. */
-  boardwalk: { x: 0.35, topY: -2.35, startZ: -172, endZ: -192, width: 3.4 },
+  boardwalk: { x: 0.35, topY: -2.35, startZ: extendCorridorZ(-172), endZ: extendCorridorZ(-192), width: 3.4 },
 
   /** Where the paper airplane touches down on the boardwalk. */
-  landing: [0.35, -2.08, -186.0] as [number, number, number],
+  landing: [0.35, -2.08, extendCorridorZ(-186.0)] as [number, number, number],
 
   /** Contact barrels floating on the sea just beyond the end of the boardwalk. */
   crates: [
-    { key: "message" as const, label: "message", x: -1.25, z: -196.2 },
-    { key: "github" as const, label: "github", x: 0.35, z: -196.8 },
-    { key: "linkedin" as const, label: "linkedin", x: 1.95, z: -196.2 },
+    { key: "message" as const, label: "message", x: -1.25, z: extendCorridorZ(-196.2) },
+    { key: "github" as const, label: "github", x: 0.35, z: extendCorridorZ(-196.8) },
+    { key: "linkedin" as const, label: "linkedin", x: 1.95, z: extendCorridorZ(-196.2) },
   ],
   crateY: -2.72,
 
   /** Distant hand-drawn mountains on the horizon behind the sea. */
-  mountainZ: -206,
+  mountainZ: extendCorridorZ(-206),
 } as const;
 
 /** The airplane's camera-locked offset during the sky flight (from the old debug defaults). */

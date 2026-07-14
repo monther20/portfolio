@@ -4,7 +4,7 @@ import { type MutableRefObject, useEffect } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 
-import { JOURNEY } from "../journeyConfig";
+import { BEACH, JOURNEY } from "../journeyConfig";
 import { setJourneyState, type AirplaneMode } from "../journeyState";
 import { AIRPLANE_LOOK } from "./airplaneGeometry";
 import {
@@ -116,7 +116,7 @@ export function useAirplaneModeEffects({
 
       case "unfolding": {
         // The cinematic owns the camera (cameraLocked was set by the crate click).
-        track(gsap.to(camera.position, { x: 0.35, y: -0.85, z: -183.3, duration: 1.4, ease: "power2.inOut" }));
+        track(gsap.to(camera.position, { x: 0.35, y: -0.85, z: BEACH.landing[2] + 2.7, duration: 1.4, ease: "power2.inOut" }));
         track(gsap.to(camera.rotation, { x: -0.52, y: 0, z: 0, duration: 1.4, ease: "power2.inOut" }));
         track(gsap.to(root.rotation, { x: 0, y: 0.15, z: 0, duration: 1, ease: "power2.inOut" }));
 

@@ -3,6 +3,9 @@
 import { useEffect, type RefObject } from "react";
 import * as THREE from "three";
 
+import { CORRIDOR_INFO_STATIONS } from "./journeyConfig";
+import { corridorHingedWallSettings } from "./corridor/hingedWallSettings";
+
 const ENABLE_CORRIDOR_DEBUG_GUI = process.env.NODE_ENV !== "production";
 
 type GuiLike = any;
@@ -137,6 +140,53 @@ function addButton(folder: GuiLike, name: string, action: () => void | Promise<v
   folder.add(button, name).name(name);
 }
 
+function addHingedWallSettingsFolder(gui: GuiLike) {
+  const settings = corridorHingedWallSettings as unknown as Record<string, number>;
+  const folder = gui.addFolder("Hinged Mini Wall Settings");
+
+  addButton(folder, "Copy Hinged Wall Settings", () =>
+    copyJsonToClipboard("Hinged Mini Wall Settings", corridorHingedWallSettings),
+  );
+
+  const wallFolder = folder.addFolder("wall values");
+  wallFolder.add(settings, "x", 0.5, 6, 0.01).name("wall center x").listen();
+  wallFolder.add(settings, "y", -4, 4, 0.01).name("wall center y").listen();
+  wallFolder.add(settings, "width", 0.5, 8, 0.01).name("wall width").listen();
+  wallFolder.add(settings, "height", 0.5, 8, 0.01).name("wall height").listen();
+  wallFolder.add(settings, "depth", 0.01, 0.5, 0.005).name("wall depth").listen();
+  wallFolder.add(settings, "contentOffset", 0.005, 0.3, 0.005).name("content offset").listen();
+  wallFolder.add(settings, "textureRepeatX", 0.1, 4, 0.01).name("texture repeat x").listen();
+  wallFolder.add(settings, "textureRepeatY", 0.1, 4, 0.01).name("texture repeat y").listen();
+
+  const leanFolder = folder.addFolder("lean timing / amount");
+  leanFolder.add(settings, "restAngle", 0, 0.6, 0.001).name("far lean angle").listen();
+  leanFolder.add(settings, "openAngle", 0, 1.6, 0.001).name("extra close lean").listen();
+  leanFolder.add(settings, "startOpenDistance", 0.5, 25, 0.1).name("starts opening dist").listen();
+  leanFolder.add(settings, "fullyOpenDistance", 0.1, 20, 0.1).name("fully open dist").listen();
+  leanFolder.add(settings, "followDamping", 0.001, 0.5, 0.001).name("lean smoothing").listen();
+
+  wallFolder.open();
+  leanFolder.open();
+  folder.open();
+}
+
+function addCorridorCameraLeanSettingsFolder(gui: GuiLike) {
+  const settings = CORRIDOR_INFO_STATIONS as unknown as Record<string, number>;
+  const folder = gui.addFolder("Camera Lean Settings");
+
+  addButton(folder, "Copy Camera Lean Settings", () =>
+    copyJsonToClipboard("Camera Lean Settings", CORRIDOR_INFO_STATIONS),
+  );
+  folder.add(settings, "focusRadius", 0.5, 16, 0.1).name("station focus radius").listen();
+  folder.add(settings, "focusLead", -6, 8, 0.1).name("station focus lead").listen();
+  folder.add(settings, "focusYaw", 0, 0.8, 0.001).name("station side lean").listen();
+  folder.add(settings, "focusPitch", -0.3, 0.3, 0.001).name("station up/down lean").listen();
+  folder.add(settings, "windowFocusRadius", 0.5, 12, 0.1).name("window focus radius").listen();
+  folder.add(settings, "windowFocusYaw", -0.5, 0.5, 0.001).name("window side lean").listen();
+  folder.add(settings, "windowFocusPitch", -0.3, 0.3, 0.001).name("window up/down lean").listen();
+  folder.close();
+}
+
 function addVector3Controls(
   folder: GuiLike,
   vector: THREE.Vector3 | THREE.Euler,
@@ -155,7 +205,7 @@ function addVector3Controls(
 function addTransformControls(folder: GuiLike, object: THREE.Object3D) {
   folder.add(object, "visible").name("visible").listen();
   folder.add(object, "renderOrder", -1000, 10000, 1).name("renderOrder").listen();
-  addVector3Controls(folder, object.position, "position", -120, 20, 0.01);
+  addVector3Controls(folder, object.position, "position", -260, 20, 0.01);
   addVector3Controls(folder, object.rotation, "rotation", -Math.PI * 2, Math.PI * 2, 0.001);
   addVector3Controls(folder, object.scale, "scale", 0.01, 20, 0.01);
 }
@@ -364,6 +414,8 @@ export function useCorridorDebugGui(
       gui.domElement.style.right = side === "right" ? "0px" : "auto";
       gui.domElement.style.left = side === "left" ? "0px" : "auto";
       gui.domElement.style.zIndex = "10000";
+      addHingedWallSettingsFolder(gui);
+      addCorridorCameraLeanSettingsFolder(gui);
       buildCorridorFolders(gui, root, rootLabel);
     };
 

@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import {
   JOURNEY,
+  CORRIDOR_INFO_STATIONS,
   cameraYAt,
+  corridorStationZ,
   descentProgressAt,
   journeyPhaseAt,
   windowProgressAt,
 } from "./journeyConfig";
 import { getJourneyState, setJourneyState } from "./journeyState";
 import { playFootstep } from "./walkAudio";
+import { corridor } from "@/data/portfolio";
 
 // Flight feel, inspired by ITom's About-room momentum controller.
 const FLIGHT_SPEED = 0.0028;
@@ -29,6 +32,14 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   // The scroll controller is only active after entering the journey/corridor.
   const flightVelocity = useRef(0);
   const stepAccumulator = useRef(0);
+  const corridorFocuses = useMemo(
+    () =>
+      corridor.stations.map((station, index) => ({
+        side: station.side,
+        z: corridorStationZ(index),
+      })),
+    [],
+  );
 
   useEffect(() => {
     flightVelocity.current = 0;
@@ -107,11 +118,41 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       }
     }
 
+    // ── Corridor reading focus: glance toward wall stations as you reach them ──
+    let yawTarget = 0;
+    let corridorPitchTarget = 0;
+    if (phase === "corridor") {
+      let strongestInfluence = 0;
+
+      for (const focus of corridorFocuses) {
+        const focusCenterZ = focus.z + CORRIDOR_INFO_STATIONS.focusLead;
+        const distance = Math.abs(nextZ - focusCenterZ);
+        const influence = 1 - THREE.MathUtils.smoothstep(distance, 0.9, CORRIDOR_INFO_STATIONS.focusRadius);
+        if (influence <= strongestInfluence) continue;
+
+        strongestInfluence = influence;
+        yawTarget = -focus.side * CORRIDOR_INFO_STATIONS.focusYaw * influence;
+        corridorPitchTarget = CORRIDOR_INFO_STATIONS.focusPitch * influence;
+      }
+
+      const windowInfluence =
+        1 -
+        THREE.MathUtils.smoothstep(
+          Math.abs(nextZ - CORRIDOR_INFO_STATIONS.windowFocusZ),
+          0.5,
+          CORRIDOR_INFO_STATIONS.windowFocusRadius,
+        );
+      if (windowInfluence > strongestInfluence) {
+        yawTarget = CORRIDOR_INFO_STATIONS.windowFocusYaw * windowInfluence;
+        corridorPitchTarget = CORRIDOR_INFO_STATIONS.windowFocusPitch * windowInfluence;
+      }
+    }
+
     // ── Flight maneuvers: banking only exists once we're out of the window ──
     const flightDistance = Math.max(0, JOURNEY.windowExitZ - nextZ);
     const descent = descentProgressAt(nextZ);
     let bankTarget = 0;
-    let pitchTarget = 0;
+    let pitchTarget = corridorPitchTarget;
 
     if (flightDistance > 0) {
       const chunkProgress = (flightDistance % CHUNK_LENGTH) / CHUNK_LENGTH;
@@ -141,7 +182,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     const rotationLerp = 1 - Math.pow(0.03, delta);
     camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, pitchTarget, rotationLerp);
     camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, bankTarget, rotationLerp);
-    camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, 0, rotationLerp * 0.5);
+    camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, yawTarget, rotationLerp * (phase === "corridor" ? 0.9 : 0.5));
   });
 
   return null;

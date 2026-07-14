@@ -11,6 +11,7 @@ import PartingItem from "../PartingItem";
 import { BEACH } from "../journeyConfig";
 import Boardwalk from "./beach/Boardwalk";
 import ContactCrates from "./beach/ContactCrates";
+import { contact } from "@/data/portfolio";
 
 const C = "/textures/textures/contact";
 
@@ -55,20 +56,20 @@ export default function BeachContactSection() {
       <ContactCrates />
 
       {/* Shore scenery */}
-      <PartingItem name="Beach Lighthouse" home={[-7, BEACH.seaY + 2.3, -196]} push={2.9} lift={0.45}>
+      <PartingItem name="Beach Lighthouse" home={[-7, BEACH.seaY + 2.3, BEACH.boardwalk.endZ - 4]} push={2.9} lift={0.45}>
         <Float speed={1} rotationIntensity={0.05} floatIntensity={0.3} floatingRange={[-0.1, 0.15]}>
           <PaintSprite name="Beach Lighthouse Sprite" sketch={`${C}/latarnia.webp`} height={4.6} revealNear={14} revealFar={32} autoReveal={false} />
         </Float>
       </PartingItem>
-      <PartingItem name="Beach Ship" home={[5.8, BEACH.seaY + 0.55, -191]} push={1.2} lift={0.15}>
+      <PartingItem name="Beach Ship" home={[5.8, BEACH.seaY + 0.55, BEACH.boardwalk.endZ + 1]} push={1.2} lift={0.15}>
         <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.25} floatingRange={[-0.05, 0.08]}>
           <PaintSprite name="Beach Ship Sprite" sketch={`${C}/statek.webp`} height={1.1} revealNear={13} revealFar={28} autoReveal={false} />
         </Float>
       </PartingItem>
-      {/* Arrival note — placeholder copy */}
+      {/* Arrival note — contact details from the CV */}
       <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.4} floatingRange={[-0.1, 0.12]}>
-        <FloatingNote position={[0, 0.9, -178]} fontSize={1.6} weight={700} color="#111111" rotation={-2} depthOcclude>
-          leave a note — or find me here
+        <FloatingNote position={[0, 0.9, BEACH.boardwalk.startZ - 6]} fontSize={1.45} weight={700} color="#111111" rotation={-2} depthOcclude>
+          {`leave a note — or find me here\n${contact.email}\n${contact.phone} · ${contact.location}`}
         </FloatingNote>
       </Float>
     </group>

@@ -26,11 +26,11 @@ const patrickHand = Patrick_Hand({
 });
 
 export const metadata: Metadata = {
-  title: "Munther Aloufi | Creative Front-end & 3D Web Developer",
+  title: "Monther Abdelrazek | Junior Front-end Engineer",
   description:
-    "An interactive 3D portfolio journey showcasing Munther Aloufi's about, skills, projects, and contact details.",
-  authors: [{ name: "Munther Aloufi" }],
-  creator: "Munther Aloufi",
+    "An interactive 3D portfolio journey showcasing Monther Abdelrazek's frontend skills, projects, experience, and contact details.",
+  authors: [{ name: "Monther Abdelrazek" }],
+  creator: "Monther Abdelrazek",
 };
 
 export default function RootLayout({
