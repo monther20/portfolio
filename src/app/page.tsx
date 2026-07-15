@@ -12,7 +12,8 @@ import AssetPreloader from "../components/scene/AssetPreloader";
 
 /** Scene-aware preloader that keeps the shared sketch visual in sync with Drei loading progress. */
 function LoadingOverlay() {
-  const { active, progress } = useProgress();
+  const active = useProgress((state) => state.active);
+  const progress = useProgress((state) => state.progress);
   const startTime = useRef(Date.now());
   const triggered = useRef(false);
 
@@ -41,7 +42,11 @@ function LoadingOverlay() {
   // Smoothly follow Three.js loader progress, but keep a little room for finish.
   useEffect(() => {
     if (active) {
-      setLineProgress((current) => Math.max(current, Math.min(progress * 0.9, 96)));
+      const loaderProgress = Number.isFinite(progress) ? progress : 0;
+      setLineProgress((current) => {
+        const next = Math.max(current, Math.min(loaderProgress * 0.9, 96));
+        return Object.is(current, next) ? current : next;
+      });
       return;
     }
 

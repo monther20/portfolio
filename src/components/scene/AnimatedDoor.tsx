@@ -64,10 +64,16 @@ const DoorWipeMaterial = shaderMaterial(
       float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
       gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
     }
-  `
+  `,
 );
 
 extend({ DoorWipeMaterial });
+
+const DOOR_PANEL_WIDTH = 4.9;
+const DOOR_PANEL_HEIGHT = 8.8;
+const DOOR_HANDLE_POSITION: [number, number, number] = [2, -0.1, 0];
+const DOOR_HANDLE_SCALE: [number, number, number] = [1.95, 1.7, 1];
+const DOOR_HANDLE_RENDER_ORDER_OFFSET = 1;
 
 declare module "@react-three/fiber" {
   interface ThreeElements {
@@ -88,47 +94,77 @@ export default function AnimatedDoor({
 }) {
   const doorRef = useRef<THREE.Group>(null);
   const frameMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
-  const wipeMaterialRef = useRef<any>(null);
+  const doorMaterialRef = useRef<any>(null);
+  const handleMaterialRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
   const { scene } = useThree();
   const { materials, meshes } = debug;
-  const doorFrameColor = isNight ? materials.doorFrame.nightColor ?? materials.doorFrame.color : materials.doorFrame.color;
-  const doorPanelTint = isNight ? materials.doorPanel.nightColor ?? materials.doorPanel.color : materials.doorPanel.color;
+  const doorFrameColor = isNight
+    ? (materials.doorFrame.nightColor ?? materials.doorFrame.color)
+    : materials.doorFrame.color;
+  const doorPanelTint = isNight
+    ? (materials.doorPanel.nightColor ?? materials.doorPanel.color)
+    : materials.doorPanel.color;
 
-  const doorClosedTexture = useLoader(THREE.TextureLoader, "/textures/door.webp");
-  const doorOpenTexture = useLoader(THREE.TextureLoader, "/textures/door_handle_open.webp");
-  const doorColoredTexture = useLoader(THREE.TextureLoader, "/textures/door_colored.webp");
-  const frameTexture = useLoader(THREE.TextureLoader, "/textures/door_frame.webp");
+  const doorDefaultTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/door_colored.webp",
+  );
+  const doorHandleTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/door_handle.webp",
+  );
+  const doorHandleOpenTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/door_handle_open.webp",
+  );
+  const frameTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/door_frame.webp",
+  );
 
   // These are color/albedo textures. Without SRGBColorSpace three.js treats
   // them as linear data, which makes image colors render noticeably washed out.
   useEffect(() => {
-    [doorClosedTexture, doorOpenTexture, doorColoredTexture, frameTexture].forEach((texture) => {
+    [
+      doorDefaultTexture,
+      doorHandleTexture,
+      doorHandleOpenTexture,
+      frameTexture,
+    ].forEach((texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.needsUpdate = true;
     });
-  }, [doorClosedTexture, doorOpenTexture, doorColoredTexture, frameTexture]);
+  }, [
+    doorDefaultTexture,
+    doorHandleTexture,
+    doorHandleOpenTexture,
+    frameTexture,
+  ]);
 
-  // Sync the manual fog uniforms with the scene's live fog each frame
+  // Sync the manual fog uniforms with the scene's live fog each frame.
   useFrame(() => {
-    if (wipeMaterialRef.current && scene.fog instanceof THREE.Fog) {
-      wipeMaterialRef.current.fogColor = scene.fog.color;
-      wipeMaterialRef.current.fogNear  = scene.fog.near;
-      wipeMaterialRef.current.fogFar   = scene.fog.far;
-    }
+    const fog = scene.fog;
+    if (!(fog instanceof THREE.Fog)) return;
+
+    [doorMaterialRef.current, handleMaterialRef.current].forEach((material) => {
+      if (!material) return;
+      material.fogColor = fog.color;
+      material.fogNear = fog.near;
+      material.fogFar = fog.far;
+    });
   });
 
-  // Animate the wipe progress on hover (only when door is closed)
+  // Only the separate handle artwork changes on door hover.
   useEffect(() => {
-    if (!wipeMaterialRef.current) return;
-    const target = hovered && !isOpen ? 1 : 0;
-    gsap.to(wipeMaterialRef.current, {
-      progress: target,
-      duration: 0.35,
+    if (!handleMaterialRef.current) return;
+    gsap.to(handleMaterialRef.current, {
+      progress: hovered ? 1 : 0,
+      duration: 0.25,
       ease: "power2.out",
       overwrite: "auto",
     });
-  }, [hovered, isOpen]);
+  }, [hovered]);
 
   // Rotate door open/closed. The debug rotation is the base pose;
   // opening adds a 90-degree swing on top of that base Y rotation.
@@ -142,7 +178,12 @@ export default function AnimatedDoor({
         ease: "power2.inOut",
       });
     }
-  }, [isOpen, meshes.doorPanelPivot.rotation.x, meshes.doorPanelPivot.rotation.y, meshes.doorPanelPivot.rotation.z]);
+  }, [
+    isOpen,
+    meshes.doorPanelPivot.rotation.x,
+    meshes.doorPanelPivot.rotation.y,
+    meshes.doorPanelPivot.rotation.z,
+  ]);
 
   // Dim the door frame and the custom door shader at night.
   useEffect(() => {
@@ -159,15 +200,16 @@ export default function AnimatedDoor({
       });
     }
 
-    if (wipeMaterialRef.current?.tintColor) {
-      gsap.to(wipeMaterialRef.current.tintColor, {
+    [doorMaterialRef.current, handleMaterialRef.current].forEach((material) => {
+      if (!material?.tintColor) return;
+      gsap.to(material.tintColor, {
         r: targetPanelTint.r,
         g: targetPanelTint.g,
         b: targetPanelTint.b,
         duration: 1.5,
         ease: "power2.inOut",
       });
-    }
+    });
   }, [doorFrameColor, doorPanelTint]);
 
   return (
@@ -231,13 +273,36 @@ export default function AnimatedDoor({
             renderOrder={meshes.doorPanelSurface.renderOrder}
             visible={meshes.doorPanelSurface.visible}
           >
-            <planeGeometry args={[4.9, 8.8]} />
+            <planeGeometry args={[DOOR_PANEL_WIDTH, DOOR_PANEL_HEIGHT]} />
             <doorWipeMaterial
-              ref={wipeMaterialRef}
-              texBase={isOpen ? doorOpenTexture : doorClosedTexture}
-              texOn={doorColoredTexture}
+              ref={doorMaterialRef}
+              texBase={doorDefaultTexture}
+              texOn={doorDefaultTexture}
               tintColor={new THREE.Color(doorPanelTint)}
               transparent={false}
+              wireframe={materials.doorPanel.wireframe}
+            />
+          </mesh>
+          <mesh
+            name="Door Handle"
+            position={DOOR_HANDLE_POSITION}
+            scale={DOOR_HANDLE_SCALE}
+            renderOrder={
+              meshes.doorPanelSurface.renderOrder +
+              DOOR_HANDLE_RENDER_ORDER_OFFSET
+            }
+            visible={meshes.doorPanelSurface.visible}
+          >
+            <planeGeometry args={[1, 1]} />
+            <doorWipeMaterial
+              ref={handleMaterialRef}
+              texBase={doorHandleTexture}
+              texOn={doorHandleOpenTexture}
+              tintColor={new THREE.Color(doorPanelTint)}
+              transparent
+              depthTest={false}
+              depthWrite={false}
+              side={THREE.DoubleSide}
               wireframe={materials.doorPanel.wireframe}
             />
           </mesh>
