@@ -8,6 +8,8 @@ import { Text } from "@react-three/drei";
 import FloatingNote from "../FloatingNote";
 import PaintSprite from "../PaintSprite";
 import { CORRIDOR, corridorStationZ } from "../journeyConfig";
+import CorridorCabinet from "./CorridorCabinet";
+import CorridorPictureFrame from "./CorridorPictureFrame";
 import { corridor } from "@/data/portfolio";
 import { corridorHingedWallSettings, hingedWallContentZ } from "./hingedWallSettings";
 import { useTiledTexture } from "./useTiledTexture";
@@ -187,21 +189,13 @@ function InfoStation({
       </WallText>
 
       <group name={`Corridor Station Frame: ${station.title}`} position={[0, 0.7, -0.01]}>
-        <PaintSprite
-          name={`Station Frame Border: ${station.title}`}
-          sketch={`${C}/ramkanazdjecieduza.webp`}
-          painted={`${C}/ramkanazdjecieduza_painted.webp`}
-          billboard={false}
-          height={1.86}
-          revealNear={7}
-          revealFar={15}
-        />
+        <CorridorPictureFrame name={`Station 3D Frame: ${station.title}`} />
         <PaintSprite
           name={`Station Artwork: ${station.title}`}
           sketch={station.art}
           billboard={false}
-          position={[0, 0, 0.035]}
-          height={1.36}
+          position={[0, 0, 0.132]}
+          height={1.3}
           revealNear={7}
           revealFar={15}
         />
@@ -283,14 +277,7 @@ export default function CorridorStations() {
         revealNear={8}
         revealFar={16}
       />
-      <PaintSprite
-        name="Corridor Cabinet"
-        sketch={`${C}/szafkaprzod.webp`}
-        position={[2.7, CORRIDOR.floorY + 0.8, CORRIDOR.endWallZ + 11]}
-        height={1.6}
-        revealNear={8}
-        revealFar={16}
-      />
+      <CorridorCabinet />
 
       {/* Vent flat on the right wall */}
       <group name="Corridor Vent" position={[CORRIDOR.halfWidth - 0.06, 1.6, -50]} rotation={[0, -Math.PI / 2, 0]}>

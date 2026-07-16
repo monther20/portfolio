@@ -51,18 +51,13 @@ export type Skill = { label: string; balloon: PaintPair; size: "S" | "M" | "L" }
 /** Skill badge images from public/textures/textures/about. */
 export const skills: Skill[] = [
   { label: "React.js", size: "L", balloon: SKILL_BADGE("reactduzybalon") },
-  { label: "React Native", size: "L", balloon: SKILL_BADGE("reactnativeduzybalon") },
   { label: "Next.js", size: "L", balloon: SKILL_BADGE("nextjssrednibalon") },
-  { label: "Tailwind CSS", size: "M", balloon: SKILL_BADGE("tailwindsrednibalon") },
-  { label: "React Query", size: "M", balloon: SKILL_BADGE("reactquerysrednibalon") },
-  { label: "Node.js", size: "M", balloon: SKILL_BADGE("nodejssrednibalon") },
-  { label: "i18n", size: "S", balloon: SKILL_BADGE("i18nmalybalon") },
-  { label: "Web Performance", size: "M", balloon: SKILL_BADGE("webperformancesrednibalon") },
+  { label: "Tailwind CSS", size: "M", balloon: SKILL_BADGE("tailwind") },
+  { label: "React Query", size: "M", balloon: SKILL_BADGE("reactquery") },
+  { label: "Node.js", size: "M", balloon: SKILL_BADGE("nodejs") },
   { label: "CSS", size: "S", balloon: SKILL_BADGE("csssrednibalon") },
-  { label: "Web3D", size: "S", balloon: SKILL_BADGE("web3dmalybalon") },
-  { label: "WebGL", size: "S", balloon: SKILL_BADGE("webglmalybalon") },
   { label: "Three.js", size: "M", balloon: SKILL_BADGE("threejsduzybalon") },
-  { label: "React Three Fiber", size: "M", balloon: SKILL_BADGE("reactthreefibersrednibalon") },
+  { label: "React Three Fiber", size: "M", balloon: SKILL_BADGE("reactthreefiber") },
 ];
 
 // ── PROJECTS ─────────────────────────────────────────────────────────────────
