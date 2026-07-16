@@ -68,7 +68,7 @@ export default function BeachContactSection() {
       </PartingItem>
       {/* Arrival note — contact details from the CV */}
       <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.4} floatingRange={[-0.1, 0.12]}>
-        <FloatingNote position={[0, 0.9, BEACH.boardwalk.startZ - 6]} fontSize={1.45} weight={700} color="#111111" rotation={-2} depthOcclude>
+        <FloatingNote position={[0, 0.9, BEACH.boardwalk.startZ - 6]} fontSize={1.45} weight={700} color="#111111" rotation={-2}>
           {`leave a note — or find me here\n${contact.email}\n${contact.phone} · ${contact.location}`}
         </FloatingNote>
       </Float>

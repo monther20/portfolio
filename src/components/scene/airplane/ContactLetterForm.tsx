@@ -78,8 +78,8 @@ export default function ContactLetterForm({
       transform
       position={[0, 0, 0.03]}
       distanceFactor={6}
-      occlude={false}
-      zIndexRange={[40, 0]}
+      occlude
+      zIndexRange={[10_000, 0]}
     >
       <form
         onSubmit={handleSend}

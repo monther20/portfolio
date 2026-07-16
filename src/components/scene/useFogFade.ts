@@ -18,6 +18,8 @@ type MaterialOwner = THREE.Object3D & {
 
 type UseFogFadeOptions = {
   visibleThreshold?: number;
+  /** Keep materials such as SDF text transparent even when the fog opacity is 1. */
+  preserveTransparency?: boolean;
 };
 
 function forEachMaterial(
@@ -41,7 +43,10 @@ function forEachMaterial(
  */
 export function useFogFade(
   ref: RefObject<THREE.Object3D | null>,
-  { visibleThreshold = 0.01 }: UseFogFadeOptions = {},
+  {
+    visibleThreshold = 0.01,
+    preserveTransparency = false,
+  }: UseFogFadeOptions = {},
 ) {
   const { camera, scene } = useThree();
   const tmp = useMemo(() => new THREE.Vector3(), []);
@@ -63,12 +68,22 @@ export function useFogFade(
           ? material.userData.fogFadeBaseOpacity
           : material.opacity;
 
-        material.userData.fogFadeBaseOpacity = baseOpacity;
-        material.opacity = baseOpacity * opacity;
-        material.depthWrite = !transparent;
+        const baseTransparent = typeof material.userData.fogFadeBaseTransparent === "boolean"
+          ? material.userData.fogFadeBaseTransparent
+          : material.transparent;
+        const baseDepthWrite = typeof material.userData.fogFadeBaseDepthWrite === "boolean"
+          ? material.userData.fogFadeBaseDepthWrite
+          : material.depthWrite;
+        const nextTransparent = transparent || (preserveTransparency && baseTransparent);
 
-        if (material.transparent !== transparent) {
-          material.transparent = transparent;
+        material.userData.fogFadeBaseOpacity = baseOpacity;
+        material.userData.fogFadeBaseTransparent = baseTransparent;
+        material.userData.fogFadeBaseDepthWrite = baseDepthWrite;
+        material.opacity = baseOpacity * opacity;
+        material.depthWrite = baseDepthWrite && !transparent;
+
+        if (material.transparent !== nextTransparent) {
+          material.transparent = nextTransparent;
           material.needsUpdate = true;
         }
 

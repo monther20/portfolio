@@ -1,17 +1,19 @@
 "use client";
 
-import React from "react";
+import { useRef } from "react";
 import * as THREE from "three";
-import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 
-import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
+import { useFogFade } from "./useFogFade";
+
+const CAVEAT_FONT = "/fonts/Caveat-Variable.ttf";
+const CSS_PIXELS_PER_REM = 16;
+const HTML_DISTANCE_SCALE = 400;
 
 /**
- * FloatingNote — a hand-written (Caveat) note that floats in 3D space.
- * Rendered as a drei <Html transform> overlay so it uses the real Caveat web
- * font already loaded app-wide, staying crisp at any zoom. Non-interactive by
- * default (pointer events pass through to the canvas so scrolling still works).
+ * FloatingNote — handwritten text rendered inside WebGL, not as a DOM overlay.
+ * This lets the normal depth buffer put clouds, sprites and geometry in front
+ * of farther notes while the note still fades through the shared scene fog.
  */
 export default function FloatingNote({
   children,
@@ -24,70 +26,63 @@ export default function FloatingNote({
   distanceFactor = 9,
   align = "center",
   name,
-  depthOcclude = false,
 }: {
-  children: React.ReactNode;
+  children: string;
   position?: [number, number, number];
+  /** Font size in the same rem-like units used by the original HTML notes. */
   fontSize?: number;
-  /** small z-rotation in degrees for a hand-placed feel */
+  /** Small z-rotation in degrees for a hand-placed feel. */
   rotation?: number;
   color?: string;
   weight?: number;
+  /** Maximum width in the same CSS-pixel units used by the original notes. */
   maxWidth?: number;
+  /** Preserves the original drei Html visual scale in world space. */
   distanceFactor?: number;
   align?: "left" | "center" | "right";
   name?: string;
-  /** Hide the DOM note when a 3D object is physically in front of it. */
-  depthOcclude?: boolean | "raycast" | "blending";
 }) {
-  const groupRef = React.useRef<THREE.Group>(null);
-  const noteRef = React.useRef<HTMLDivElement>(null);
-  const tmp = React.useMemo(() => new THREE.Vector3(), []);
-  const { camera, scene } = useThree();
+  const groupRef = useRef<THREE.Group>(null);
+  useFogFade(groupRef, { preserveTransparency: true, visibleThreshold: 0 });
 
-  useFrame(() => {
-    const note = noteRef.current;
-    const group = groupRef.current;
-    if (!note || !group) return;
-
-    let opacity = 1;
-    if (scene.fog instanceof THREE.Fog) {
-      opacity = fogOpacityForDepth(fogDepthForObject(group, camera, tmp), scene.fog);
-    }
-
-    note.style.opacity = opacity.toFixed(3);
-    note.style.visibility = opacity <= 0.02 ? "hidden" : "visible";
-  });
+  const worldUnitsPerPixel = distanceFactor / HTML_DISTANCE_SCALE;
+  const worldFontSize = fontSize * CSS_PIXELS_PER_REM * worldUnitsPerPixel;
+  const worldMaxWidth = maxWidth * worldUnitsPerPixel;
 
   return (
-    <group ref={groupRef} name={name ?? "Floating Note"} position={position}>
-      <Html
-        transform
-        distanceFactor={distanceFactor}
-        occlude={depthOcclude}
-        pointerEvents="none"
-        zIndexRange={[20, 0]}
-        style={{ pointerEvents: "none", userSelect: "none" }}
+    <group
+      ref={groupRef}
+      name={name ?? "Floating Note"}
+      position={position}
+      rotation={[0, 0, THREE.MathUtils.degToRad(rotation)]}
+    >
+      <Text
+        name={`${name ?? "Floating Note"} Text`}
+        font={CAVEAT_FONT}
+        fontSize={worldFontSize}
+        fontWeight={weight}
+        color={color}
+        maxWidth={worldMaxWidth}
+        lineHeight={1.15}
+        textAlign={align}
+        anchorX={align}
+        anchorY="middle"
+        overflowWrap="break-word"
+        whiteSpace="normal"
+        sdfGlyphSize={128}
+        frustumCulled={false}
       >
-        <div
-          ref={noteRef}
-          style={{
-            fontFamily: "var(--font-caveat), 'Caveat', cursive",
-            fontSize: `${fontSize}rem`,
-            fontWeight: weight,
-            color,
-            textAlign: align,
-            lineHeight: 1.15,
-            maxWidth: `${maxWidth}px`,
-            transform: `rotate(${rotation}deg)`,
-            textShadow:
-              "0 1px 0 rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.8)",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {children}
-        </div>
-      </Html>
+        {children}
+        <meshBasicMaterial
+          color={color}
+          transparent
+          depthTest
+          depthWrite={false}
+          fog
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </Text>
     </group>
   );
 }

@@ -32,7 +32,7 @@ export default function JourneyHud({ visible }: { visible: boolean }) {
         textAlign: "center",
         fontFamily: "var(--font-caveat), 'Caveat', cursive",
         color: "#2b2b2b",
-        zIndex: 40,
+        zIndex: 10_001,
         userSelect: "none",
       }}
     >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { Float } from "@react-three/drei";
 
 import PaintSprite from "./PaintSprite";
@@ -95,7 +95,7 @@ function SectionHeading({
   children,
 }: {
   position: [number, number, number];
-  children: ReactNode;
+  children: string;
 }) {
   return (
     <group name="Section Heading">

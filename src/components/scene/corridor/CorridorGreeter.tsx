@@ -35,10 +35,10 @@ export default function CorridorGreeter() {
       <AnimatedAvatar position={[0, CORRIDOR.floorY + 1.35, 0]} height={2.7} />
 
       {/* Greeting + tagline floating above his head */}
-      <FloatingNote name="Corridor Greeting Note" position={[0.55, 0.85, 0]} fontSize={2.2} weight={700} rotation={-2} depthOcclude>
+      <FloatingNote name="Corridor Greeting Note" position={[0.55, 0.85, 0]} fontSize={2.2} weight={700} rotation={-2}>
         {corridor.greeting}
       </FloatingNote>
-      <FloatingNote name="Corridor Tagline Note" position={[0.65, 0.15, 0]} fontSize={1.25} color="#6a6a6a" rotation={-1} depthOcclude>
+      <FloatingNote name="Corridor Tagline Note" position={[0.65, 0.15, 0]} fontSize={1.25} color="#6a6a6a" rotation={-1}>
         {corridor.tagline}
       </FloatingNote>
 
