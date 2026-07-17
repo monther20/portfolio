@@ -7,11 +7,11 @@ import WrappedImageMesh from "../WrappedImageMesh";
 import { CORRIDOR, JOURNEY, windowProgressAt } from "../journeyConfig";
 import { getJourneyState, setJourneyState } from "../journeyState";
 
-const WINDOW_FRAME_TEXTURE = "/textures/textures/entrance/window_frame.png";
+const WINDOW_FRAME_TEXTURE = "/textures/corridor/window/window_frame.png";
 const WINDOW_LEFT_SIDE_TEXTURE =
-  "/textures/textures/entrance/window_left_side.png";
+  "/textures/corridor/window/window_left_side.png";
 const WINDOW_RIGHT_SIDE_TEXTURE =
-  "/textures/textures/entrance/window_right_side.png";
+  "/textures/corridor/window/window_right_side.png";
 const WINDOW_FRAME_IMAGE_ASPECT = 611 / 730;
 const WINDOW_FRAME_WIDTH_SCALE = 1.34;
 const WINDOW_FRAME_HEIGHT_SCALE = 0.96;

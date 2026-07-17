@@ -14,7 +14,7 @@ import { corridor } from "@/data/portfolio";
 import { corridorHingedWallSettings, hingedWallContentZ } from "./hingedWallSettings";
 import { useTiledTexture } from "./useTiledTexture";
 
-const C = "/textures/textures/corridor";
+const C = "/textures/corridor";
 
 type CorridorStation = (typeof corridor.stations)[number];
 type WallSide = CorridorStation["side"];
@@ -300,7 +300,7 @@ export default function CorridorStations() {
       {/* The table beside the window (the airplane rests above it) */}
       <PaintSprite
         name="Corridor Window Table"
-        sketch="/textures/table.webp"
+        sketch="/textures/shared/table.webp"
         position={[CORRIDOR.table.x, CORRIDOR.floorY + 1.15, CORRIDOR.table.z]}
         height={2.3}
         revealNear={9}

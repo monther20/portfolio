@@ -30,7 +30,7 @@ const CORRIDOR_ASSETS: (string | undefined)[] = [
   `${CORRIDOR_TEX}/strzalka.webp`,
   `${CORRIDOR_TEX}/ramkanazdjecieduza.webp`,
   `${CORRIDOR_TEX}/ramkanazdjecieduza_painted.webp`,
-  "/textures/table.webp",
+  "/textures/shared/table.webp",
   ...corridor.stations.map((station) => station.art),
   ...corridor.doodles,
   ...corridor.logos.flatMap((logo) => [logo.sketch, logo.painted]),
@@ -40,7 +40,7 @@ const CORRIDOR_ASSETS: (string | undefined)[] = [
 const SKY_ASSETS: (string | undefined)[] = [
   ...CLOUD_TEXTURE_URLS,
   ...journeyMilestones.map((milestone) => milestone.island),
-  "/textures/lantern.webp",
+  "/textures/journey/lantern.webp",
   ...skills.flatMap((skill) => [skill.balloon.sketch, skill.balloon.painted]),
   ...projects.flatMap((project) => [project.panel.sketch, project.panel.painted]),
   projectUI.openLive,

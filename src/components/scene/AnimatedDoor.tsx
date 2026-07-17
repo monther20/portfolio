@@ -108,19 +108,19 @@ export default function AnimatedDoor({
 
   const doorDefaultTexture = useLoader(
     THREE.TextureLoader,
-    "/textures/door_colored.webp",
+    "/textures/room/door_colored.webp",
   );
   const doorHandleTexture = useLoader(
     THREE.TextureLoader,
-    "/textures/door_handle.webp",
+    "/textures/room/door_handle.webp",
   );
   const doorHandleOpenTexture = useLoader(
     THREE.TextureLoader,
-    "/textures/door_handle_open.webp",
+    "/textures/room/door_handle_open.webp",
   );
   const frameTexture = useLoader(
     THREE.TextureLoader,
-    "/textures/door_frame.webp",
+    "/textures/room/door_frame.webp",
   );
 
   // These are color/albedo textures. Without SRGBColorSpace three.js treats

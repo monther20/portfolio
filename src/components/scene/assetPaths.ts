@@ -1,6 +1,6 @@
-const CORRIDOR_TEXTURE_BASE = "/textures/textures/corridor";
-const CONTACT_TEXTURE_BASE = "/textures/textures/contact";
-const CLOUD_TEXTURE_BASE = "/textures/textures/clouds";
+const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
+const CONTACT_TEXTURE_BASE = "/textures/contact";
+const CLOUD_TEXTURE_BASE = "/textures/journey/clouds";
 
 export const AVATAR_FRAME_COUNT = 33;
 export const AVATAR_FRAME_URLS = Array.from(

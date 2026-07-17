@@ -9,7 +9,7 @@ import PartingItem, { seededRange } from "../PartingItem";
 import { JOURNEY } from "../journeyConfig";
 import { journeyMilestones } from "@/data/portfolio";
 
-const LANTERN_TEX = "/textures/lantern.webp";
+const LANTERN_TEX = "/textures/journey/lantern.webp";
 
 /**
  * JourneySection — the first stop of the sky flight: milestones of my story

@@ -13,7 +13,7 @@ import Boardwalk from "./beach/Boardwalk";
 import ContactCrates from "./beach/ContactCrates";
 import { contact } from "@/data/portfolio";
 
-const C = "/textures/textures/contact";
+const C = "/textures/contact";
 
 /** The sea surface — a slowly drifting hand-drawn wave pattern. */
 function Sea() {

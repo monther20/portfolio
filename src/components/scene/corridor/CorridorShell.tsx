@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { CORRIDOR } from "../journeyConfig";
 import { useTiledTexture } from "./useTiledTexture";
 
-const C = "/textures/textures/corridor";
+const C = "/textures/corridor";
 
 /** Extra clearance around the window so the camera never clips the wall. */
 const HOLE_MARGIN = 0.15;

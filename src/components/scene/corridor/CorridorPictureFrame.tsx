@@ -2,7 +2,7 @@
 
 import WrappedImageMesh from "../WrappedImageMesh";
 
-const C = "/textures/textures/corridor";
+const C = "/textures/corridor";
 
 /** A thin frame mesh whose original drawing wraps continuously around its sides. */
 export default function CorridorPictureFrame({ name }: { name: string }) {

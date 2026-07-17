@@ -11,7 +11,7 @@ import {
 } from "./roomDebug/types";
 
 export default function ExteriorRoof({ debug }: { debug: RoomDebugState }) {
-  const bricksTexture = useLoader(THREE.TextureLoader, "/textures/wall_bricks_2.webp");
+  const bricksTexture = useLoader(THREE.TextureLoader, "/textures/room/wall_bricks_2.webp");
   // This is a color/albedo texture. Mark it as sRGB so it does not render
   // lighter/washed out than the original image.
   bricksTexture.colorSpace = THREE.SRGBColorSpace;

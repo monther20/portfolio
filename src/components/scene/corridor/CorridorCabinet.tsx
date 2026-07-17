@@ -8,7 +8,7 @@ import {
   type CabinetDebugSettings,
 } from "./CabinetDebugGui";
 
-const C = "/textures/textures/corridor";
+const C = "/textures/corridor";
 
 const CABINET_DEFAULTS: CabinetDebugSettings = {
   visible: true,

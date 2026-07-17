@@ -5,8 +5,11 @@
  * experience/projects, education milestones, and contact details.
  */
 
-const ABOUT_BASE = "/textures/textures/about";
-const GALLERY_BASE = "/textures/textures/gallery";
+const CORRIDOR_BASE = "/textures/corridor";
+const CORRIDOR_LOGOS_BASE = `${CORRIDOR_BASE}/logos`;
+const JOURNEY_MILESTONES_BASE = "/textures/journey/milestones";
+const PROJECTS_BASE = "/textures/projects";
+const SKILLS_BASE = "/textures/skills";
 
 /** A sprite that has a hand-drawn sketch and a coloured "painted" variant. */
 export type PaintPair = {
@@ -17,13 +20,13 @@ export type PaintPair = {
 };
 
 const SKILL_BADGE = (fileName: string): PaintPair => ({
-  sketch: `${ABOUT_BASE}/${fileName}.webp`,
-  painted: `${ABOUT_BASE}/${fileName}_painted.webp`,
+  sketch: `${SKILLS_BASE}/${fileName}.webp`,
+  painted: `${SKILLS_BASE}/${fileName}_painted.webp`,
 });
 
 const PROJECT_PANEL = (fileName: string): PaintPair => ({
-  sketch: `${GALLERY_BASE}/${fileName}.webp`,
-  painted: `${GALLERY_BASE}/${fileName}_painted.webp`,
+  sketch: `${PROJECTS_BASE}/${fileName}.webp`,
+  painted: `${PROJECTS_BASE}/${fileName}_painted.webp`,
 });
 
 // ── ABOUT ──────────────────────────────────────────────────────────────────
@@ -40,15 +43,15 @@ export const about = {
   ],
   /** Decorative "islands" already in your assets — set show:false to hide. */
   islands: [
-    { tex: `${ABOUT_BASE}/uowyspa.webp`, label: "Computer Science @ JUST", show: true },
-    { tex: `${ABOUT_BASE}/freelancewyspa.webp`, label: "Alphaworks Front-end", show: true },
+    { tex: `${JOURNEY_MILESTONES_BASE}/uowyspa.webp`, label: "Computer Science @ JUST", show: true },
+    { tex: `${JOURNEY_MILESTONES_BASE}/freelancewyspa.webp`, label: "Alphaworks Front-end", show: true },
   ],
 };
 
 // ── SKILLS ─────────────────────────────────────────────────────────────────
 export type Skill = { label: string; balloon: PaintPair; size: "S" | "M" | "L" };
 
-/** Skill badge images from public/textures/textures/about. */
+/** Skill badge images from public/textures/skills. */
 export const skills: Skill[] = [
   { label: "React.js", size: "L", balloon: SKILL_BADGE("reactduzybalon") },
   { label: "Next.js", size: "L", balloon: SKILL_BADGE("nextjssrednibalon") },
@@ -88,8 +91,8 @@ export const projects: Project[] = [
 
 /** Shared gallery UI sprites for the project papers. */
 export const projectUI = {
-  paperTexture: "/textures/textures/paper-texture.webp",
-  openLive: `${GALLERY_BASE}/openliveproject.webp`,
+  paperTexture: `${PROJECTS_BASE}/paper-texture.webp`,
+  openLive: `${PROJECTS_BASE}/openliveproject.webp`,
 };
 
 // ── CONTACT ──────────────────────────────────────────────────────────────────
@@ -103,10 +106,9 @@ export const contact = {
 };
 
 // ── CORRIDOR ─────────────────────────────────────────────────────────────────
-const CORRIDOR_BASE = "/textures/textures/corridor";
-const GALLERY_LOGO = (name: string, paintedName = name): PaintPair => ({
-  sketch: `${GALLERY_BASE}/${name}.webp`,
-  painted: `${GALLERY_BASE}/${paintedName}_painted.webp`,
+const CORRIDOR_LOGO = (name: string, paintedName = name): PaintPair => ({
+  sketch: `${CORRIDOR_LOGOS_BASE}/${name}.webp`,
+  painted: `${CORRIDOR_LOGOS_BASE}/${paintedName}_painted.webp`,
 });
 
 /**
@@ -125,7 +127,7 @@ export const corridor = {
     `${CORRIDOR_BASE}/decorations/paper_ball.webp`,
   ],
   /** Tech logos floating near the avatar (sketch + painted pairs). */
-  logos: [GALLERY_LOGO("reactlogo"), GALLERY_LOGO("jslogo"), GALLERY_LOGO("csslogo", "css3logo")],
+  logos: [CORRIDOR_LOGO("reactlogo"), CORRIDOR_LOGO("jslogo"), CORRIDOR_LOGO("csslogo", "css3logo")],
   /** Info stations along the corridor walls. */
   stations: [
     {
@@ -166,13 +168,13 @@ export const journeyMilestones: JourneyMilestone[] = [
     year: "2020–Present",
     title: "Computer Science @ JUST",
     text: "Studying Computer Science at Jordan University of Science and Technology.",
-    island: `${ABOUT_BASE}/uowyspa.webp`,
+    island: `${JOURNEY_MILESTONES_BASE}/uowyspa.webp`,
   },
   {
     year: "2023–2025",
     title: "Alphaworks Frontend",
     text: "Frontend freelancer, then graduate trainee/intern from 07/2025 to 11/2025.",
-    island: `${ABOUT_BASE}/freelancewyspa.webp`,
+    island: `${JOURNEY_MILESTONES_BASE}/freelancewyspa.webp`,
   },
   {
     year: "Now",
