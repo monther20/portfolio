@@ -8,7 +8,6 @@ import { contact, corridor, journeyMilestones, projects, projectUI, skills } fro
 import {
   AVATAR_FRAME_URLS,
   CLOUD_TEXTURE_URLS,
-  CONTACT_BUTTON_PAINTED_TEXTURES,
   CONTACT_BUTTON_TEXTURES,
   CONTACT_TEXTURES,
   CORRIDOR_TEXTURES,
@@ -52,10 +51,8 @@ const BEACH_ASSETS: (string | undefined)[] = [
   CONTACT_TEXTURES.waves,
   CONTACT_TEXTURES.lighthouse,
   CONTACT_TEXTURES.ship,
+  CONTACT_TEXTURES.boardwalkWood,
   ...Object.entries(CONTACT_BUTTON_TEXTURES)
-    .filter(([key]) => key !== "linkedin" || Boolean(contact.linkedin))
-    .map(([, texture]) => texture),
-  ...Object.entries(CONTACT_BUTTON_PAINTED_TEXTURES)
     .filter(([key]) => key !== "linkedin" || Boolean(contact.linkedin))
     .map(([, texture]) => texture),
 ];

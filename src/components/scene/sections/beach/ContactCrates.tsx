@@ -9,10 +9,12 @@ import { seededRange } from "../../PartingItem";
 import { BEACH } from "../../journeyConfig";
 import { getJourneyState, setJourneyState } from "../../journeyState";
 import { contact } from "@/data/portfolio";
-import { CONTACT_BUTTON_PAINTED_TEXTURES, CONTACT_BUTTON_TEXTURES } from "../../assetPaths";
+import { CONTACT_BUTTON_TEXTURES } from "../../assetPaths";
 
-const CONTACT_BUTTON_HEIGHT = 1.65;
+const CONTACT_BUTTON_HEIGHT = 1.75;
 const CONTACT_BUTTON_Y = BEACH.seaY + CONTACT_BUTTON_HEIGHT / 2;
+const CONTACT_BUTTON_SPACING = 1.95;
+const CONTACT_BUTTON_Z = BEACH.boardwalk.endZ - 4.15;
 
 function crateAction(key: string) {
   if (key === "message") {
@@ -32,7 +34,13 @@ function crateAction(key: string) {
 }
 
 /** One clickable pre-labeled wooden contact barrel floating on the sea. */
-function ContactBarrel({ crate }: { crate: (typeof BEACH.crates)[number] }) {
+function ContactBarrel({
+  crate,
+  position,
+}: {
+  crate: (typeof BEACH.crates)[number];
+  position: [number, number];
+}) {
   const bobRef = useRef<THREE.Group>(null);
   const phase = useMemo(() => seededRange(crate.key, 0, Math.PI * 2), [crate.key]);
 
@@ -48,12 +56,11 @@ function ContactBarrel({ crate }: { crate: (typeof BEACH.crates)[number] }) {
   });
 
   return (
-    <group name={`Contact Barrel Button: ${crate.label}`} position={[crate.x, CONTACT_BUTTON_Y, crate.z]}>
+    <group name={`Contact Barrel Button: ${crate.label}`} position={[position[0], CONTACT_BUTTON_Y, position[1]]}>
       <group ref={bobRef} name={`Contact Barrel Button Bob: ${crate.label}`}>
         <PaintSprite
           name={`Contact Barrel Button Sprite: ${crate.label}`}
           sketch={CONTACT_BUTTON_TEXTURES[crate.key]}
-          painted={CONTACT_BUTTON_PAINTED_TEXTURES[crate.key]}
           position={[0, 0, 0]}
           height={CONTACT_BUTTON_HEIGHT}
           revealNear={8}
@@ -68,15 +75,24 @@ function ContactBarrel({ crate }: { crate: (typeof BEACH.crates)[number] }) {
   );
 }
 
-/** ContactCrates — message / github / linkedin as pre-labeled floating barrel buttons. */
+/** ContactCrates — available actions centered as a welcoming fan beyond the pier. */
 export default function ContactCrates() {
+  const availableCrates = BEACH.crates.filter(
+    (crate) => crate.key !== "linkedin" || Boolean(contact.linkedin),
+  );
+  const middle = (availableCrates.length - 1) / 2;
+
   return (
     <group name="Contact Barrel Buttons">
-      {BEACH.crates
-        .filter((crate) => crate.key !== "linkedin" || Boolean(contact.linkedin))
-        .map((crate) => (
-          <ContactBarrel key={crate.key} crate={crate} />
-        ))}
+      {availableCrates.map((crate, index) => {
+        const centerDistance = Math.abs(index - middle);
+        const x = BEACH.boardwalk.x + (index - middle) * CONTACT_BUTTON_SPACING;
+        const z = CONTACT_BUTTON_Z + centerDistance * 0.18;
+
+        return (
+          <ContactBarrel key={crate.key} crate={crate} position={[x, z]} />
+        );
+      })}
     </group>
   );
 }

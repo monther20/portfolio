@@ -68,7 +68,9 @@ function LoadingOverlay() {
 
   if (isGone) return null;
 
-  return <SketchPreloader lineProgress={lineProgress} isSketching={isSketching} />;
+  return (
+    <SketchPreloader lineProgress={lineProgress} isSketching={isSketching} />
+  );
 }
 
 export default function MoodyHallwayScene() {
@@ -77,7 +79,12 @@ export default function MoodyHallwayScene() {
   return (
     <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
       <Canvas
-        camera={{ position: [0.370000000000005, 1.06, 5.62], fov: 32, near: 0.1, far: 770 }}
+        camera={{
+          position: [0.370000000000005, 1.06, 5.62],
+          fov: 30,
+          near: 0.1,
+          far: 770,
+        }}
         onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
         gl={{ toneMapping: THREE.NoToneMapping }}
       >
@@ -90,7 +97,6 @@ export default function MoodyHallwayScene() {
       <JourneyHud visible={entered} />
       {/* Warms the texture cache in the background (corridor → sky → beach). */}
       <AssetPreloader />
-
     </div>
   );
 }

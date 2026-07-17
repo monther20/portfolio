@@ -6,7 +6,6 @@
  */
 
 const CORRIDOR_BASE = "/textures/corridor";
-const CORRIDOR_LOGOS_BASE = `${CORRIDOR_BASE}/logos`;
 const JOURNEY_MILESTONES_BASE = "/textures/journey/milestones";
 const PROJECTS_BASE = "/textures/projects";
 const SKILLS_BASE = "/textures/skills";
@@ -106,11 +105,6 @@ export const contact = {
 };
 
 // ── CORRIDOR ─────────────────────────────────────────────────────────────────
-const CORRIDOR_LOGO = (name: string, paintedName = name): PaintPair => ({
-  sketch: `${CORRIDOR_LOGOS_BASE}/${name}.webp`,
-  painted: `${CORRIDOR_LOGOS_BASE}/${paintedName}_painted.webp`,
-});
-
 /**
  * Everything shown inside the entrance corridor: the avatar greeting, the
  * floating doodads around him, and the info stations along the walls.
@@ -120,14 +114,11 @@ export const corridor = {
   tagline: about.tagline,
   /** Small hand-drawn doodles floating around the avatar. */
   doodles: [
-    `${CORRIDOR_BASE}/decorations/coffee_cup.webp`,
     `${CORRIDOR_BASE}/decorations/pencil.webp`,
-    `${CORRIDOR_BASE}/decorations/idea_process.webp`,
     `${CORRIDOR_BASE}/decorations/while_true_loop.webp`,
-    `${CORRIDOR_BASE}/decorations/paper_ball.webp`,
   ],
-  /** Tech logos floating near the avatar (sketch + painted pairs). */
-  logos: [CORRIDOR_LOGO("reactlogo"), CORRIDOR_LOGO("jslogo"), CORRIDOR_LOGO("csslogo", "css3logo")],
+  /** Optional tech logos floating near the avatar (sketch + painted pairs). */
+  logos: [] as PaintPair[],
   /** Info stations along the corridor walls. */
   stations: [
     {

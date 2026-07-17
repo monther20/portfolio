@@ -8,10 +8,11 @@ const inkColor = "#111111";
 const fieldStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "rgba(255,255,255,0.92)",
-  border: "1.6px dashed #111111",
-  borderRadius: 6,
-  padding: "6px 8px",
+  background: "rgba(255, 255, 255, 0.78)",
+  border: "1.5px solid rgba(17, 17, 17, 0.72)",
+  borderRadius: 5,
+  padding: "7px 9px",
+  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.55)",
   fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
   fontSize: 14,
   color: inkColor,
@@ -25,7 +26,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 700,
   color: inkColor,
   display: "block",
-  marginBottom: 2,
+  marginBottom: 3,
 };
 
 export type LetterFields = { name: string; email: string; message: string };
@@ -82,10 +83,11 @@ export default function ContactLetterForm({
       zIndexRange={[10_000, 0]}
     >
       <form
+        aria-label="Send Monther a message"
         onSubmit={handleSend}
         onWheel={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        style={{ width: 250, padding: "10px 14px", position: "relative", userSelect: "none", color: inkColor }}
+        style={{ width: 260, padding: "12px 16px", position: "relative", userSelect: "none", color: inkColor }}
       >
         <button
           type="button"
@@ -111,13 +113,23 @@ export default function ContactLetterForm({
         <div
           style={{
             fontFamily: "var(--font-caveat), 'Caveat', cursive",
-            fontSize: 21,
+            fontSize: 23,
             fontWeight: 700,
             color: inkColor,
-            marginBottom: 8,
+            lineHeight: 1,
           }}
         >
-          write me a message ✎
+          let&apos;s make something ✎
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-patrick), 'Patrick Hand', cursive",
+            fontSize: 12,
+            color: "#444444",
+            margin: "4px 0 9px",
+          }}
+        >
+          This opens your mail app — no message disappears into a void.
         </div>
 
         <label style={labelStyle}>
@@ -127,6 +139,10 @@ export default function ContactLetterForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="your name"
+            autoComplete="name"
+            maxLength={80}
+            required
+            disabled={sent}
           />
         </label>
         <label style={{ ...labelStyle, marginTop: 6 }}>
@@ -137,21 +153,31 @@ export default function ContactLetterForm({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@somewhere.com"
+            autoComplete="email"
+            maxLength={160}
+            required
+            disabled={sent}
           />
         </label>
         <label style={{ ...labelStyle, marginTop: 6 }}>
           message
           <textarea
             style={fieldStyle}
-            rows={4}
+            rows={3}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="say hi…"
+            placeholder="tell me a little about your idea…"
+            minLength={8}
+            maxLength={1200}
+            required
+            disabled={sent}
           />
         </label>
 
         <button
           type="submit"
+          disabled={sent}
+          aria-live="polite"
           style={{
             marginTop: 10,
             width: "100%",
@@ -163,19 +189,20 @@ export default function ContactLetterForm({
             border: "2px solid #111111",
             borderRadius: 10,
             padding: "6px 0",
-            cursor: "pointer",
+            cursor: sent ? "wait" : "pointer",
             boxShadow: "2px 2px 0 #111111",
-            transition: "transform 160ms ease",
+            opacity: sent ? 0.72 : 1,
+            transition: "transform 160ms ease, opacity 160ms ease",
             transform: sent ? "scale(0.98)" : undefined,
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform = "rotate(-1deg) scale(1.03)";
+            if (!sent) e.currentTarget.style.transform = "rotate(-1deg) scale(1.03)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform = "none";
+            if (!sent) e.currentTarget.style.transform = "none";
           }}
         >
-          {sent ? "sent ✓" : "fold & send ✈"}
+          {sent ? "opening mail app…" : "continue in mail app ✈"}
         </button>
       </form>
     </Html>

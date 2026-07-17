@@ -29,16 +29,12 @@ export const CONTACT_BUTTON_TEXTURES: Record<ContactButtonKey, string> = {
   linkedin: `${CONTACT_TEXTURE_BASE}/linkedinlink.webp`,
 };
 
-export const CONTACT_BUTTON_PAINTED_TEXTURES: Record<ContactButtonKey, string> = {
-  message: `${CONTACT_TEXTURE_BASE}/maillink_painted.webp`,
-  github: `${CONTACT_TEXTURE_BASE}/githublink_painted.webp`,
-  linkedin: `${CONTACT_TEXTURE_BASE}/linkedinlink_painted.webp`,
-};
-
 export const CONTACT_TEXTURES = {
   waves: `${CONTACT_TEXTURE_BASE}/faletopdown.webp`,
   lighthouse: `${CONTACT_TEXTURE_BASE}/latarnia.webp`,
   ship: `${CONTACT_TEXTURE_BASE}/statek.webp`,
+  /** Reuse the hand-drawn floor grain as monochrome pier timber. */
+  boardwalkWood: `${CORRIDOR_TEXTURE_BASE}/floor_wood.webp`,
 } as const;
 
 export const CORRIDOR_TEXTURES = {

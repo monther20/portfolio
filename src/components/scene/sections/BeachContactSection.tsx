@@ -66,10 +66,43 @@ export default function BeachContactSection() {
           <PaintSprite name="Beach Ship Sprite" sketch={`${C}/statek.webp`} height={1.1} revealNear={13} revealFar={28} autoReveal={false} />
         </Float>
       </PartingItem>
-      {/* Arrival note — contact details from the CV */}
-      <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.4} floatingRange={[-0.1, 0.12]}>
-        <FloatingNote position={[0, 0.9, BEACH.boardwalk.startZ - 6]} fontSize={1.45} weight={700} color="#111111" rotation={-2}>
-          {`leave a note — or find me here\n${contact.email}\n${contact.phone} · ${contact.location}`}
+      {/* A clear invitation on arrival, followed by a small prompt near the actions. */}
+      <Float speed={1.05} rotationIntensity={0.035} floatIntensity={0.28} floatingRange={[-0.08, 0.1]}>
+        <FloatingNote
+          name="Contact Invitation"
+          position={[BEACH.boardwalk.x, 0.4, BEACH.boardwalk.startZ - 6.2]}
+          fontSize={2.05}
+          maxWidth={520}
+          weight={700}
+          color="#111111"
+          rotation={-1.5}
+        >
+          want to build something together?
+        </FloatingNote>
+      </Float>
+      <Float speed={0.9} rotationIntensity={0.025} floatIntensity={0.2} floatingRange={[-0.05, 0.06]}>
+        <FloatingNote
+          name="Contact Details"
+          position={[BEACH.boardwalk.x, -0.48, BEACH.boardwalk.startZ - 6.35]}
+          fontSize={1.05}
+          maxWidth={560}
+          weight={600}
+          color="#333333"
+          rotation={0.8}
+        >
+          {`${contact.location} · open to frontend opportunities\n${contact.email} · ${contact.phone}`}
+        </FloatingNote>
+      </Float>
+      <Float speed={1.15} rotationIntensity={0.03} floatIntensity={0.25} floatingRange={[-0.05, 0.08]}>
+        <FloatingNote
+          name="Contact Action Prompt"
+          position={[BEACH.boardwalk.x, -0.98, BEACH.boardwalk.endZ - 1.35]}
+          fontSize={1.15}
+          weight={700}
+          color="#111111"
+          rotation={-1}
+        >
+          choose a sign
         </FloatingNote>
       </Float>
     </group>

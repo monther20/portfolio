@@ -151,11 +151,11 @@ export const BEACH = {
   /** Where the paper airplane touches down on the boardwalk. */
   landing: [0.35, -2.08, extendCorridorZ(-186.0)] as [number, number, number],
 
-  /** Contact barrels floating on the sea just beyond the end of the boardwalk. */
+  /** Contact barrels are centered dynamically according to the links that are available. */
   crates: [
-    { key: "message" as const, label: "message", x: -1.25, z: extendCorridorZ(-196.2) },
-    { key: "github" as const, label: "github", x: 0.35, z: extendCorridorZ(-196.8) },
-    { key: "linkedin" as const, label: "linkedin", x: 1.95, z: extendCorridorZ(-196.2) },
+    { key: "message" as const, label: "message" },
+    { key: "github" as const, label: "github" },
+    { key: "linkedin" as const, label: "linkedin" },
   ],
 } as const;
 

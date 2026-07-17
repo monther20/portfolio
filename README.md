@@ -34,6 +34,4 @@ public/textures/                Hand-drawn and painted scene assets
 
 ## Notes
 
-Development-only scene tuning controls are available through the corridor/contact lil-gui panels when running outside production.
-
 Before working on Next.js APIs in this project, read the local Next.js docs under `node_modules/next/dist/docs/` because this project uses a newer Next.js version with breaking changes.

@@ -131,7 +131,7 @@ export default function RoomScene({
       <ExteriorRoof debug={debug} />
       <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} debug={debug} />
 
-      {/* Keep the journey mounted so corridor debug controls are always available. */}
+      {/* Keep the journey mounted so corridor assets are ready when the door opens. */}
       <Suspense fallback={null}>
         <group visible={isOpen}>
           <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
