@@ -1,7 +1,4 @@
-import type { ShadowConfig } from "../ShadowDebugPanel";
-
-/** lil-gui is imported dynamically, so folders/controllers stay untyped. */
-export type GuiLike = any;
+import type { ShadowConfig } from "../shadowConfig";
 
 export type Vector3Debug = {
   x: number;
@@ -17,14 +14,14 @@ export type TransformDebug = {
   renderOrder: number;
 };
 
-export type LightDebug = {
+type LightDebug = {
   visible: boolean;
   color: string;
   dayIntensity: number;
   nightIntensity: number;
 };
 
-export type SpotLightDebug = {
+type SpotLightDebug = {
   visible: boolean;
   position: Vector3Debug;
   target: Vector3Debug;
@@ -36,7 +33,7 @@ export type SpotLightDebug = {
   decay: number;
 };
 
-export type MaterialDebug = {
+type MaterialDebug = {
   color: string;
   nightColor?: string;
   roughness: number;
@@ -45,7 +42,7 @@ export type MaterialDebug = {
   wireframe: boolean;
 };
 
-export type FloorGlowDebug = TransformDebug & {
+type FloorGlowDebug = TransformDebug & {
   radius: number;
   color: string;
   maxOpacity: number;
@@ -83,14 +80,11 @@ export type FloorDecalsDebug = {
   chair: FloorDecalCategoryDebug;
 };
 
-export type InteriorDetailsDebug = {
+type InteriorDetailsDebug = {
   floorDecals: FloorDecalsDebug;
 };
 
 export type RoomDebugState = {
-  interaction: {
-    nightMode: boolean;
-  };
   scene: {
     dayBackgroundColor: string;
     nightBackgroundColor: string;
@@ -98,17 +92,6 @@ export type RoomDebugState = {
     nightFogColor: string;
     fogNear: number;
     fogFar: number;
-  };
-  renderer: {
-    toneMappingExposure: number;
-    clearColor: string;
-  };
-  camera: {
-    position: Vector3Debug;
-    lookAt: Vector3Debug;
-    fov: number;
-    near: number;
-    far: number;
   };
   environment: {
     studioHdri: {
@@ -181,8 +164,4 @@ export function rotationTuple(vector: Vector3Debug): [number, number, number] {
 
 export function scaleTuple(vector: Vector3Debug): [number, number, number] {
   return [vector.x, vector.y, vector.z];
-}
-
-export function serializeRoomDebugState(debug: RoomDebugState) {
-  return JSON.parse(JSON.stringify(debug)) as RoomDebugState;
 }

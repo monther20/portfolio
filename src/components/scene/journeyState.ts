@@ -60,7 +60,7 @@ export function setJourneyState(patch: Partial<JourneyStateShape>) {
   listeners.forEach((listener) => listener());
 }
 
-export function subscribeJourney(listener: () => void): () => void {
+function subscribeJourney(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

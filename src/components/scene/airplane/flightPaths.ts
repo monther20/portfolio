@@ -37,19 +37,23 @@ export function createLandingCurve(from: THREE.Vector3): THREE.CatmullRomCurve3 
 
 /** Climbing away over the sea, carrying the visitor's message. */
 export function createSendoffCurve(): THREE.CatmullRomCurve3 {
+  const landingZ = BEACH.landing[2];
+
   return new THREE.CatmullRomCurve3([
     new THREE.Vector3(...BEACH.landing),
-    new THREE.Vector3(-1.5, -0.6, -191),
-    new THREE.Vector3(1.5, 1.8, -198),
-    new THREE.Vector3(4, 4, -206),
+    new THREE.Vector3(-1.5, -0.6, landingZ - 5),
+    new THREE.Vector3(1.5, 1.8, landingZ - 12),
+    new THREE.Vector3(4, 4, landingZ - 20),
   ]);
 }
 
 /** Swooping back in to land again after the send-off. */
 export function createReturnCurve(): THREE.CatmullRomCurve3 {
+  const landingZ = BEACH.landing[2];
+
   return new THREE.CatmullRomCurve3([
-    new THREE.Vector3(4.5, 2.2, -178),
-    new THREE.Vector3(2.2, 0.2, -181.5),
+    new THREE.Vector3(4.5, 2.2, landingZ + 8),
+    new THREE.Vector3(2.2, 0.2, landingZ + 4.5),
     new THREE.Vector3(...BEACH.landing),
   ]);
 }

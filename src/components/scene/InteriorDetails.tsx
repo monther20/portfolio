@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import gsap from "gsap";
 import SpotlightCone, { FloorGlow } from "./SpotlightCone";
 import Lantern from "./Lantern";
-import { ShadowConfig } from "./ShadowDebugPanel";
+import type { ShadowConfig } from "./shadowConfig";
 import { FloorDecal, WallShadow } from "./room/decals";
 import {
   buildFloorDecals,
@@ -65,7 +65,7 @@ export default function InteriorDetails({
 
   const baseFloorTexture = useLoader(
     THREE.TextureLoader,
-    "/textures/floor.webp",
+    "/textures/room/floor.webp",
   );
   const floorTexture = useMemo(() => {
     const t = baseFloorTexture.clone();
@@ -77,16 +77,16 @@ export default function InteriorDetails({
     return t;
   }, [baseFloorTexture]);
 
-  const lightTex = useLoader(THREE.TextureLoader, "/textures/light.webp");
-  const lightOnTex = useLoader(THREE.TextureLoader, "/textures/light_on.webp");
-  const rock1Tex = useLoader(THREE.TextureLoader, "/textures/rock-1.webp");
-  const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/rock_and_herp.webp");
-  const herpTex = useLoader(THREE.TextureLoader, "/textures/herp.webp");
-  const stonePathTex = useLoader(THREE.TextureLoader, "/textures/stone-path.webp");
-  const tableTex = useLoader(THREE.TextureLoader, "/textures/table.webp");
-  const chairTex = useLoader(THREE.TextureLoader, "/textures/chair.webp");
-  const tableShadowTex = useLoader(THREE.TextureLoader, "/textures/table-shadow.webp");
-  const chairShadowTex = useLoader(THREE.TextureLoader, "/textures/chair-shadow.webp");
+  const lightTex = useLoader(THREE.TextureLoader, "/textures/room/light.webp");
+  const lightOnTex = useLoader(THREE.TextureLoader, "/textures/room/light_on.webp");
+  const rock1Tex = useLoader(THREE.TextureLoader, "/textures/room/rock-1.webp");
+  const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/room/rock_and_herp.webp");
+  const herpTex = useLoader(THREE.TextureLoader, "/textures/room/herp.webp");
+  const stonePathTex = useLoader(THREE.TextureLoader, "/textures/room/stone-path.webp");
+  const tableTex = useLoader(THREE.TextureLoader, "/textures/shared/table.webp");
+  const chairTex = useLoader(THREE.TextureLoader, "/textures/room/chair.webp");
+  const tableShadowTex = useLoader(THREE.TextureLoader, "/textures/room/table-shadow.webp");
+  const chairShadowTex = useLoader(THREE.TextureLoader, "/textures/room/chair-shadow.webp");
 
   const decals = buildFloorDecals(
     {

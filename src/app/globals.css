@@ -5,13 +5,6 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -27,23 +20,11 @@ body {
 
 /* ─── Sketch Preloader ────────────────────────────────────────────────── */
 
-/* Door-panel accent colours (kept for potential use elsewhere) */
-:root {
-  --door-blue: #5b9fd4;
-  --door-green: #8dc46a;
-  --door-yellow: #f6c247;
-  --door-orange: #e87d2a;
-  --door-red: #e04a4a;
-  --door-purple: #9166b8;
-}
-
-
-
 .sketch-preloader {
   --line-progress: 0;
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 10002;
   overflow: hidden;
   pointer-events: auto;
   cursor: default;

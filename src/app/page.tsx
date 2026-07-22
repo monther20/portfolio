@@ -1,68 +1,28 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
 
+import SketchPreloader from "../components/SketchPreloader";
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
 import AssetPreloader from "../components/scene/AssetPreloader";
 
-/**
- * LoadingOverlay — A sketch-style preloader: an off-white/white surface
- * split by a hand-drawn scribbled line, with hand-written details.
- */
-function createSketchPoints() {
-  const points: number[][] = [[50, 0]];
-  const segments = 20;
-
-  for (let i = 1; i < segments; i++) {
-    const y = (i / segments) * 100;
-    // A squiggly hand-drawn pencil line
-    const scribble = Math.sin(i * 12) * 2;
-    const jitter = (Math.random() - 0.5) * 3;
-    points.push([50 + scribble + jitter, y]);
-  }
-
-  points.push([50, 100]);
-  return points;
-}
-
+/** Scene-aware preloader that keeps the shared sketch visual in sync with Drei loading progress. */
 function LoadingOverlay() {
-  const { active, progress } = useProgress();
-  const startTime = React.useRef(Date.now());
-  const triggered = React.useRef(false);
+  const active = useProgress((state) => state.active);
+  const progress = useProgress((state) => state.progress);
+  const startTime = useRef(Date.now());
+  const triggered = useRef(false);
 
   const [lineProgress, setLineProgress] = useState(0);
   const [isSketching, setIsSketching] = useState(false);
   const [isGone, setIsGone] = useState(false);
-  const [sketchPoints, setSketchPoints] = useState<number[][]>([[50, 0], [50, 100]]);
-
-  useEffect(() => {
-    setSketchPoints(createSketchPoints());
-  }, []);
-
-  const svgPathData = useMemo(
-    () => sketchPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`).join(" "),
-    [sketchPoints]
-  );
-
-  const leftClipPoly = useMemo(() => {
-    const middle = sketchPoints.map((p) => `${p[0]}% ${p[1]}%`).join(", ");
-    return `polygon(0% 0%, ${middle}, 0% 100%)`;
-  }, [sketchPoints]);
-
-  const rightClipPoly = useMemo(() => {
-    const middle = [...sketchPoints]
-      .reverse()
-      .map((p) => `${p[0]}% ${p[1]}%`)
-      .join(", ");
-    return `polygon(100% 0%, 100% 100%, ${middle})`;
-  }, [sketchPoints]);
 
   /** Fire the sketch animation once, honouring the min display time. */
-  const sketch = React.useCallback(() => {
+  const sketch = useCallback(() => {
     if (triggered.current) return;
     triggered.current = true;
 
@@ -82,7 +42,11 @@ function LoadingOverlay() {
   // Smoothly follow Three.js loader progress, but keep a little room for finish.
   useEffect(() => {
     if (active) {
-      setLineProgress((current) => Math.max(current, Math.min(progress * 0.9, 96)));
+      const loaderProgress = Number.isFinite(progress) ? progress : 0;
+      setLineProgress((current) => {
+        const next = Math.max(current, Math.min(loaderProgress * 0.9, 96));
+        return Object.is(current, next) ? current : next;
+      });
       return;
     }
 
@@ -104,33 +68,8 @@ function LoadingOverlay() {
 
   if (isGone) return null;
 
-  const percentageText = `${Math.round(lineProgress)}%`;
-
   return (
-    <div
-      className={`sketch-preloader${isSketching ? " is-sketching" : ""}`}
-      style={{ "--line-progress": lineProgress } as React.CSSProperties}
-    >
-      <div className="sketch-preloader__half sketch-preloader__half--left" style={{ clipPath: leftClipPoly }}>
-        <div className="sketch-preloader__content">
-          <span>{percentageText}</span>
-          <span className="sketch-preloader__ring" aria-hidden="true" />
-        </div>
-        <svg className="sketch-preloader__overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path pathLength="100" d={svgPathData} />
-        </svg>
-      </div>
-
-      <div className="sketch-preloader__half sketch-preloader__half--right" style={{ clipPath: rightClipPoly }}>
-        <div className="sketch-preloader__content">
-          <span>{percentageText}</span>
-          <span className="sketch-preloader__ring" aria-hidden="true" />
-        </div>
-        <svg className="sketch-preloader__overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path pathLength="100" d={svgPathData} />
-        </svg>
-      </div>
-    </div>
+    <SketchPreloader lineProgress={lineProgress} isSketching={isSketching} />
   );
 }
 
@@ -140,7 +79,12 @@ export default function MoodyHallwayScene() {
   return (
     <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
       <Canvas
-        camera={{ position: [0.370000000000005, 1.06, 5.62], fov: 32, near: 0.1, far: 770 }}
+        camera={{
+          position: [0.370000000000005, 1.06, 5.62],
+          fov: 30,
+          near: 0.1,
+          far: 770,
+        }}
         onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
         gl={{ toneMapping: THREE.NoToneMapping }}
       >
@@ -153,8 +97,6 @@ export default function MoodyHallwayScene() {
       <JourneyHud visible={entered} />
       {/* Warms the texture cache in the background (corridor → sky → beach). */}
       <AssetPreloader />
-
-      {/* Development-only Three.js controls now live in the corridor-items lil-gui panel. */}
     </div>
   );
 }

@@ -6,8 +6,8 @@ import * as THREE from "three";
  * it does not make DOM overlays disappear, so we use the same camera-space
  * depth and fade them out while they are deep in the fog curtain.
  */
-export const FOG_HIDE_START = 0.45;
-export const FOG_HIDE_END = 0.72;
+const FOG_HIDE_START = 0.45;
+const FOG_HIDE_END = 0.72;
 
 export function getFogFadeRange(fog: THREE.Fog) {
   const span = Math.max(0.001, fog.far - fog.near);

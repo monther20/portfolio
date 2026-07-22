@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Caveat, Patrick_Hand } from "next/font/google";
+import { Caveat, Patrick_Hand } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const caveat = Caveat({
   variable: "--font-caveat",
@@ -26,11 +16,11 @@ const patrickHand = Patrick_Hand({
 });
 
 export const metadata: Metadata = {
-  title: "Munther Aloufi | Creative Front-end & 3D Web Developer",
+  title: "Monther Abdelrazek | Junior Front-end Engineer",
   description:
-    "An interactive 3D portfolio journey showcasing Munther Aloufi's about, skills, projects, and contact details.",
-  authors: [{ name: "Munther Aloufi" }],
-  creator: "Munther Aloufi",
+    "An interactive 3D portfolio journey showcasing Monther Abdelrazek's frontend skills, projects, experience, and contact details.",
+  authors: [{ name: "Monther Abdelrazek" }],
+  creator: "Monther Abdelrazek",
 };
 
 export default function RootLayout({
@@ -41,7 +31,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${patrickHand.variable} h-full antialiased`}
+      className={`${caveat.variable} ${patrickHand.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>

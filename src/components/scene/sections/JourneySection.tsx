@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Float } from "@react-three/drei";
 
 import FloatingNote from "../FloatingNote";
@@ -9,7 +9,7 @@ import PartingItem, { seededRange } from "../PartingItem";
 import { JOURNEY } from "../journeyConfig";
 import { journeyMilestones } from "@/data/portfolio";
 
-const LANTERN_TEX = "/textures/lantern.webp";
+const LANTERN_TEX = "/textures/journey/lantern.webp";
 
 /**
  * JourneySection — the first stop of the sky flight: milestones of my story
@@ -61,14 +61,14 @@ export default function JourneySection({ zStart = JOURNEY.journeyAnchorZ }: { zS
             {milestone.island ? (
               <PaintSprite name={`Journey Island: ${milestone.title}`} sketch={milestone.island} position={[0, -1.1, 0]} height={1.9} revealNear={8} revealFar={20} />
             ) : null}
-            <FloatingNote position={[0, 0.55, 0]} fontSize={1.55} weight={700} rotation={-1.5}>
-              <span style={{ display: "block" }}>
-                {milestone.year} — {milestone.title}
-              </span>
-              <span style={{ display: "block", fontSize: "0.65em", color: "#4a4a4a", maxWidth: 250 }}>
+            <group name={`Journey Milestone Note: ${milestone.title}`} position={[0, 0.55, 0]}>
+              <FloatingNote position={[0, 0.25, 0]} fontSize={1.55} weight={700} rotation={-1.5}>
+                {`${milestone.year} — ${milestone.title}`}
+              </FloatingNote>
+              <FloatingNote position={[0, -0.35, 0]} fontSize={1} weight={600} color="#4a4a4a" maxWidth={250} rotation={-1.5}>
                 {milestone.text}
-              </span>
-            </FloatingNote>
+              </FloatingNote>
+            </group>
           </Float>
         </PartingItem>
       ))}

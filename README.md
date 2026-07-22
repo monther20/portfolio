@@ -1,4 +1,4 @@
-# Munther Aloufi Portfolio
+# Monther Abdelrazek Portfolio
 
 An interactive 3D portfolio built with Next.js, React Three Fiber, Three.js, Drei, GSAP, Tailwind CSS, and TypeScript.
 
@@ -19,7 +19,7 @@ Open http://localhost:3000.
 - `src/data/portfolio.ts` — edit portfolio content: about text, skills, projects, contact links, and texture paths.
 - `src/app/layout.tsx` — edit site metadata such as title, description, author, and creator.
 - `src/components/scene/JourneyScene.tsx` — adjust section positions along the 3D scroll path.
-- `src/app/page.tsx` — controls the Canvas, loader, room scene, HUD, and development-only debug panel.
+- `src/app/page.tsx` — controls the Canvas, loader, room scene, HUD, and background asset preloader.
 - `src/app/globals.css`, `src/app/loading.tsx` — customize the sketch-style loading screen.
 
 ## Project structure
@@ -33,7 +33,5 @@ public/textures/                Hand-drawn and painted scene assets
 ```
 
 ## Notes
-
-The shadow debug panel is shown only in development mode and hidden in production builds.
 
 Before working on Next.js APIs in this project, read the local Next.js docs under `node_modules/next/dist/docs/` because this project uses a newer Next.js version with breaking changes.

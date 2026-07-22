@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame, useLoader } from "@react-three/fiber";
 import { Float } from "@react-three/drei";
 
-import FloatingNote from "../FloatingNote";
 import PaintSprite from "../PaintSprite";
 import PartingItem from "../PartingItem";
 import { BEACH } from "../journeyConfig";
 import Boardwalk from "./beach/Boardwalk";
 import ContactCrates from "./beach/ContactCrates";
 
-const C = "/textures/textures/contact";
+const C = "/textures/contact";
 
 /** The sea surface — a slowly drifting hand-drawn wave pattern. */
 function Sea() {
@@ -55,22 +54,26 @@ export default function BeachContactSection() {
       <ContactCrates />
 
       {/* Shore scenery */}
-      <PartingItem name="Beach Lighthouse" home={[-7, BEACH.seaY + 2.3, -196]} push={2.9} lift={0.45}>
+      <PartingItem
+        name="Beach Lighthouse"
+        home={[-7, -2.07, -260]}
+        push={2.9}
+        lift={0.45}
+      >
         <Float speed={1} rotationIntensity={0.05} floatIntensity={0.3} floatingRange={[-0.1, 0.15]}>
           <PaintSprite name="Beach Lighthouse Sprite" sketch={`${C}/latarnia.webp`} height={4.6} revealNear={14} revealFar={32} autoReveal={false} />
         </Float>
       </PartingItem>
-      <PartingItem name="Beach Ship" home={[5.8, BEACH.seaY + 0.55, -191]} push={1.2} lift={0.15}>
+      <PartingItem
+        name="Beach Ship"
+        home={[4.16, -3.22, -260]}
+        push={1.2}
+        lift={0.15}
+      >
         <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.25} floatingRange={[-0.05, 0.08]}>
           <PaintSprite name="Beach Ship Sprite" sketch={`${C}/statek.webp`} height={1.1} revealNear={13} revealFar={28} autoReveal={false} />
         </Float>
       </PartingItem>
-      {/* Arrival note — placeholder copy */}
-      <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.4} floatingRange={[-0.1, 0.12]}>
-        <FloatingNote position={[0, 0.9, -178]} fontSize={1.6} weight={700} color="#111111" rotation={-2} depthOcclude>
-          leave a note — or find me here
-        </FloatingNote>
-      </Float>
     </group>
   );
 }

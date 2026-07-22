@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
 
+import { AVATAR_FRAME_URLS } from "./assetPaths";
 import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
-
-const FRAME_COUNT = 33;
-const FRAME_URLS = Array.from(
-  { length: FRAME_COUNT },
-  (_, i) => `/textures/textures/corridor/avatar_anim_warp/${String(i + 1).padStart(3, "0")}.png`,
-);
 
 function pingPongFrameIndex(step: number, count: number) {
   if (count <= 1) return 0;
@@ -37,7 +32,7 @@ export default function AnimatedAvatar({
   const lastFrame = useRef(-1);
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const { camera, scene, gl } = useThree();
-  const frames = useLoader(THREE.TextureLoader, FRAME_URLS);
+  const frames = useLoader(THREE.TextureLoader, AVATAR_FRAME_URLS);
 
   useEffect(() => {
     const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
