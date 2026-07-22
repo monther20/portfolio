@@ -42,13 +42,25 @@ export const about = {
   ],
   /** Decorative "islands" already in your assets — set show:false to hide. */
   islands: [
-    { tex: `${JOURNEY_MILESTONES_BASE}/uowyspa.webp`, label: "Computer Science @ JUST", show: true },
-    { tex: `${JOURNEY_MILESTONES_BASE}/freelancewyspa.webp`, label: "Alphaworks Front-end", show: true },
+    {
+      tex: `${JOURNEY_MILESTONES_BASE}/uowyspa.webp`,
+      label: "Computer Science @ JUST",
+      show: true,
+    },
+    {
+      tex: `${JOURNEY_MILESTONES_BASE}/freelancewyspa.webp`,
+      label: "Alphaworks Front-end",
+      show: true,
+    },
   ],
 };
 
 // ── SKILLS ─────────────────────────────────────────────────────────────────
-export type Skill = { label: string; balloon: PaintPair; size: "S" | "M" | "L" };
+export type Skill = {
+  label: string;
+  balloon: PaintPair;
+  size: "S" | "M" | "L";
+};
 
 /** Skill badge images from public/textures/skills. */
 export const skills: Skill[] = [
@@ -59,7 +71,11 @@ export const skills: Skill[] = [
   { label: "Node.js", size: "M", balloon: SKILL_BADGE("nodejs") },
   { label: "CSS", size: "S", balloon: SKILL_BADGE("csssrednibalon") },
   { label: "Three.js", size: "M", balloon: SKILL_BADGE("threejsduzybalon") },
-  { label: "React Three Fiber", size: "M", balloon: SKILL_BADGE("reactthreefiber") },
+  {
+    label: "React Three Fiber",
+    size: "M",
+    balloon: SKILL_BADGE("reactthreefiber"),
+  },
 ];
 
 // ── PROJECTS ─────────────────────────────────────────────────────────────────
@@ -76,13 +92,15 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: "Reachlet",
-    blurb: "React Native mobile frontend for an advertisement display app with dynamic multimedia content, auto-scrolling image/video ads, and QR-code external links.",
+    blurb:
+      "React Native mobile frontend for an advertisement display app with dynamic multimedia content, auto-scrolling image/video ads, and QR-code external links.",
     link: "#",
     panel: PROJECT_PANEL("reachlet"),
   },
   {
     name: "eZorro",
-    blurb: "Financial trading platform frontend using React with real-time market analysis, portfolio management, AI-powered trading assistance, streaming chat, and interactive dashboards.",
+    blurb:
+      "Financial trading platform frontend using React with real-time market analysis, portfolio management, AI-powered trading assistance, streaming chat, and interactive dashboards.",
     link: "#",
     panel: PROJECT_PANEL("ezorro"),
   },
@@ -133,11 +151,10 @@ export const corridor = {
     {
       title: "What I build",
       lines: [
-        "Responsive web and mobile interfaces with React and React Native.",
-        "Real-time dashboards, streaming chat, Kanban workflows, and polished UI motion.",
+        "Responsive web, mobile, and interactive 3D experiences using React, React Native, Three.js, and WebGL.",
       ],
       side: 1 as const, // right wall
-      art: `${CORRIDOR_BASE}/rysuneknaobrazek3.webp`,
+      art: `${CORRIDOR_BASE}/web-mobile-3d-corridor-sketch.webp`,
     },
   ],
   /** The note beside the window at the end of the corridor. */
@@ -159,7 +176,7 @@ export const journeyMilestones: JourneyMilestone[] = [
     year: "2020–Present",
     title: "Computer Science @ JUST",
     text: "Studying Computer Science at Jordan University of Science and Technology.",
-    island: `${JOURNEY_MILESTONES_BASE}/uowyspa.webp`,
+    island: `${JOURNEY_MILESTONES_BASE}/justwyspa.png`,
   },
   {
     year: "2023–2025",

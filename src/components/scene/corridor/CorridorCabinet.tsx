@@ -1,11 +1,12 @@
 "use client";
 
 import WrappedImageMesh from "../WrappedImageMesh";
+import { corridorLayoutZ } from "../journeyConfig";
 
 const C = "/textures/corridor";
 
 const CABINET = {
-  position: [-3.09, -2.4, -71] as [number, number, number],
+  position: [-3.09, -2.4, corridorLayoutZ(-71)] as [number, number, number],
   rotation: [0, 4.6228, -0.0002] as [number, number, number],
   size: 1.6,
   depth: 0.9,

@@ -8,11 +8,14 @@ import AnimatedDoor from "./AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
-import { JOURNEY } from "./journeyConfig";
+import { CORRIDOR } from "./journeyConfig";
 import { primeWalkAudio } from "./walkAudio";
 import { DEFAULT_SHADOW_CONFIG } from "./shadowConfig";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
+
+/** Stop close enough to greet the avatar without clipping through its sprite. */
+const AVATAR_APPROACH_DISTANCE = 7;
 
 export default function RoomScene({
   onTransitionComplete,
@@ -31,8 +34,12 @@ export default function RoomScene({
   }
 
   const debug = debugRef.current;
-  const sceneBackgroundColor = isNight ? debug.scene.nightBackgroundColor : debug.scene.dayBackgroundColor;
-  const sceneFogColor = isNight ? debug.scene.nightFogColor : debug.scene.dayFogColor;
+  const sceneBackgroundColor = isNight
+    ? debug.scene.nightBackgroundColor
+    : debug.scene.dayBackgroundColor;
+  const sceneFogColor = isNight
+    ? debug.scene.nightFogColor
+    : debug.scene.dayFogColor;
 
   const toggleNight = () => {
     setIsNight((current) => !current);
@@ -60,7 +67,13 @@ export default function RoomScene({
         duration: 1.5,
       });
     }
-  }, [debug.scene.fogFar, debug.scene.fogNear, scene, sceneBackgroundColor, sceneFogColor]);
+  }, [
+    debug.scene.fogFar,
+    debug.scene.fogNear,
+    scene,
+    sceneBackgroundColor,
+    sceneFogColor,
+  ]);
 
   const handleDoorClick = () => {
     if (isTransitioning) return;
@@ -78,14 +91,14 @@ export default function RoomScene({
       },
     });
 
-    // Walk the camera through the door — stop just past it, facing the avatar.
+    // Walk through the door and continue down the corridor to the avatar.
     tl.to(
       camera.position,
       {
         x: 0,
         y: -1.5,
-        z: JOURNEY.corridorStart,
-        duration: 3.5,
+        z: CORRIDOR.avatar.z + AVATAR_APPROACH_DISTANCE,
+        duration: 2.5,
         ease: "power2.inOut",
       },
       "+=0.5",
@@ -93,7 +106,7 @@ export default function RoomScene({
     // Level the view to look straight down the journey (-z).
     tl.to(
       camera.rotation,
-      { x: 0, y: 0, z: 0, duration: 3.5, ease: "power2.inOut" },
+      { x: 0, y: 0, z: 0, duration: 2.5, ease: "power2.inOut" },
       "<",
     );
   };
@@ -104,7 +117,10 @@ export default function RoomScene({
     <>
       {/* Lighting */}
       <color attach="background" args={[sceneBackgroundColor]} />
-      <fog attach="fog" args={[sceneFogColor, debug.scene.fogNear, debug.scene.fogFar]} />
+      <fog
+        attach="fog"
+        args={[sceneFogColor, debug.scene.fogNear, debug.scene.fogFar]}
+      />
 
       {/* 
         ENVIRONMENT MAP (HDRI)
@@ -117,7 +133,9 @@ export default function RoomScene({
       {debug.environment.studioHdri.visible && (
         <Environment
           files="/monochrome_studio_02_1k.hdr"
-          environmentIntensity={debug.environment.studioHdri.environmentIntensity}
+          environmentIntensity={
+            debug.environment.studioHdri.environmentIntensity
+          }
         />
       )}
 
@@ -129,7 +147,12 @@ export default function RoomScene({
         debug={debug}
       />
       <ExteriorRoof debug={debug} />
-      <AnimatedDoor isOpen={isOpen} isNight={isNight} onClick={handleDoorClick} debug={debug} />
+      <AnimatedDoor
+        isOpen={isOpen}
+        isNight={isNight}
+        onClick={handleDoorClick}
+        debug={debug}
+      />
 
       {/* Keep the journey mounted so corridor assets are ready when the door opens. */}
       <Suspense fallback={null}>
@@ -137,7 +160,6 @@ export default function RoomScene({
           <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
         </group>
       </Suspense>
-
     </>
   );
 }

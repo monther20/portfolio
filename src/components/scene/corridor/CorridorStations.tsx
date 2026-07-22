@@ -7,14 +7,23 @@ import { Text } from "@react-three/drei";
 
 import FloatingNote from "../FloatingNote";
 import PaintSprite from "../PaintSprite";
-import { CORRIDOR, corridorStationZ } from "../journeyConfig";
+import {
+  CORRIDOR,
+  corridorLayoutZ,
+  corridorStationInfluenceAt,
+  corridorStationZ,
+} from "../journeyConfig";
 import CorridorCabinet from "./CorridorCabinet";
 import CorridorPictureFrame from "./CorridorPictureFrame";
 import { corridor } from "@/data/portfolio";
-import { corridorHingedWallSettings, hingedWallContentZ } from "./hingedWallSettings";
+import {
+  corridorHingedWallSettings,
+  hingedWallContentZ,
+} from "./hingedWallSettings";
 import { useTiledTexture } from "./useTiledTexture";
 
 const C = "/textures/corridor";
+const HANDWRITTEN_FONT = "/fonts/Caveat-Variable.ttf";
 
 type CorridorStation = (typeof corridor.stations)[number];
 type WallSide = CorridorStation["side"];
@@ -23,7 +32,13 @@ function inwardWallYaw(side: WallSide) {
   return -side * (Math.PI / 2);
 }
 
-function MiniWallSurface({ texture, title }: { texture: THREE.Texture; title: string }) {
+function MiniWallSurface({
+  texture,
+  title,
+}: {
+  texture: THREE.Texture;
+  title: string;
+}) {
   const meshRef = React.useRef<THREE.Mesh>(null);
 
   useFrame(() => {
@@ -60,18 +75,20 @@ function MiniWallSurface({ texture, title }: { texture: THREE.Texture; title: st
 }
 
 /**
- * A small wall segment placed flat on the corridor wall. When the visitor gets
- * close it rotates from the front/camera-side edge, like a hinged display wall,
- * so the image and notes face the camera instead of hiding on the side wall.
+ * A small wall segment placed flat on the corridor wall. After the preceding
+ * section is passed, it leans gently from its camera-side edge and settles back
+ * once the visitor passes it.
  */
 function HingedMiniWall({
   side,
   z,
+  index,
   name,
   children,
 }: {
   side: WallSide;
   z: number;
+  index: number;
   name: string;
   children: React.ReactNode;
 }) {
@@ -91,18 +108,16 @@ function HingedMiniWall({
     if (!hinge) return;
 
     const settings = corridorHingedWallSettings;
-    const dx = camera.position.x - side * settings.x;
-    const dz = camera.position.z - z;
-    const distance = Math.hypot(dx, dz);
-    const proximity = 1 - THREE.MathUtils.smoothstep(distance, settings.fullyOpenDistance, settings.startOpenDistance);
-    const targetYaw = baseYaw + side * (settings.restAngle + settings.openAngle * proximity);
+    const influence = corridorStationInfluenceAt(index, camera.position.z);
+    const targetYaw =
+      baseYaw + side * (settings.restAngle + settings.openAngle * influence);
     const lerp = 1 - Math.pow(settings.followDamping, delta);
 
     hinge.position.set(side * settings.x, settings.y, z + settings.width / 2);
     hinge.rotation.y = THREE.MathUtils.lerp(hinge.rotation.y, targetYaw, lerp);
 
     if (wallRef.current) {
-      wallRef.current.position.set(-side * settings.width / 2, 0, 0);
+      wallRef.current.position.set((-side * settings.width) / 2, 0, 0);
     }
     if (contentRef.current) {
       contentRef.current.position.z = hingedWallContentZ();
@@ -113,13 +128,25 @@ function HingedMiniWall({
     <group
       ref={hingeRef}
       name={name}
-      position={[side * corridorHingedWallSettings.x, corridorHingedWallSettings.y, z + corridorHingedWallSettings.width / 2]}
+      position={[
+        side * corridorHingedWallSettings.x,
+        corridorHingedWallSettings.y,
+        z + corridorHingedWallSettings.width / 2,
+      ]}
       rotation={[0, baseYaw + side * corridorHingedWallSettings.restAngle, 0]}
     >
       {/* Offset from the hinge so rotation happens from the edge closest to the camera. */}
-      <group ref={wallRef} name={`${name} Content Wall`} position={[-side * corridorHingedWallSettings.width / 2, 0, 0]}>
+      <group
+        ref={wallRef}
+        name={`${name} Content Wall`}
+        position={[(-side * corridorHingedWallSettings.width) / 2, 0, 0]}
+      >
         <MiniWallSurface texture={wallTexture} title={name} />
-        <group ref={contentRef} name={`${name} Display Content`} position={[0, 0, hingedWallContentZ()]}>
+        <group
+          ref={contentRef}
+          name={`${name} Display Content`}
+          position={[0, 0, hingedWallContentZ()]}
+        >
           {children}
         </group>
       </group>
@@ -148,6 +175,7 @@ function WallText({
     <Text
       position={position}
       rotation={[0, 0, rotation]}
+      font={HANDWRITTEN_FONT}
       fontSize={fontSize}
       fontWeight={weight}
       color={color}
@@ -170,25 +198,25 @@ function WallText({
 function InfoStation({
   station,
   z,
+  index,
 }: {
   station: CorridorStation;
   z: number;
+  index: number;
 }) {
   const side = station.side;
 
   return (
-    <HingedMiniWall side={side} z={z} name={`Corridor Hinged Mini Wall: ${station.title}`}>
-      <WallText
-        position={[0, 2.25, 0]}
-        fontSize={0.38}
-        weight={700}
-        maxWidth={3.25}
-        rotation={side * -0.026}
+    <HingedMiniWall
+      side={side}
+      z={z}
+      index={index}
+      name={`Corridor Hinged Mini Wall: ${station.title}`}
+    >
+      <group
+        name={`Corridor Station Frame: ${station.title}`}
+        position={[0, 0.7, -0.01]}
       >
-        {station.title}
-      </WallText>
-
-      <group name={`Corridor Station Frame: ${station.title}`} position={[0, 0.7, -0.01]}>
         <CorridorPictureFrame name={`Station 3D Frame: ${station.title}`} />
         <PaintSprite
           name={`Station Artwork: ${station.title}`}
@@ -202,7 +230,7 @@ function InfoStation({
       </group>
 
       <WallText
-        position={[0, -1.8, 0]}
+        position={[0, -1, 0]}
         fontSize={0.21}
         color="#453f35"
         maxWidth={3.35}
@@ -216,7 +244,10 @@ function InfoStation({
 
 function WindowWallNote() {
   return (
-    <group name="Corridor Window Wall Note" position={[-2.42, 0.46, CORRIDOR.endWallZ + 0.09]}>
+    <group
+      name="Corridor Window Wall Note"
+      position={[-2.42, 0.46, CORRIDOR.endWallZ + 0.09]}
+    >
       <mesh name="Corridor Window Note Paper Border" position={[0, 0, -0.025]}>
         <planeGeometry args={[1.65, 1.12]} />
         <meshBasicMaterial color="#8a6a3f" side={THREE.DoubleSide} />
@@ -257,14 +288,19 @@ export default function CorridorStations() {
   return (
     <group name="Corridor Stations">
       {corridor.stations.map((station, i) => (
-        <InfoStation key={station.title} station={station} z={corridorStationZ(i)} />
+        <InfoStation
+          key={station.title}
+          station={station}
+          z={corridorStationZ(i)}
+          index={i}
+        />
       ))}
 
       {/* Props standing on the floor */}
       <PaintSprite
         name="Corridor Potted Tree"
         sketch={`${C}/drzewkowdoniczce.webp`}
-        position={[2.6, CORRIDOR.floorY + 0.95, -38]}
+        position={[2.6, CORRIDOR.floorY + 0.95, corridorLayoutZ(-38)]}
         height={1.9}
         revealNear={8}
         revealFar={16}
@@ -272,7 +308,7 @@ export default function CorridorStations() {
       <PaintSprite
         name="Corridor Potted Flower"
         sketch={`${C}/kwiatekwdoniczce.webp`}
-        position={[-2.7, CORRIDOR.floorY + 0.55, -57]}
+        position={[-2.7, CORRIDOR.floorY + 0.55, corridorLayoutZ(-57)]}
         height={1.1}
         revealNear={8}
         revealFar={16}
@@ -280,22 +316,45 @@ export default function CorridorStations() {
       <CorridorCabinet />
 
       {/* Vent flat on the right wall */}
-      <group name="Corridor Vent" position={[CORRIDOR.halfWidth - 0.06, 1.6, -50]} rotation={[0, -Math.PI / 2, 0]}>
-        <PaintSprite name="Corridor Vent Sprite" sketch={`${C}/kratkawentylacyjna.webp`} billboard={false} height={0.5} />
+      <group
+        name="Corridor Vent"
+        position={[CORRIDOR.halfWidth - 0.06, 1.6, corridorLayoutZ(-50)]}
+        rotation={[0, -Math.PI / 2, 0]}
+      >
+        <PaintSprite
+          name="Corridor Vent Sprite"
+          sketch={`${C}/kratkawentylacyjna.webp`}
+          billboard={false}
+          height={0.5}
+        />
       </group>
 
       {/* Ceiling lamps with a warm pool of light under each */}
-      {[-24, -38, -52, -66, CORRIDOR.endWallZ + 4].map((z) => (
-        <group key={z} name={`Corridor Ceiling Lamp ${z}`} position={[0, 0, z]}>
-          <PaintSprite
-            name={`Corridor Ceiling Lamp Shade ${z}`}
-            sketch={`${C}/bokilampy.webp`}
-            position={[0, CORRIDOR.ceilY - 0.5, 0]}
-            height={0.9}
-          />
-          <pointLight name={`Corridor Ceiling Lamp Light ${z}`} position={[0, 1.2, 0]} intensity={5} distance={9} decay={2} color="#ffe3b8" />
-        </group>
-      ))}
+      {[-24, -38, -52, -66]
+        .map(corridorLayoutZ)
+        .concat(CORRIDOR.endWallZ + 4)
+        .map((z) => (
+          <group
+            key={z}
+            name={`Corridor Ceiling Lamp ${z}`}
+            position={[0, 0, z]}
+          >
+            <PaintSprite
+              name={`Corridor Ceiling Lamp Shade ${z}`}
+              sketch={`${C}/bokilampy.webp`}
+              position={[0, CORRIDOR.ceilY - 0.5, 0]}
+              height={0.9}
+            />
+            <pointLight
+              name={`Corridor Ceiling Lamp Light ${z}`}
+              position={[0, 1.2, 0]}
+              intensity={5}
+              distance={9}
+              decay={2}
+              color="#ffe3b8"
+            />
+          </group>
+        ))}
 
       {/* The table beside the window (the airplane rests above it) */}
       <PaintSprite

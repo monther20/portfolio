@@ -7,7 +7,7 @@ import {
   JOURNEY,
   CORRIDOR_INFO_STATIONS,
   cameraYAt,
-  corridorStationZ,
+  corridorStationInfluenceAt,
   descentProgressAt,
   journeyPhaseAt,
   windowProgressAt,
@@ -23,6 +23,11 @@ const WALK_SPEED_FACTOR = 0.55;
 const FRICTION = 0.92;
 const MIN_VELOCITY = 0.00015;
 const CHUNK_LENGTH = 40;
+/** Subtle cursor-follow parallax; pointer values are normalized from -1 to 1. */
+const MOUSE_POSITION_X = 0.12;
+const MOUSE_POSITION_Y = 0.06;
+const MOUSE_YAW = 0.018;
+const MOUSE_PITCH = 0.012;
 /** World units of walking between footstep sounds. */
 const STEP_DISTANCE = 1.4;
 
@@ -35,8 +40,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const corridorFocuses = useMemo(
     () =>
       corridor.stations.map((station, index) => ({
+        index,
         side: station.side,
-        z: corridorStationZ(index),
       })),
     [],
   );
@@ -99,15 +104,18 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
 
     const phase = journeyPhaseAt(nextZ);
     const t = state.clock.elapsedTime;
+    const mouseX = state.pointer.x;
+    const mouseY = state.pointer.y;
 
-    // ── Height: follow the journey's Y profile with a phase-appropriate bob ──
+    // ── Height + subtle mouse parallax around the journey's base camera path ──
     const bob = phase === "corridor"
       ? Math.sin(t * 2.1) * 0.015
       : Math.sin(t * 1.7) * 0.025;
-    const targetY = cameraYAt(nextZ) + bob;
+    const targetY = cameraYAt(nextZ) + bob + mouseY * MOUSE_POSITION_Y;
+    const targetX = mouseX * MOUSE_POSITION_X;
     const positionLerp = 1 - Math.pow(0.02, delta);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, positionLerp);
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, positionLerp * 0.6);
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, positionLerp * 0.6);
 
     // ── Footsteps while walking the corridor ──
     if (phase === "corridor") {
@@ -121,18 +129,18 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     // ── Corridor reading focus: glance toward wall stations as you reach them ──
     let yawTarget = 0;
     let corridorPitchTarget = 0;
+    let corridorRollTarget = 0;
     if (phase === "corridor") {
       let strongestInfluence = 0;
 
       for (const focus of corridorFocuses) {
-        const focusCenterZ = focus.z + CORRIDOR_INFO_STATIONS.focusLead;
-        const distance = Math.abs(nextZ - focusCenterZ);
-        const influence = 1 - THREE.MathUtils.smoothstep(distance, 0.9, CORRIDOR_INFO_STATIONS.focusRadius);
+        const influence = corridorStationInfluenceAt(focus.index, nextZ);
         if (influence <= strongestInfluence) continue;
 
         strongestInfluence = influence;
         yawTarget = -focus.side * CORRIDOR_INFO_STATIONS.focusYaw * influence;
         corridorPitchTarget = CORRIDOR_INFO_STATIONS.focusPitch * influence;
+        corridorRollTarget = focus.side * CORRIDOR_INFO_STATIONS.focusRoll * influence;
       }
 
       const windowInfluence =
@@ -145,13 +153,14 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       if (windowInfluence > strongestInfluence) {
         yawTarget = CORRIDOR_INFO_STATIONS.windowFocusYaw * windowInfluence;
         corridorPitchTarget = CORRIDOR_INFO_STATIONS.windowFocusPitch * windowInfluence;
+        corridorRollTarget = 0;
       }
     }
 
     // ── Flight maneuvers: banking only exists once we're out of the window ──
     const flightDistance = Math.max(0, JOURNEY.windowExitZ - nextZ);
     const descent = descentProgressAt(nextZ);
-    let bankTarget = 0;
+    let bankTarget = corridorRollTarget;
     let pitchTarget = corridorPitchTarget;
 
     if (flightDistance > 0) {
@@ -176,6 +185,10 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     const windowProgress = windowProgressAt(nextZ);
     pitchTarget += Math.sin(Math.PI * windowProgress) * 0.07;
     pitchTarget += Math.sin(Math.PI * descent) * -0.15;
+
+    // Follow the cursor slightly without overpowering station focus or flight motion.
+    yawTarget -= mouseX * MOUSE_YAW;
+    pitchTarget += mouseY * MOUSE_PITCH;
 
     // Lerp the actual camera rotation toward the targets. Approaching (instead
     // of assigning) keeps hand-offs from gsap cinematics snap-free.

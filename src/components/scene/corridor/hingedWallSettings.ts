@@ -14,11 +14,9 @@ export const corridorHingedWallSettings = {
   textureRepeatX: 1.05,
   textureRepeatY: 1.35,
 
-  // Lean / hinge behavior
-  restAngle: 0.08,
-  openAngle: 0.7,
-  fullyOpenDistance: 4.8,
-  startOpenDistance: 13.2,
+  // Sequential lean / hinge behavior
+  restAngle: 0.015,
+  openAngle: 0.22,
   followDamping: 0.045,
 } as const;
 
