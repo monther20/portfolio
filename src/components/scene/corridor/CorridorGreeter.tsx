@@ -16,13 +16,15 @@ const NAME_Y = -1.25;
 const NAME_Z = -0.22;
 const ROLE_Y = -2.12;
 const ROLE_Z = 0.22;
-const SPLIT_START_DISTANCE = 6;
-const SPLIT_TRAVEL_DISTANCE = 4.5;
-const AVATAR_EXIT_X = -2.2;
-const NAME_HALF_EXIT_X = 1.15;
-const ROLE_JOIN_X = 0.22;
-const ROLE_JOIN_GAP = 0.05;
-const ROLE_HALF_EXIT_X = 1.4;
+const corridorGreeterMotionSettings = {
+  splitStartDistance: 6,
+  splitTravelDistance: 4.5,
+  avatarExitX: -2.2,
+  nameHalfExitX: 1.15,
+  roleJoinX: 0.22,
+  roleJoinGap: 0.05,
+  roleHalfExitX: 1.4,
+} as const;
 
 const FLOATING_ITEMS = [
   {
@@ -119,12 +121,13 @@ export default function CorridorGreeter() {
   useFogFade(roleRightRef, { preserveTransparency: true, visibleThreshold: 0 });
 
   useFrame((_, delta) => {
+    const settings = corridorGreeterMotionSettings;
     const distancePastStart =
-      CORRIDOR.avatar.z + SPLIT_START_DISTANCE - camera.position.z;
+      CORRIDOR.avatar.z + settings.splitStartDistance - camera.position.z;
     const targetProgress = THREE.MathUtils.smoothstep(
       distancePastStart,
       0,
-      SPLIT_TRAVEL_DISTANCE,
+      settings.splitTravelDistance,
     );
     const damping = 1 - Math.pow(0.025, delta);
     splitProgress.current = THREE.MathUtils.lerp(
@@ -135,25 +138,25 @@ export default function CorridorGreeter() {
     const progress = THREE.MathUtils.smootherstep(splitProgress.current, 0, 1);
 
     if (avatarRef.current) {
-      avatarRef.current.position.x = AVATAR_EXIT_X * progress;
+      avatarRef.current.position.x = settings.avatarExitX * progress;
     }
     if (nameLeftRef.current) {
-      nameLeftRef.current.position.x = -NAME_HALF_EXIT_X * progress;
+      nameLeftRef.current.position.x = -settings.nameHalfExitX * progress;
     }
     if (nameRightRef.current) {
-      nameRightRef.current.position.x = NAME_HALF_EXIT_X * progress;
+      nameRightRef.current.position.x = settings.nameHalfExitX * progress;
     }
     if (roleLeftRef.current) {
       roleLeftRef.current.position.x = THREE.MathUtils.lerp(
-        ROLE_JOIN_X - ROLE_JOIN_GAP / 2,
-        -ROLE_HALF_EXIT_X,
+        settings.roleJoinX - settings.roleJoinGap / 2,
+        -settings.roleHalfExitX,
         progress,
       );
     }
     if (roleRightRef.current) {
       roleRightRef.current.position.x = THREE.MathUtils.lerp(
-        ROLE_JOIN_X + ROLE_JOIN_GAP / 2,
-        ROLE_HALF_EXIT_X,
+        settings.roleJoinX + settings.roleJoinGap / 2,
+        settings.roleHalfExitX,
         progress,
       );
     }
@@ -195,7 +198,12 @@ export default function CorridorGreeter() {
       <group
         ref={roleLeftRef}
         name="Greeter Role Left Half"
-        position={[ROLE_JOIN_X - ROLE_JOIN_GAP / 2, ROLE_Y, ROLE_Z]}
+        position={[
+          corridorGreeterMotionSettings.roleJoinX -
+            corridorGreeterMotionSettings.roleJoinGap / 2,
+          ROLE_Y,
+          ROLE_Z,
+        ]}
       >
         <GreeterTextHalf
           name="Greeter Role Web and Mobile"
@@ -210,7 +218,12 @@ export default function CorridorGreeter() {
       <group
         ref={roleRightRef}
         name="Greeter Role Right Half"
-        position={[ROLE_JOIN_X + ROLE_JOIN_GAP / 2, ROLE_Y, ROLE_Z]}
+        position={[
+          corridorGreeterMotionSettings.roleJoinX +
+            corridorGreeterMotionSettings.roleJoinGap / 2,
+          ROLE_Y,
+          ROLE_Z,
+        ]}
       >
         <GreeterTextHalf
           name="Greeter Role Developer"

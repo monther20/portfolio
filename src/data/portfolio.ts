@@ -157,8 +157,6 @@ export const corridor = {
       art: `${CORRIDOR_BASE}/web-mobile-3d-corridor-sketch.webp`,
     },
   ],
-  /** The note beside the window at the end of the corridor. */
-  windowNote: "from code to\ncollaboration ✈",
 };
 
 // ── JOURNEY (sky section) ────────────────────────────────────────────────────

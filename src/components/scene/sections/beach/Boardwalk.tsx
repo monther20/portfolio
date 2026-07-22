@@ -10,7 +10,13 @@ import { seededRange } from "../../PartingItem";
 import { BEACH } from "../../journeyConfig";
 import { useFogFade } from "../../useFogFade";
 
+const BOARDWALK_POSITION: [number, number, number] = [0, -0.39, -1.72];
+/** Extend the pier far enough to reach the contact buttons. */
+const BOARDWALK_END_Z = BEACH.boardwalk.endZ - 5;
 const PLANK_DEPTH = 0.68;
+const REMOVED_PLANK_COUNT = 20;
+const RETAINED_POST_START_INDEX = 4;
+const RETAINED_ROPE_START_INDEX = 3;
 const PLANK_TEXTURE_VARIANTS = 6;
 const WOOD_TINTS = ["#ffffff", "#eeeeeb", "#f8f8f5", "#deded9"] as const;
 
@@ -50,8 +56,8 @@ function FogFadedMesh({
 
 /**
  * Boardwalk — a weathered monochrome timber pier built from the project's
- * existing hand-drawn wood grain. Uneven planks, supporting beams and sagging side
- * ropes retain the imperfect sketchbook construction of the rest of the scene.
+ * existing hand-drawn wood grain. Uneven planks, posts and sagging side ropes
+ * retain the imperfect sketchbook construction of the rest of the scene.
  */
 export default function Boardwalk() {
   const woodSource = useLoader(THREE.TextureLoader, CONTACT_TEXTURES.boardwalkWood);
@@ -60,11 +66,6 @@ export default function Boardwalk() {
     [],
   );
   const postGeometry = useMemo(() => new THREE.BoxGeometry(0.2, 1.75, 0.2), []);
-  const supportLength = BEACH.boardwalk.startZ - BEACH.boardwalk.endZ + PLANK_DEPTH;
-  const supportGeometry = useMemo(
-    () => new THREE.BoxGeometry(0.2, 0.24, supportLength),
-    [supportLength],
-  );
 
   // Crop narrow strips from different boards in the source artwork, then turn
   // the grain so it runs along each plank instead of across the short edge.
@@ -115,7 +116,7 @@ export default function Boardwalk() {
       widthScale: number;
     }[] = [];
 
-    for (let z = BEACH.boardwalk.startZ; z >= BEACH.boardwalk.endZ; z -= 0.62) {
+    for (let z = BEACH.boardwalk.startZ; z >= BOARDWALK_END_Z; z -= 0.62) {
       out.push({
         z,
         x: BEACH.boardwalk.x + seededRange(`plank-${z}-x`, -0.025, 0.025),
@@ -124,12 +125,12 @@ export default function Boardwalk() {
         widthScale: seededRange(`plank-${z}-width`, 0.985, 1.015),
       });
     }
-    return out;
+    return out.slice(REMOVED_PLANK_COUNT);
   }, []);
 
   const postRows = useMemo(() => {
     const zPositions: number[] = [];
-    for (let z = BEACH.boardwalk.startZ - 0.65; z >= BEACH.boardwalk.endZ; z -= 3.35) {
+    for (let z = BEACH.boardwalk.startZ - 0.65; z >= BOARDWALK_END_Z; z -= 3.35) {
       zPositions.push(z);
     }
 
@@ -143,21 +144,32 @@ export default function Boardwalk() {
   const ropes = useMemo(
     () =>
       postRows.sides.flatMap((x, sideIndex) =>
-        postRows.zPositions.slice(0, -1).map((z, index) => {
-          const nextZ = postRows.zPositions[index + 1];
-          const span = z - nextZ;
-          const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(0, 0, span / 2),
-            new THREE.Vector3(0, -0.16, 0),
-            new THREE.Vector3(0, 0, -span / 2),
-          ]);
+        postRows.zPositions
+          .slice(RETAINED_ROPE_START_INDEX, -1)
+          .map((z, retainedIndex) => {
+            const originalIndex = retainedIndex + RETAINED_ROPE_START_INDEX;
+            const nextZ = postRows.zPositions[originalIndex + 1];
+            const span = z - nextZ;
+            const curve = new THREE.CatmullRomCurve3([
+              new THREE.Vector3(0, 0, span / 2),
+              new THREE.Vector3(0, -0.16, 0),
+              new THREE.Vector3(0, 0, -span / 2),
+            ]);
 
-          return {
-            key: `rope-${sideIndex}-${index}`,
-            geometry: new THREE.TubeGeometry(curve, 10, 0.026, 5, false),
-            position: [x, BEACH.boardwalk.topY + 0.38, (z + nextZ) / 2] as [number, number, number],
-          };
-        }),
+            return {
+              key: `rope-${sideIndex}-${originalIndex}`,
+              nameIndex:
+                sideIndex * (postRows.zPositions.length - 1) +
+                originalIndex +
+                1,
+              geometry: new THREE.TubeGeometry(curve, 10, 0.026, 5, false),
+              position: [
+                x,
+                BEACH.boardwalk.topY + 0.38,
+                (z + nextZ) / 2,
+              ] as [number, number, number],
+            };
+          }),
       ),
     [postRows],
   );
@@ -167,31 +179,12 @@ export default function Boardwalk() {
     [ropes],
   );
 
-  const supportCenterZ = (BEACH.boardwalk.startZ + BEACH.boardwalk.endZ) / 2;
-
   return (
-    <group name="Beach Boardwalk">
-      {/* Darker lengthwise timbers make the separate deck boards feel supported. */}
-      {[-0.92, 0.92].map((offset, index) => (
-        <FogFadedMesh
-          key={`support-${offset}`}
-          name={`Boardwalk Support Beam ${index + 1}`}
-          geometry={supportGeometry}
-          position={[
-            BEACH.boardwalk.x + offset,
-            BEACH.boardwalk.topY - 0.24,
-            supportCenterZ,
-          ]}
-        >
-          <meshBasicMaterial map={postTexture} color="#c8c8c3" fog />
-          <Edges color="#111111" fog />
-        </FogFadedMesh>
-      ))}
-
+    <group name="Beach Boardwalk" position={BOARDWALK_POSITION}>
       {planks.map((plank, index) => (
         <FogFadedMesh
           key={`plank-${plank.z}`}
-          name={`Boardwalk Plank ${index + 1}`}
+          name={`Boardwalk Plank ${index + REMOVED_PLANK_COUNT + 1}`}
           geometry={plankGeometry}
           position={[plank.x, plank.y, plank.z]}
           rotation={[0, plank.tilt, 0]}
@@ -207,24 +200,33 @@ export default function Boardwalk() {
       ))}
 
       {postRows.sides.flatMap((x, sideIndex) =>
-        postRows.zPositions.map((z, index) => (
-          <FogFadedMesh
-            key={`post-${sideIndex}-${z}`}
-            name={`Boardwalk Post ${sideIndex * postRows.zPositions.length + index + 1}`}
-            geometry={postGeometry}
-            position={[x, BEACH.boardwalk.topY - 0.34, z]}
-            rotation={[0, seededRange(`post-${sideIndex}-${z}`, -0.035, 0.035), 0]}
-          >
-            <meshBasicMaterial map={postTexture} color="#ddddda" fog />
-            <Edges color="#111111" fog />
-          </FogFadedMesh>
-        )),
+        postRows.zPositions
+          .slice(RETAINED_POST_START_INDEX)
+          .map((z, retainedIndex) => {
+            const originalIndex = retainedIndex + RETAINED_POST_START_INDEX;
+            return (
+              <FogFadedMesh
+                key={`post-${sideIndex}-${z}`}
+                name={`Boardwalk Post ${sideIndex * postRows.zPositions.length + originalIndex + 1}`}
+                geometry={postGeometry}
+                position={[x, BEACH.boardwalk.topY - 0.34, z]}
+                rotation={[
+                  0,
+                  seededRange(`post-${sideIndex}-${z}`, -0.035, 0.035),
+                  0,
+                ]}
+              >
+                <meshBasicMaterial map={postTexture} color="#ddddda" fog />
+                <Edges color="#111111" fog />
+              </FogFadedMesh>
+            );
+          }),
       )}
 
-      {ropes.map((rope, index) => (
+      {ropes.map((rope) => (
         <FogFadedMesh
           key={rope.key}
-          name={`Boardwalk Rope ${index + 1}`}
+          name={`Boardwalk Rope ${rope.nameIndex}`}
           geometry={rope.geometry}
           position={rope.position}
         >

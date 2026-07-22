@@ -36,8 +36,8 @@ type PartingItemProps = {
 
 /**
  * Moves a scene item aside only while it is directly in front of the paper
- * airplane. The home position stays deterministic, but the wrapper gives each
- * item the same "clouds parting" behavior.
+ * airplane. The named outer group remains a stable, editable anchor while an
+ * inner motion group applies the reversible "clouds parting" offset.
  */
 export default function PartingItem({
   home,
@@ -50,38 +50,45 @@ export default function PartingItem({
   influenceDistance = 9.5,
   lerp = 0.09,
 }: PartingItemProps) {
-  const groupRef = useRef<THREE.Group>(null);
+  const anchorRef = useRef<THREE.Group>(null);
+  const motionRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const base = useMemo(() => new THREE.Vector3(home[0], home[1], home[2]), [home[0], home[1], home[2]]);
-  const target = useMemo(() => new THREE.Vector3(home[0], home[1], home[2]), [home[0], home[1], home[2]]);
+  const anchorWorldPosition = useMemo(() => new THREE.Vector3(), []);
+  const targetOffset = useMemo(() => new THREE.Vector3(), []);
   const fallbackSide = useMemo(() => {
     if (Math.abs(home[0]) > 0.35) return Math.sign(home[0]) as -1 | 1;
     return seededUnit(`${home.join(":")}:part-side`) < 0.5 ? -1 : 1;
   }, [home[0], home[1], home[2]]);
 
   useFrame(() => {
-    const group = groupRef.current;
-    if (!group) return;
+    const anchor = anchorRef.current;
+    const motion = motionRef.current;
+    if (!anchor || !motion) return;
 
+    anchor.getWorldPosition(anchorWorldPosition);
     const airplaneZ = camera.position.z - AIRPLANE_CAMERA_Z_OFFSET;
-    const distanceInFront = airplaneZ - base.z;
+    const distanceInFront = airplaneZ - anchorWorldPosition.z;
     const influence = distanceInFront >= 0
       ? 1 - THREE.MathUtils.smoothstep(distanceInFront, 0.5, influenceDistance)
       : 0;
     const moveSide = side ?? fallbackSide;
 
-    target.set(
-      base.x + moveSide * influence * push,
-      base.y + influence * lift,
-      base.z + influence * forward,
+    targetOffset.set(
+      moveSide * influence * push,
+      influence * lift,
+      influence * forward,
     );
 
-    group.position.lerp(target, lerp);
+    motion.position.lerp(targetOffset, lerp);
   });
 
+  const itemName = name ?? "Parting Item";
+
   return (
-    <group ref={groupRef} name={name ?? "Parting Item"} position={home}>
-      {children}
+    <group ref={anchorRef} name={itemName} position={home}>
+      <group ref={motionRef} name={`${itemName} Motion`}>
+        {children}
+      </group>
     </group>
   );
 }

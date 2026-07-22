@@ -24,9 +24,13 @@ const WINDOW_LEFT_IMAGE_ASPECT = 371 / 690;
 const WINDOW_RIGHT_IMAGE_ASPECT = 379 / 696;
 const WINDOW_PANE_DEPTH = 0.055;
 
-const WINDOW_OPEN_ANGLE = 2.1;
-/** The panes finish opening early in the window section, while the plane keeps flying. */
-const WINDOW_FULLY_OPEN_AT_PROGRESS = 0.42;
+const corridorWindowMotionSettings = {
+  openAngle: 2.1,
+  /** Begin opening this many world units before the airplane launch point. */
+  openLeadDistance: 8,
+  /** The panes finish opening early while the plane keeps flying. */
+  fullyOpenAtProgress: 0.42,
+} as const;
 
 /**
  * CorridorWindow — the window in the corridor's end wall. The panes are driven
@@ -39,18 +43,21 @@ export default function CorridorWindow() {
   const { camera } = useThree();
 
   useFrame(() => {
-    const progress = windowProgressAt(camera.position.z);
+    const settings = corridorWindowMotionSettings;
+    const progress = windowProgressAt(
+      camera.position.z - settings.openLeadDistance,
+    );
     const openProgress = THREE.MathUtils.smoothstep(
       progress,
       0,
-      WINDOW_FULLY_OPEN_AT_PROGRESS,
+      settings.fullyOpenAtProgress,
     );
 
     if (leftPivot.current) {
-      leftPivot.current.rotation.y = -WINDOW_OPEN_ANGLE * openProgress;
+      leftPivot.current.rotation.y = -settings.openAngle * openProgress;
     }
     if (rightPivot.current) {
-      rightPivot.current.rotation.y = WINDOW_OPEN_ANGLE * openProgress;
+      rightPivot.current.rotation.y = settings.openAngle * openProgress;
     }
 
     if (camera.position.z > JOURNEY.launchTriggerZ) return;
@@ -69,7 +76,11 @@ export default function CorridorWindow() {
       <WrappedImageMesh
         name="Corridor Window Frame"
         sketch={WINDOW_FRAME_TEXTURE}
-        width={(win.height + 0.5) * WINDOW_FRAME_IMAGE_ASPECT * WINDOW_FRAME_WIDTH_SCALE}
+        width={
+          (win.height + 0.5) *
+          WINDOW_FRAME_IMAGE_ASPECT *
+          WINDOW_FRAME_WIDTH_SCALE
+        }
         height={(win.height + 0.5) * WINDOW_FRAME_HEIGHT_SCALE}
         depth={WINDOW_FRAME_DEPTH}
         position={[0, 0, WINDOW_FRAME_FRONT_Z - WINDOW_FRAME_DEPTH / 2]}

@@ -11,10 +11,23 @@ import { getJourneyState, setJourneyState } from "../../journeyState";
 import { contact } from "@/data/portfolio";
 import { CONTACT_BUTTON_TEXTURES } from "../../assetPaths";
 
+type ContactCrateKey = (typeof BEACH.crates)[number]["key"];
+
 const CONTACT_BUTTON_HEIGHT = 1.75;
 const CONTACT_BUTTON_Y = BEACH.seaY + CONTACT_BUTTON_HEIGHT / 2;
 const CONTACT_BUTTON_SPACING = 1.95;
 const CONTACT_BUTTON_Z = BEACH.boardwalk.endZ - 4.15;
+const CONTACT_BUTTON_GROUP_POSITION: [number, number, number] = [
+  0,
+  -0.21,
+  -7,
+];
+const TUNED_CONTACT_BUTTON_POSITIONS: Partial<
+  Record<ContactCrateKey, [number, number, number]>
+> = {
+  message: [-0.85, -2.65, -245.38],
+  github: [1.59, -2.66, -245.47],
+};
 
 function crateAction(key: string) {
   if (key === "message") {
@@ -39,7 +52,7 @@ function ContactBarrel({
   position,
 }: {
   crate: (typeof BEACH.crates)[number];
-  position: [number, number];
+  position: [number, number, number];
 }) {
   const bobRef = useRef<THREE.Group>(null);
   const phase = useMemo(() => seededRange(crate.key, 0, Math.PI * 2), [crate.key]);
@@ -56,7 +69,7 @@ function ContactBarrel({
   });
 
   return (
-    <group name={`Contact Barrel Button: ${crate.label}`} position={[position[0], CONTACT_BUTTON_Y, position[1]]}>
+    <group name={`Contact Barrel Button: ${crate.label}`} position={position}>
       <group ref={bobRef} name={`Contact Barrel Button Bob: ${crate.label}`}>
         <PaintSprite
           name={`Contact Barrel Button Sprite: ${crate.label}`}
@@ -83,14 +96,23 @@ export default function ContactCrates() {
   const middle = (availableCrates.length - 1) / 2;
 
   return (
-    <group name="Contact Barrel Buttons">
+    <group
+      name="Contact Barrel Buttons"
+      position={CONTACT_BUTTON_GROUP_POSITION}
+    >
       {availableCrates.map((crate, index) => {
         const centerDistance = Math.abs(index - middle);
         const x = BEACH.boardwalk.x + (index - middle) * CONTACT_BUTTON_SPACING;
         const z = CONTACT_BUTTON_Z + centerDistance * 0.18;
+        const position: [number, number, number] =
+          TUNED_CONTACT_BUTTON_POSITIONS[crate.key] ?? [
+            x,
+            CONTACT_BUTTON_Y,
+            z,
+          ];
 
         return (
-          <ContactBarrel key={crate.key} crate={crate} position={[x, z]} />
+          <ContactBarrel key={crate.key} crate={crate} position={position} />
         );
       })}
     </group>

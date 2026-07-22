@@ -5,7 +5,6 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 
-import FloatingNote from "../FloatingNote";
 import PaintSprite from "../PaintSprite";
 import {
   CORRIDOR,
@@ -242,47 +241,9 @@ function InfoStation({
   );
 }
 
-function WindowWallNote() {
-  return (
-    <group
-      name="Corridor Window Wall Note"
-      position={[-2.42, 0.46, CORRIDOR.endWallZ + 0.09]}
-    >
-      <mesh name="Corridor Window Note Paper Border" position={[0, 0, -0.025]}>
-        <planeGeometry args={[1.65, 1.12]} />
-        <meshBasicMaterial color="#8a6a3f" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh name="Corridor Window Note Paper" position={[0, 0, -0.01]}>
-        <planeGeometry args={[1.53, 1]} />
-        <meshBasicMaterial color="#fff6df" side={THREE.DoubleSide} />
-      </mesh>
-      <FloatingNote
-        name="Corridor Window Note"
-        position={[0, 0.04, 0.05]}
-        fontSize={1.02}
-        weight={700}
-        maxWidth={190}
-        distanceFactor={6.2}
-        rotation={-2}
-      >
-        {corridor.windowNote}
-      </FloatingNote>
-      <PaintSprite
-        name="Corridor Window Arrow"
-        sketch={`${C}/strzalka.webp`}
-        billboard={false}
-        position={[1.12, -0.52, 0.045]}
-        height={0.46}
-        revealNear={8}
-        revealFar={16}
-      />
-    </group>
-  );
-}
-
 /**
- * CorridorStations — the info stops along the corridor walls, the potted
- * props, ceiling lamps and the little vignette pointing at the window.
+ * CorridorStations — the info stops along the corridor walls and the remaining
+ * floor and wall props.
  */
 export default function CorridorStations() {
   return (
@@ -329,33 +290,6 @@ export default function CorridorStations() {
         />
       </group>
 
-      {/* Ceiling lamps with a warm pool of light under each */}
-      {[-24, -38, -52, -66]
-        .map(corridorLayoutZ)
-        .concat(CORRIDOR.endWallZ + 4)
-        .map((z) => (
-          <group
-            key={z}
-            name={`Corridor Ceiling Lamp ${z}`}
-            position={[0, 0, z]}
-          >
-            <PaintSprite
-              name={`Corridor Ceiling Lamp Shade ${z}`}
-              sketch={`${C}/bokilampy.webp`}
-              position={[0, CORRIDOR.ceilY - 0.5, 0]}
-              height={0.9}
-            />
-            <pointLight
-              name={`Corridor Ceiling Lamp Light ${z}`}
-              position={[0, 1.2, 0]}
-              intensity={5}
-              distance={9}
-              decay={2}
-              color="#ffe3b8"
-            />
-          </group>
-        ))}
-
       {/* The table beside the window (the airplane rests above it) */}
       <PaintSprite
         name="Corridor Window Table"
@@ -365,9 +299,6 @@ export default function CorridorStations() {
         revealNear={9}
         revealFar={18}
       />
-
-      {/* End vignette — pinned to the end wall beside the window. */}
-      <WindowWallNote />
     </group>
   );
 }
