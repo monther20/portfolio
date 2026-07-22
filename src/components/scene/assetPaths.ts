@@ -2,13 +2,13 @@ const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";
 const CLOUD_TEXTURE_BASE = "/textures/journey/clouds";
 
-export const AVATAR_FRAME_COUNT = 33;
+const AVATAR_FRAME_COUNT = 33;
 export const AVATAR_FRAME_URLS = Array.from(
   { length: AVATAR_FRAME_COUNT },
   (_, index) => `${CORRIDOR_TEXTURE_BASE}/avatar_anim_warp/${String(index + 1).padStart(3, "0")}.png`,
 );
 
-export const CLOUD_TEXTURE_FILES = [
+const CLOUD_TEXTURE_FILES = [
   "1131c3eb-dfae-423f-924b-ff39d8ccd6dc",
   "254b8ec8-d6f7-4275-956f-7bab65b2ce2d",
   "2cc88dd1-483c-466d-b07e-f8308c61ccbe",

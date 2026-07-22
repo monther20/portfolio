@@ -17,7 +17,7 @@
 const CORRIDOR_REFERENCE_START_Z = -15.95;
 const CORRIDOR_REFERENCE_END_WALL_Z = -82;
 const BASE_CORRIDOR_LENGTH_EXTENSION = 16;
-export const CORRIDOR_LENGTH_SCALE = 1.5;
+const CORRIDOR_LENGTH_SCALE = 1.5;
 
 const CORRIDOR_REFERENCE_LENGTH =
   CORRIDOR_REFERENCE_START_Z - CORRIDOR_REFERENCE_END_WALL_Z;
@@ -105,7 +105,7 @@ export function corridorStationZ(index: number): number {
 }
 
 /** Each station activates as soon as the camera passes the preceding section. */
-export function corridorStationActivationZ(index: number): number {
+function corridorStationActivationZ(index: number): number {
   return index === 0 ? CORRIDOR_AVATAR_Z : corridorStationZ(index - 1);
 }
 
@@ -134,7 +134,7 @@ export function journeyPhaseAt(z: number): JourneyPhase {
 }
 
 /** Classic smoothstep, clamped. */
-export function smoothstep(edge0: number, edge1: number, x: number): number {
+function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
 }

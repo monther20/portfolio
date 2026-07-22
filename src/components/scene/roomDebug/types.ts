@@ -14,14 +14,14 @@ export type TransformDebug = {
   renderOrder: number;
 };
 
-export type LightDebug = {
+type LightDebug = {
   visible: boolean;
   color: string;
   dayIntensity: number;
   nightIntensity: number;
 };
 
-export type SpotLightDebug = {
+type SpotLightDebug = {
   visible: boolean;
   position: Vector3Debug;
   target: Vector3Debug;
@@ -33,7 +33,7 @@ export type SpotLightDebug = {
   decay: number;
 };
 
-export type MaterialDebug = {
+type MaterialDebug = {
   color: string;
   nightColor?: string;
   roughness: number;
@@ -42,7 +42,7 @@ export type MaterialDebug = {
   wireframe: boolean;
 };
 
-export type FloorGlowDebug = TransformDebug & {
+type FloorGlowDebug = TransformDebug & {
   radius: number;
   color: string;
   maxOpacity: number;
@@ -80,7 +80,7 @@ export type FloorDecalsDebug = {
   chair: FloorDecalCategoryDebug;
 };
 
-export type InteriorDetailsDebug = {
+type InteriorDetailsDebug = {
   floorDecals: FloorDecalsDebug;
 };
 

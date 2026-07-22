@@ -11,7 +11,7 @@ const PROJECTS_BASE = "/textures/projects";
 const SKILLS_BASE = "/textures/skills";
 
 /** A sprite that has a hand-drawn sketch and a coloured "painted" variant. */
-export type PaintPair = {
+type PaintPair = {
   /** monochrome / line-art texture shown before reveal */
   sketch: string;
   /** full-colour texture cross-faded in on approach / hover (optional) */
@@ -27,33 +27,6 @@ const PROJECT_PANEL = (fileName: string): PaintPair => ({
   sketch: `${PROJECTS_BASE}/${fileName}.webp`,
   painted: `${PROJECTS_BASE}/${fileName}_painted.webp`,
 });
-
-// ── ABOUT ──────────────────────────────────────────────────────────────────
-export const about = {
-  name: "Monther Abdelrazek",
-  /** First line shown floating around the avatar when you come through the door. */
-  greeting: "Hi, I'm Monther 👋",
-  tagline: "Junior Front-end Engineer",
-  /** Each string becomes a floating handwritten note in the About section. Edit freely. */
-  blurbs: [
-    "Computer Science student at Jordan University of Science and Technology (JUST).",
-    "I build responsive web and mobile interfaces using React, React Native, and Next.js.",
-    "Recently completed a graduate trainee program at Alphaworks after freelancing there since 2023.",
-  ],
-  /** Decorative "islands" already in your assets — set show:false to hide. */
-  islands: [
-    {
-      tex: `${JOURNEY_MILESTONES_BASE}/uowyspa.webp`,
-      label: "Computer Science @ JUST",
-      show: true,
-    },
-    {
-      tex: `${JOURNEY_MILESTONES_BASE}/freelancewyspa.webp`,
-      label: "Alphaworks Front-end",
-      show: true,
-    },
-  ],
-};
 
 // ── SKILLS ─────────────────────────────────────────────────────────────────
 export type Skill = {
@@ -81,8 +54,6 @@ export const skills: Skill[] = [
 // ── PROJECTS ─────────────────────────────────────────────────────────────────
 export type Project = {
   name: string;
-  /** one-line description shown when the paper flies up to the camera */
-  blurb: string;
   /** LIVE url — replace "#" with the real link to enable the "open live project" button */
   link: string;
   /** front panel artwork */
@@ -92,15 +63,11 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: "Reachlet",
-    blurb:
-      "React Native mobile frontend for an advertisement display app with dynamic multimedia content, auto-scrolling image/video ads, and QR-code external links.",
     link: "#",
     panel: PROJECT_PANEL("reachlet"),
   },
   {
     name: "eZorro",
-    blurb:
-      "Financial trading platform frontend using React with real-time market analysis, portfolio management, AI-powered trading assistance, streaming chat, and interactive dashboards.",
     link: "#",
     panel: PROJECT_PANEL("ezorro"),
   },
@@ -115,11 +82,8 @@ export const projectUI = {
 // ── CONTACT ──────────────────────────────────────────────────────────────────
 export const contact = {
   email: "monther.abdelrazek@gmail.com",
-  phone: "+962 780862010",
-  location: "Amman, Jordan",
   github: "https://github.com/monther20",
   linkedin: "", // add your LinkedIn url when available
-  twitter: "", // add your X / Twitter url when available
 };
 
 // ── CORRIDOR ─────────────────────────────────────────────────────────────────
@@ -128,15 +92,13 @@ export const contact = {
  * floating doodads around him, and the info stations along the walls.
  */
 export const corridor = {
-  greeting: about.greeting,
-  tagline: about.tagline,
+  greeting: "Hi, I'm Monther 👋",
+  tagline: "Junior Front-end Engineer",
   /** Small hand-drawn doodles floating around the avatar. */
   doodles: [
     `${CORRIDOR_BASE}/decorations/pencil.webp`,
     `${CORRIDOR_BASE}/decorations/while_true_loop.webp`,
   ],
-  /** Optional tech logos floating near the avatar (sketch + painted pairs). */
-  logos: [] as PaintPair[],
   /** Info stations along the corridor walls. */
   stations: [
     {

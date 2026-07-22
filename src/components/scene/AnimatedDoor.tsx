@@ -18,6 +18,9 @@ const DoorWipeMaterial = shaderMaterial(
   {
     texBase: null,
     texOn: null,
+    displacementMap: null,
+    displacementScale: 0,
+    displacementBias: 0,
     progress: 0,
     tintColor: new THREE.Color("#ffffff"),
     // Manual fog uniforms — synced each frame from the scene fog
@@ -25,13 +28,21 @@ const DoorWipeMaterial = shaderMaterial(
     fogNear: 5,
     fogFar: 55,
   },
-  // Vertex — passes fog depth to fragment
+  // Vertex — displaces the subdivided door panel and passes fog depth to fragment
   `
     varying vec2 vUv;
     varying float vFogDepth;
+    uniform sampler2D displacementMap;
+    uniform float displacementScale;
+    uniform float displacementBias;
+
     void main() {
       vUv = uv;
-      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      float displacement = texture2D(displacementMap, uv).r;
+      vec3 displacedPosition = position + normal * (
+        displacement * displacementScale + displacementBias
+      );
+      vec4 mvPos = modelViewMatrix * vec4(displacedPosition, 1.0);
       gl_Position = projectionMatrix * mvPos;
       vFogDepth = -mvPos.z;
     }
@@ -71,6 +82,10 @@ extend({ DoorWipeMaterial });
 
 const DOOR_PANEL_WIDTH = 4.9;
 const DOOR_PANEL_HEIGHT = 8.8;
+const DOOR_PANEL_WIDTH_SEGMENTS = 96;
+const DOOR_PANEL_HEIGHT_SEGMENTS = 192;
+const DOOR_DISPLACEMENT_SCALE = 0.14;
+const DOOR_DISPLACEMENT_BIAS = -DOOR_DISPLACEMENT_SCALE * 0.5;
 const DOOR_HANDLE_POSITION: [number, number, number] = [2, -0.1, 0];
 const DOOR_HANDLE_SCALE: [number, number, number] = [1.95, 1.7, 1];
 const DOOR_HANDLE_RENDER_ORDER_OFFSET = 1;
@@ -110,6 +125,10 @@ export default function AnimatedDoor({
     THREE.TextureLoader,
     "/textures/room/door_colored.webp",
   );
+  const doorDisplacementTexture = useLoader(
+    THREE.TextureLoader,
+    "/textures/room/door_displacement.png",
+  );
   const doorHandleTexture = useLoader(
     THREE.TextureLoader,
     "/textures/room/door_handle.webp",
@@ -141,6 +160,13 @@ export default function AnimatedDoor({
     doorHandleOpenTexture,
     frameTexture,
   ]);
+
+  // Displacement maps are linear data, not color. Keep the texture out of the
+  // sRGB conversion used by the door artwork.
+  useEffect(() => {
+    doorDisplacementTexture.colorSpace = THREE.NoColorSpace;
+    doorDisplacementTexture.needsUpdate = true;
+  }, [doorDisplacementTexture]);
 
   // Sync the manual fog uniforms with the scene's live fog each frame.
   useFrame(() => {
@@ -273,11 +299,21 @@ export default function AnimatedDoor({
             renderOrder={meshes.doorPanelSurface.renderOrder}
             visible={meshes.doorPanelSurface.visible}
           >
-            <planeGeometry args={[DOOR_PANEL_WIDTH, DOOR_PANEL_HEIGHT]} />
+            <planeGeometry
+              args={[
+                DOOR_PANEL_WIDTH,
+                DOOR_PANEL_HEIGHT,
+                DOOR_PANEL_WIDTH_SEGMENTS,
+                DOOR_PANEL_HEIGHT_SEGMENTS,
+              ]}
+            />
             <doorWipeMaterial
               ref={doorMaterialRef}
               texBase={doorDefaultTexture}
               texOn={doorDefaultTexture}
+              displacementMap={doorDisplacementTexture}
+              displacementScale={DOOR_DISPLACEMENT_SCALE}
+              displacementBias={DOOR_DISPLACEMENT_BIAS}
               tintColor={new THREE.Color(doorPanelTint)}
               transparent={false}
               wireframe={materials.doorPanel.wireframe}

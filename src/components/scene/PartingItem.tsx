@@ -6,7 +6,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 
 const AIRPLANE_CAMERA_Z_OFFSET = 2.85;
 
-export function seededUnit(seed: string | number) {
+function seededUnit(seed: string | number) {
   let hash = 2166136261;
   const input = String(seed);
 

@@ -30,7 +30,6 @@ const CORRIDOR_ASSETS: (string | undefined)[] = [
   "/textures/shared/table.webp",
   ...corridor.stations.map((station) => station.art),
   ...corridor.doodles,
-  ...corridor.logos.flatMap((logo) => [logo.sketch, logo.painted]),
 ];
 
 /** Everything in the sky flight (clouds, milestones, skills, projects). */
