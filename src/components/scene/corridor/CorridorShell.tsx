@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type GUI from "lil-gui";
 import * as THREE from "three";
 
-import { CORRIDOR } from "../journeyConfig";
 import { useTiledTexture } from "./useTiledTexture";
 
 const C = "/textures/corridor";
@@ -94,137 +91,13 @@ const DEFAULT_DEBUG: CorridorShellDebug = {
   wireframe: false,
 };
 
-function useCorridorShellDebug() {
-  const [debug, setDebug] = useState<CorridorShellDebug>(() => ({
-    ...DEFAULT_DEBUG,
-  }));
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
-
-    let gui: GUI | undefined;
-    let disposed = false;
-
-    void import("lil-gui").then(({ default: GUIConstructor }) => {
-      if (disposed) return;
-
-      const params = { ...DEFAULT_DEBUG };
-      gui = new GUIConstructor({ title: "Corridor Shell Debug", width: 330 });
-      gui.domElement.style.zIndex = "10020";
-
-      const commit = () => setDebug({ ...params });
-      const number = (
-        folder: GUI,
-        key: keyof CorridorShellDebug,
-        min: number,
-        max: number,
-        step: number,
-        label: string,
-      ) => folder.add(params, key, min, max, step).name(label).onChange(commit);
-      const toggle = (
-        folder: GUI,
-        key: keyof CorridorShellDebug,
-        label: string,
-      ) => folder.add(params, key).name(label).onChange(commit);
-
-      const visibility = gui.addFolder("Visibility");
-      toggle(visibility, "shellVisible", "Shell");
-      toggle(visibility, "floorVisible", "Floor");
-      toggle(visibility, "ceilingVisible", "Ceiling");
-      toggle(visibility, "leftWallVisible", "Left wall");
-      toggle(visibility, "rightWallVisible", "Right wall");
-      toggle(visibility, "endWallVisible", "End wall");
-
-      const transform = gui.addFolder("Shell transform");
-      transform.close();
-      number(transform, "positionX", -10, 10, 0.01, "Position X");
-      number(transform, "positionY", -10, 10, 0.01, "Position Y");
-      number(transform, "positionZ", -30, 30, 0.01, "Position Z");
-      number(transform, "rotationX", -Math.PI, Math.PI, 0.001, "Rotation X");
-      number(transform, "rotationY", -Math.PI, Math.PI, 0.001, "Rotation Y");
-      number(transform, "rotationZ", -Math.PI, Math.PI, 0.001, "Rotation Z");
-      number(transform, "scaleX", 0.1, 3, 0.01, "Scale X");
-      number(transform, "scaleY", 0.1, 3, 0.01, "Scale Y");
-      number(transform, "scaleZ", 0.1, 3, 0.01, "Scale Z");
-
-      const dimensions = gui.addFolder("Dimensions");
-      dimensions.close();
-      number(
-        dimensions,
-        "startZ",
-        CORRIDOR.startZ - 30,
-        CORRIDOR.startZ + 30,
-        0.01,
-        "Start Z",
-      );
-      number(
-        dimensions,
-        "endWallZ",
-        CORRIDOR.endWallZ - 60,
-        CORRIDOR.endWallZ + 60,
-        0.01,
-        "End wall Z",
-      );
-      number(dimensions, "halfWidth", 1, 10, 0.01, "Half width");
-      number(dimensions, "floorY", -8, 2, 0.01, "Floor Y");
-      number(dimensions, "ceilY", -1, 8, 0.01, "Ceiling Y");
-
-      const windowHole = gui.addFolder("Window hole");
-      windowHole.close();
-      number(windowHole, "windowX", -5, 5, 0.01, "Center X");
-      number(windowHole, "windowY", -5, 5, 0.01, "Center Y");
-      number(windowHole, "windowWidth", 0.2, 8, 0.01, "Width");
-      number(windowHole, "windowHeight", 0.2, 7, 0.01, "Height");
-      number(windowHole, "holeMargin", 0, 1, 0.01, "Margin");
-
-      const textures = gui.addFolder("Texture repeats");
-      textures.close();
-      number(textures, "floorRepeatX", 0.1, 50, 0.1, "Floor X");
-      number(textures, "floorRepeatY", 0.1, 80, 0.1, "Floor Y");
-      number(textures, "ceilingRepeatX", 0.1, 50, 0.1, "Ceiling X");
-      number(textures, "ceilingRepeatY", 0.1, 80, 0.1, "Ceiling Y");
-      number(textures, "wallRepeatX", 0.1, 80, 0.1, "Walls X");
-      number(textures, "wallRepeatY", 0.1, 20, 0.1, "Walls Y");
-      number(textures, "endWallRepeatX", 0.1, 20, 0.1, "End wall X");
-      number(textures, "endWallRepeatY", 0.1, 20, 0.1, "End wall Y");
-
-      const material = gui.addFolder("Material");
-      material.close();
-      material.addColor(params, "floorColor").name("Floor color").onChange(commit);
-      material
-        .addColor(params, "ceilingColor")
-        .name("Ceiling color")
-        .onChange(commit);
-      material.addColor(params, "wallColor").name("Wall color").onChange(commit);
-      number(material, "opacity", 0, 1, 0.01, "Opacity");
-      toggle(material, "wireframe", "Wireframe");
-
-      const actions = {
-        copySettings: () => {
-          const json = JSON.stringify(params, null, 2);
-          void navigator.clipboard?.writeText(json);
-          console.info("Corridor Shell Debug settings:\n", json);
-        },
-      };
-      gui.add(actions, "copySettings").name("Copy settings JSON");
-    });
-
-    return () => {
-      disposed = true;
-      gui?.destroy();
-    };
-  }, []);
-
-  return debug;
-}
-
 /**
  * CorridorShell — floor, ceiling and walls of the entrance corridor, plus the
  * end wall built from four strips so it has a REAL hole where the window sits
  * (the camera flies through it after the launch).
  */
 export default function CorridorShell() {
-  const debug = useCorridorShellDebug();
+  const debug = DEFAULT_DEBUG;
   const length = Math.max(0.01, debug.startZ - debug.endWallZ);
   const floorTex = useTiledTexture(
     `${C}/floor_wood.webp`,

@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Html } from "@react-three/drei";
 
+import { projectUI } from "@/data/portfolio";
+
 const inkColor = "#111111";
 
 const fieldStyle: React.CSSProperties = {
@@ -20,16 +22,11 @@ const fieldStyle: React.CSSProperties = {
   resize: "none",
 };
 
-const labelStyle: React.CSSProperties = {
-  fontFamily: "var(--font-caveat), 'Caveat', cursive",
-  fontSize: 15,
-  fontWeight: 700,
-  color: inkColor,
-  display: "block",
-  marginBottom: 3,
+export type LetterFields = {
+  email: string;
+  subject: string;
+  message: string;
 };
-
-export type LetterFields = { name: string; email: string; message: string };
 
 /**
  * ContactLetterForm — the handwriting-styled form drawn onto the unfolded
@@ -42,8 +39,8 @@ export default function ContactLetterForm({
   onSend: (fields: LetterFields) => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const sendTimeout = useRef<number | null>(null);
@@ -71,7 +68,10 @@ export default function ContactLetterForm({
     if (sent) return;
     setSent(true);
     // Brief "sent ✓" beat before the letter folds itself back up.
-    sendTimeout.current = window.setTimeout(() => onSend({ name, email, message }), 800);
+    sendTimeout.current = window.setTimeout(
+      () => onSend({ email, subject, message }),
+      800,
+    );
   };
 
   return (
@@ -87,7 +87,21 @@ export default function ContactLetterForm({
         onSubmit={handleSend}
         onWheel={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        style={{ width: 260, padding: "12px 16px", position: "relative", userSelect: "none", color: inkColor }}
+        style={{
+          width: 260,
+          boxSizing: "border-box",
+          padding: "18px 18px 20px",
+          position: "relative",
+          userSelect: "none",
+          color: inkColor,
+          backgroundColor: "#f5f2e9",
+          backgroundImage: `url("${projectUI.paperTexture}")`,
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+          border: "1.5px solid rgba(80, 74, 64, 0.38)",
+          borderRadius: 2,
+          boxShadow: "0 7px 18px rgba(31, 27, 20, 0.22)",
+        }}
       >
         <button
           type="button"
@@ -95,8 +109,8 @@ export default function ContactLetterForm({
           onClick={onClose}
           style={{
             position: "absolute",
-            top: 2,
-            right: 2,
+            top: 6,
+            right: 7,
             border: "none",
             background: "transparent",
             fontFamily: "var(--font-caveat), 'Caveat', cursive",
@@ -110,69 +124,40 @@ export default function ContactLetterForm({
           ✕
         </button>
 
-        <div
-          style={{
-            fontFamily: "var(--font-caveat), 'Caveat', cursive",
-            fontSize: 23,
-            fontWeight: 700,
-            color: inkColor,
-            lineHeight: 1,
-          }}
-        >
-          let&apos;s make something ✎
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--font-patrick), 'Patrick Hand', cursive",
-            fontSize: 12,
-            color: "#444444",
-            margin: "4px 0 9px",
-          }}
-        >
-          This opens your mail app — no message disappears into a void.
-        </div>
-
-        <label style={labelStyle}>
-          name
-          <input
-            style={fieldStyle}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="your name"
-            autoComplete="name"
-            maxLength={80}
-            required
-            disabled={sent}
-          />
-        </label>
-        <label style={{ ...labelStyle, marginTop: 6 }}>
-          email
-          <input
-            style={fieldStyle}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@somewhere.com"
-            autoComplete="email"
-            maxLength={160}
-            required
-            disabled={sent}
-          />
-        </label>
-        <label style={{ ...labelStyle, marginTop: 6 }}>
-          message
-          <textarea
-            style={fieldStyle}
-            rows={3}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="tell me a little about your idea…"
-            minLength={8}
-            maxLength={1200}
-            required
-            disabled={sent}
-          />
-        </label>
+        <input
+          aria-label="Email"
+          style={fieldStyle}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="email"
+          autoComplete="email"
+          maxLength={160}
+          required
+          disabled={sent}
+        />
+        <input
+          aria-label="Subject"
+          style={{ ...fieldStyle, marginTop: 7 }}
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder="subject"
+          maxLength={160}
+          required
+          disabled={sent}
+        />
+        <textarea
+          aria-label="Message"
+          style={{ ...fieldStyle, marginTop: 7 }}
+          rows={5}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="message"
+          minLength={8}
+          maxLength={1200}
+          required
+          disabled={sent}
+        />
 
         <button
           type="submit"
@@ -202,7 +187,7 @@ export default function ContactLetterForm({
             if (!sent) e.currentTarget.style.transform = "none";
           }}
         >
-          {sent ? "opening mail app…" : "continue in mail app ✈"}
+          {sent ? "opening mail app…" : "send ✈"}
         </button>
       </form>
     </Html>

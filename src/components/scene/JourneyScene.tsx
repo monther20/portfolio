@@ -5,7 +5,6 @@ import { Float } from "@react-three/drei";
 
 import PaintSprite from "./PaintSprite";
 import PartingItem, { seededRange } from "./PartingItem";
-import FloatingNote from "./FloatingNote";
 import CorridorScene from "./CorridorScene";
 import ScrollCameraManager from "./ScrollCameraManager";
 import PaperAirplaneActor from "./PaperAirplaneActor";
@@ -89,25 +88,6 @@ function FlightClouds() {
   );
 }
 
-/** A handwritten heading floating at the start of a sky section. */
-function SectionHeading({
-  position,
-  children,
-}: {
-  position: [number, number, number];
-  children: string;
-}) {
-  return (
-    <group name="Section Heading">
-      <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.4} floatingRange={[-0.12, 0.12]}>
-        <FloatingNote position={position} fontSize={2.4} weight={700} rotation={-2}>
-          {children}
-        </FloatingNote>
-      </Float>
-    </group>
-  );
-}
-
 /**
  * JourneyScene — everything beyond the door: the corridor walk, the window
  * launch, the sky flight (journey → skills → projects) and the beach landing
@@ -121,13 +101,8 @@ export default function JourneyScene({ scrollEnabled }: { scrollEnabled: boolean
       <PaperAirplaneActor />
       <FlightClouds />
 
-      <SectionHeading position={[0, 2.9, JOURNEY.journeyAnchorZ + 5]}>my journey</SectionHeading>
       <JourneySection zStart={JOURNEY.journeyAnchorZ} />
-
-      <SectionHeading position={[0, 2.9, JOURNEY.skillsAnchorZ + 5]}>skills</SectionHeading>
       <SkillsSection zStart={JOURNEY.skillsAnchorZ} />
-
-      <SectionHeading position={[0, 2.9, JOURNEY.projectsAnchorZ + 5]}>projects</SectionHeading>
       <ProjectsSection zStart={JOURNEY.projectsAnchorZ} />
 
       <BeachContactSection />

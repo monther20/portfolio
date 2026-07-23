@@ -21,6 +21,12 @@ const FLIGHT_SPEED = 0.0028;
 const WALK_SPEED_FACTOR = 0.55;
 const FRICTION = 0.92;
 const MIN_VELOCITY = 0.00015;
+/** Keep rapid wheel/trackpad gestures from building up runaway momentum. */
+const MAX_WHEEL_DELTA = 100;
+const MAX_WALK_VELOCITY = 0.22;
+const MAX_FLIGHT_VELOCITY = 0.38;
+/** Avoid a large camera jump if a frame stalls while momentum is active. */
+const MAX_FRAME_SCALE = 2;
 const CHUNK_LENGTH = 40;
 /** Subtle cursor-follow parallax; pointer values are normalized from -1 to 1. */
 const MOUSE_POSITION_X = 0.12;
@@ -55,7 +61,26 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       if (journey.cameraLocked || journey.contactOpen) return;
 
       const walking = journeyPhaseAt(camera.position.z) === "corridor";
-      flightVelocity.current += e.deltaY * FLIGHT_SPEED * (walking ? WALK_SPEED_FACTOR : 1);
+      const speedFactor = walking ? WALK_SPEED_FACTOR : 1;
+      const maxVelocity = walking ? MAX_WALK_VELOCITY : MAX_FLIGHT_VELOCITY;
+      // Wheel delta units vary by browser, so convert line/page deltas to an
+      // approximate pixel value before limiting both the gesture and momentum.
+      const deltaMultiplier = e.deltaMode === 1
+        ? 16
+        : e.deltaMode === 2
+          ? window.innerHeight
+          : 1;
+      const wheelDelta = THREE.MathUtils.clamp(
+        e.deltaY * deltaMultiplier,
+        -MAX_WHEEL_DELTA,
+        MAX_WHEEL_DELTA,
+      );
+
+      flightVelocity.current = THREE.MathUtils.clamp(
+        flightVelocity.current + wheelDelta * FLIGHT_SPEED * speedFactor,
+        -maxVelocity,
+        maxVelocity,
+      );
     };
 
     window.addEventListener("wheel", handleWheel, { passive: true });
@@ -72,12 +97,20 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       return;
     }
 
-    const frameScale = delta * 60;
+    const frameScale = Math.min(delta * 60, MAX_FRAME_SCALE);
 
     // Momentum: velocity moves the camera, then decays. Back-scroll is allowed
     // all the way into the corridor even after flying out through the window.
     const nearBound = JOURNEY.corridorStart;
     const prevZ = camera.position.z;
+    const maxVelocity = journeyPhaseAt(prevZ) === "corridor"
+      ? MAX_WALK_VELOCITY
+      : MAX_FLIGHT_VELOCITY;
+    flightVelocity.current = THREE.MathUtils.clamp(
+      flightVelocity.current,
+      -maxVelocity,
+      maxVelocity,
+    );
     const proposedZ = prevZ - flightVelocity.current * frameScale;
     const nextZ = THREE.MathUtils.clamp(proposedZ, JOURNEY.farBound, nearBound);
 

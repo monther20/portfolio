@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type GUI from "lil-gui";
 import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 
 import {
   AIRPLANE_CAMERA_OFFSET,
+  BEACH,
   CORRIDOR,
   JOURNEY,
   windowProgressAt,
@@ -16,6 +18,7 @@ import {
   getJourneyState,
   setJourneyState,
   useJourneyState,
+  type AirplaneMode,
 } from "./journeyState";
 import {
   AIRPLANE_LOOK,
@@ -33,7 +36,213 @@ import ContactLetterForm, {
 import { contact, projectUI } from "@/data/portfolio";
 
 /** The plane's resting pose once it has landed on the boardwalk. */
-const LANDED_EULER = new THREE.Euler(0, 0.25, 0.04);
+const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
+
+type LandedAirplaneDebug = {
+  visible: boolean;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
+};
+
+const DEFAULT_LANDED_AIRPLANE_DEBUG: LandedAirplaneDebug = {
+  visible: true,
+  positionX: BEACH.landing[0],
+  positionY: BEACH.landing[1],
+  positionZ: BEACH.landing[2],
+  rotationX: LANDED_EULER.x,
+  rotationY: LANDED_EULER.y,
+  rotationZ: LANDED_EULER.z,
+  scaleX: 1,
+  scaleY: 1,
+  scaleZ: 1,
+};
+
+type MessagePaperDebug = {
+  visible: boolean;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
+  width: number;
+  height: number;
+};
+
+const DEFAULT_MESSAGE_PAPER_DEBUG: MessagePaperDebug = {
+  visible: true,
+  positionX: 0,
+  positionY: -0.0199999999999996,
+  positionZ: -0.0300000000000002,
+  rotationX: -1.1907963267948967,
+  rotationY: 0.000407346410206788,
+  rotationZ: 0,
+  scaleX: 0.27,
+  scaleY: 0.22,
+  scaleZ: 1,
+  width: 1.7,
+  height: 2.3,
+};
+
+/** Development-only transform inspector shown after the airplane has landed. */
+function useLandedAirplaneDebug(airplaneMode: AirplaneMode) {
+  const [debug, setDebug] = useState<LandedAirplaneDebug>(() => ({
+    ...DEFAULT_LANDED_AIRPLANE_DEBUG,
+  }));
+  const debugRef = useRef(debug);
+  debugRef.current = debug;
+
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV !== "development" ||
+      airplaneMode !== "landed"
+    ) {
+      return;
+    }
+
+    let gui: GUI | undefined;
+    let disposed = false;
+
+    void import("lil-gui").then(({ default: GUIConstructor }) => {
+      if (disposed) return;
+
+      const params = { ...debugRef.current };
+      gui = new GUIConstructor({ title: "Landed Airplane Debug", width: 330 });
+      gui.domElement.style.zIndex = "10020";
+
+      const commit = () => setDebug({ ...params });
+      const number = (
+        folder: GUI,
+        key: keyof LandedAirplaneDebug,
+        min: number,
+        max: number,
+        step: number,
+        label: string,
+      ) => folder.add(params, key, min, max, step).name(label).onChange(commit);
+
+      gui.add(params, "visible").name("Visible").onChange(commit);
+
+      const position = gui.addFolder("Position");
+      number(position, "positionX", -10, 10, 0.01, "X");
+      number(position, "positionY", -8, 5, 0.01, "Y");
+      number(
+        position,
+        "positionZ",
+        BEACH.landing[2] - 30,
+        BEACH.landing[2] + 30,
+        0.01,
+        "Z",
+      );
+
+      const rotation = gui.addFolder("Rotation");
+      number(rotation, "rotationX", -Math.PI, Math.PI, 0.001, "X");
+      number(rotation, "rotationY", -Math.PI, Math.PI, 0.001, "Y");
+      number(rotation, "rotationZ", -Math.PI, Math.PI, 0.001, "Z");
+
+      const scale = gui.addFolder("Scale");
+      number(scale, "scaleX", 0.05, 4, 0.01, "X");
+      number(scale, "scaleY", 0.05, 4, 0.01, "Y");
+      number(scale, "scaleZ", 0.05, 4, 0.01, "Z");
+
+      const actions = {
+        copySettings: () => {
+          const json = JSON.stringify(params, null, 2);
+          void navigator.clipboard?.writeText(json);
+          console.info("Landed Airplane Debug settings:\n", json);
+        },
+      };
+      gui.add(actions, "copySettings").name("Copy settings JSON");
+    });
+
+    return () => {
+      disposed = true;
+      gui?.destroy();
+    };
+  }, [airplaneMode]);
+
+  return debug;
+}
+
+/** Development-only inspector shown while the contact message paper is open. */
+function useMessagePaperDebug(contactOpen: boolean) {
+  const [debug, setDebug] = useState<MessagePaperDebug>(() => ({
+    ...DEFAULT_MESSAGE_PAPER_DEBUG,
+  }));
+  const debugRef = useRef(debug);
+  debugRef.current = debug;
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || !contactOpen) return;
+
+    let gui: GUI | undefined;
+    let disposed = false;
+
+    void import("lil-gui").then(({ default: GUIConstructor }) => {
+      if (disposed) return;
+
+      const params = { ...debugRef.current };
+      gui = new GUIConstructor({ title: "Message Paper Debug", width: 330 });
+      gui.domElement.style.zIndex = "10020";
+
+      const commit = () => setDebug({ ...params });
+      const number = (
+        folder: GUI,
+        key: keyof MessagePaperDebug,
+        min: number,
+        max: number,
+        step: number,
+        label: string,
+      ) => folder.add(params, key, min, max, step).name(label).onChange(commit);
+
+      gui.add(params, "visible").name("Visible").onChange(commit);
+
+      const position = gui.addFolder("Position");
+      number(position, "positionX", -5, 5, 0.01, "X");
+      number(position, "positionY", -5, 5, 0.01, "Y");
+      number(position, "positionZ", -5, 5, 0.01, "Z");
+
+      const rotation = gui.addFolder("Rotation");
+      number(rotation, "rotationX", -Math.PI, Math.PI, 0.001, "X");
+      number(rotation, "rotationY", -Math.PI, Math.PI, 0.001, "Y");
+      number(rotation, "rotationZ", -Math.PI, Math.PI, 0.001, "Z");
+
+      const scale = gui.addFolder("Scale");
+      number(scale, "scaleX", 0.05, 4, 0.01, "X");
+      number(scale, "scaleY", 0.05, 4, 0.01, "Y");
+      number(scale, "scaleZ", 0.05, 4, 0.01, "Z");
+
+      const size = gui.addFolder("Paper Size");
+      number(size, "width", 0.25, 5, 0.01, "Width");
+      number(size, "height", 0.25, 6, 0.01, "Height");
+
+      const actions = {
+        copySettings: () => {
+          const json = JSON.stringify(params, null, 2);
+          void navigator.clipboard?.writeText(json);
+          console.info("Message Paper Debug settings:\n", json);
+        },
+      };
+      gui.add(actions, "copySettings").name("Copy settings JSON");
+    });
+
+    return () => {
+      disposed = true;
+      gui?.destroy();
+    };
+  }, [contactOpen]);
+
+  return debug;
+}
 
 /**
  * PaperAirplaneActor — the journey's hero. Rests on the corridor table, flies
@@ -41,8 +250,10 @@ const LANDED_EULER = new THREE.Euler(0, 0.25, 0.04);
  * down onto the boardwalk, and unfolds into the contact letter.
  */
 export default function PaperAirplaneActor() {
-  const { airplaneMode } = useJourneyState();
+  const { airplaneMode, contactOpen } = useJourneyState();
   const { camera } = useThree();
+  const landedDebug = useLandedAirplaneDebug(airplaneMode);
+  const messagePaperDebug = useMessagePaperDebug(contactOpen);
 
   const rootRef = useRef<THREE.Group>(null);
   const planeRef = useRef<THREE.Group>(null);
@@ -197,6 +408,11 @@ export default function PaperAirplaneActor() {
     if (!root) return;
     const t = state.clock.elapsedTime;
 
+    if (airplaneMode !== "landed") {
+      root.visible = true;
+      root.scale.set(1, 1, 1);
+    }
+
     switch (airplaneMode) {
       case "resting": {
         const rest = CORRIDOR.airplaneRest;
@@ -255,8 +471,23 @@ export default function PaperAirplaneActor() {
       }
 
       case "landed": {
-        // A landed paper plane still breathes a little in the sea breeze.
-        root.rotation.z = LANDED_EULER.z + Math.sin(t * 1.4) * 0.012;
+        root.visible = landedDebug.visible;
+        root.position.set(
+          landedDebug.positionX,
+          landedDebug.positionY,
+          landedDebug.positionZ,
+        );
+        root.rotation.set(
+          landedDebug.rotationX,
+          landedDebug.rotationY,
+          // A landed paper plane still breathes a little in the sea breeze.
+          landedDebug.rotationZ + Math.sin(t * 1.4) * 0.012,
+        );
+        root.scale.set(
+          landedDebug.scaleX,
+          landedDebug.scaleY,
+          landedDebug.scaleZ,
+        );
 
         const journey = getJourneyState();
         if (
@@ -275,9 +506,9 @@ export default function PaperAirplaneActor() {
 
   const handleSend = useCallback((fields: LetterFields) => {
     sendRequested.current = true;
-    const subject = encodeURIComponent("Hello Monther — from your portfolio");
+    const subject = encodeURIComponent(fields.subject);
     const body = encodeURIComponent(
-      `${fields.message}\n\n— ${fields.name} (${fields.email})`,
+      `${fields.message}\n\nReply to: ${fields.email}`,
     );
     window.open(
       `mailto:${contact.email}?subject=${subject}&body=${body}`,
@@ -336,22 +567,43 @@ export default function PaperAirplaneActor() {
         </line>
       </group>
 
-      {/* The unfolded letter with the contact form */}
+      {/* The unfolded letter with the contact form. The outer group owns the
+          fold animation; the inner group is safe to tune with the inspector. */}
       <group
         ref={letterRef}
-        name="Contact Letter"
+        name="Contact Letter Animation"
         visible={false}
-        position={[0, 0.06, 0]}
-        rotation={[-Math.PI / 2 + 0.38, 0, 0]}
       >
-        <mesh name="Contact Letter Paper">
-          <planeGeometry args={[1.7, 2.3]} />
-          <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} fog />
-          <Edges color="#8e8a82" fog />
-        </mesh>
-        {letterOpen && (
-          <ContactLetterForm onSend={handleSend} onClose={handleClose} />
-        )}
+        <group
+          name="Contact Letter"
+          visible={messagePaperDebug.visible}
+          position={[
+            messagePaperDebug.positionX,
+            messagePaperDebug.positionY,
+            messagePaperDebug.positionZ,
+          ]}
+          rotation={[
+            messagePaperDebug.rotationX,
+            messagePaperDebug.rotationY,
+            messagePaperDebug.rotationZ,
+          ]}
+          scale={[
+            messagePaperDebug.scaleX,
+            messagePaperDebug.scaleY,
+            messagePaperDebug.scaleZ,
+          ]}
+        >
+          <mesh name="Contact Letter Paper">
+            <planeGeometry
+              args={[messagePaperDebug.width, messagePaperDebug.height]}
+            />
+            <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} fog />
+            <Edges color="#8e8a82" fog />
+          </mesh>
+          {letterOpen && (
+            <ContactLetterForm onSend={handleSend} onClose={handleClose} />
+          )}
+        </group>
       </group>
     </group>
   );

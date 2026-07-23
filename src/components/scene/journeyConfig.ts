@@ -230,8 +230,8 @@ export const BEACH = {
     width: 3.4,
   },
 
-  /** Where the paper airplane touches down on the boardwalk. */
-  landing: [0.35, -2.08, extendCorridorZ(-186.0)] as [number, number, number],
+  /** Where the paper airplane touches down at the far end of the boardwalk. */
+  landing: [0.35, -2.63, -245.805] as [number, number, number],
 
   /** Contact barrels are centered dynamically according to the links that are available. */
   crates: [

@@ -108,7 +108,7 @@ export const corridor = {
         "Passionate about frontend development and intuitive user experiences.",
       ],
       side: -1 as const, // left wall
-      art: `${CORRIDOR_BASE}/rysuneknaobraz1.webp`,
+      art: `${CORRIDOR_BASE}/profile.png`,
     },
     {
       title: "What I build",
