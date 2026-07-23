@@ -15,9 +15,9 @@ import {
 } from "./flightPaths";
 
 /**
- * The scripted route the frame loop is currently following. gsap only
- * advances `t`; PaperAirplaneActor applies it to the group every frame so
- * there is a single writer for the airplane transform.
+ * The scripted route the frame loop is currently following. Scroll position
+ * advances launch/landing progress while gsap advances the contact send-off;
+ * PaperAirplaneActor remains the single writer for the airplane transform.
  */
 export type ModeAnim = {
   curve: THREE.CatmullRomCurve3 | null;
@@ -25,6 +25,12 @@ export type ModeAnim = {
   kind: "launch" | "landing" | "sendoffOut" | "sendoffReturn" | null;
   /** Orientation at the moment a curve starts, used to ease into tangent-following. */
   startQuaternion: THREE.Quaternion;
+  /** Retained so back-scrolling can reverse the exact same flight paths. */
+  launchCurve: THREE.CatmullRomCurve3 | null;
+  launchStartQuaternion: THREE.Quaternion;
+  landingCurve: THREE.CatmullRomCurve3 | null;
+  landingStartQuaternion: THREE.Quaternion;
+  landingStartZ: number | null;
 };
 
 type Refs = {
@@ -34,13 +40,12 @@ type Refs = {
   planeRef: MutableRefObject<THREE.Group | null>;
   letterRef: MutableRefObject<THREE.Group | null>;
   modeAnim: ModeAnim;
-  relock: { from: THREE.Vector3; t: number };
   sendRequested: MutableRefObject<boolean>;
 };
 
 /**
- * useAirplaneModeEffects — every one-shot gsap transition of the airplane's
- * state machine (launch, landing, contact-letter cinematic, send-off).
+ * Prepares scroll-owned flight routes and runs the one-shot gsap transitions
+ * for the contact-letter cinematic and send-off.
  */
 export function useAirplaneModeEffects({
   airplaneMode,
@@ -49,7 +54,6 @@ export function useAirplaneModeEffects({
   planeRef,
   letterRef,
   modeAnim,
-  relock,
   sendRequested,
 }: Refs) {
   useEffect(() => {
@@ -81,36 +85,42 @@ export function useAirplaneModeEffects({
     };
 
     switch (airplaneMode) {
+      case "resting": {
+        // A complete return to the corridor starts a fresh reversible journey.
+        modeAnim.curve = null;
+        modeAnim.kind = null;
+        modeAnim.launchCurve = null;
+        modeAnim.landingCurve = null;
+        modeAnim.landingStartZ = null;
+        break;
+      }
+
       case "launching": {
-        // Scroll owns launch progress. The frame loop updates modeAnim.t from
-        // camera z, so stopping the scroll freezes the airplane in place.
-        modeAnim.startQuaternion.copy(root.quaternion);
-        modeAnim.curve = createLaunchCurve(root.position);
+        // Scroll owns launch progress. Retaining the initial path lets the
+        // airplane follow it backward when the visitor reverses direction.
+        if (!modeAnim.launchCurve) {
+          modeAnim.launchCurve = createLaunchCurve(root.position);
+          modeAnim.launchStartQuaternion.copy(root.quaternion);
+        }
+        modeAnim.curve = modeAnim.launchCurve;
+        modeAnim.startQuaternion.copy(modeAnim.launchStartQuaternion);
         modeAnim.kind = "launch";
         modeAnim.t = 0;
         break;
       }
 
-      case "locked": {
-        // Blend in from wherever the plane was (launch end, or re-lock from the boardwalk).
-        relock.from.copy(root.position);
-        relock.t = 0;
-        break;
-      }
-
       case "landing": {
-        modeAnim.startQuaternion.copy(root.quaternion);
-        modeAnim.curve = createLandingCurve(root.position.clone());
+        if (!modeAnim.landingCurve) {
+          modeAnim.landingCurve = createLandingCurve(root.position.clone());
+          modeAnim.landingStartQuaternion.copy(root.quaternion);
+          // Start at the camera position that produced the curve's first pose,
+          // avoiding a jump when momentum crosses the nominal trigger.
+          modeAnim.landingStartZ = camera.position.z;
+        }
+        modeAnim.curve = modeAnim.landingCurve;
+        modeAnim.startQuaternion.copy(modeAnim.landingStartQuaternion);
         modeAnim.kind = "landing";
         modeAnim.t = 0;
-        track(
-          gsap.to(modeAnim, {
-            t: 1,
-            duration: 2.4,
-            ease: "power1.inOut",
-            onComplete: () => setJourneyState({ airplaneMode: "landed" }),
-          }),
-        );
         break;
       }
 

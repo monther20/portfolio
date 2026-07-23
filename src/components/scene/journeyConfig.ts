@@ -183,6 +183,18 @@ export function descentProgressAt(z: number): number {
   );
 }
 
+/** 0 → 1 as scrolling carries the airplane from the sky to its landing spot. */
+export function landingProgressAt(
+  z: number,
+  startZ = JOURNEY.landingTriggerZ,
+): number {
+  return smoothstep(
+    0,
+    1,
+    (startZ - z) / (startZ - JOURNEY.farBound),
+  );
+}
+
 // ── Corridor layout anchors (shared by CorridorScene + PaperAirplaneActor) ──
 export const CORRIDOR = {
   /** Corridor geometry begins at the doorway so the visible floor reaches the threshold. */

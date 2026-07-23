@@ -12,7 +12,7 @@ import { useSyncExternalStore } from "react";
 
 export type AirplaneMode =
   | "resting" // parked above the corridor table
-  | "launching" // gsap flight from the table out through the window
+  | "launching" // scroll-driven flight from the table out through the window
   | "locked" // glued in front of the camera during the sky flight
   | "landing" // gliding down to the boardwalk
   | "landed" // parked on the boardwalk

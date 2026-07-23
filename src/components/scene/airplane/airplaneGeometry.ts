@@ -48,16 +48,13 @@ export const AIRPLANE_LOOK = {
   renderOrder: 1000,
 } as const;
 
-/** Looping in-flight maneuver parameters (the old debug-panel defaults). */
+/** Scroll-distance-driven in-flight maneuver parameters. */
 export const AIRPLANE_WOBBLE = {
   rollStrength: 0.18,
   rollFrequency: 0.28,
-  rollSpeed: 0.55,
   pitchBase: 0.12,
   pitchStrength: 0.055,
   pitchFrequency: 0.42,
-  pitchSpeed: 0.35,
   yawStrength: 0.08,
   yawFrequency: 0.2,
-  yawSpeed: 0.45,
 } as const;

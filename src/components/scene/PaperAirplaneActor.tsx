@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type GUI from "lil-gui";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
@@ -11,6 +10,7 @@ import {
   BEACH,
   CORRIDOR,
   JOURNEY,
+  landingProgressAt,
   windowProgressAt,
 } from "./journeyConfig";
 import { useFogFade } from "./useFogFade";
@@ -18,7 +18,6 @@ import {
   getJourneyState,
   setJourneyState,
   useJourneyState,
-  type AirplaneMode,
 } from "./journeyState";
 import {
   AIRPLANE_LOOK,
@@ -38,211 +37,14 @@ import { contact, projectUI } from "@/data/portfolio";
 /** The plane's resting pose once it has landed on the boardwalk. */
 const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
 
-type LandedAirplaneDebug = {
-  visible: boolean;
-  positionX: number;
-  positionY: number;
-  positionZ: number;
-  rotationX: number;
-  rotationY: number;
-  rotationZ: number;
-  scaleX: number;
-  scaleY: number;
-  scaleZ: number;
-};
-
-const DEFAULT_LANDED_AIRPLANE_DEBUG: LandedAirplaneDebug = {
-  visible: true,
-  positionX: BEACH.landing[0],
-  positionY: BEACH.landing[1],
-  positionZ: BEACH.landing[2],
-  rotationX: LANDED_EULER.x,
-  rotationY: LANDED_EULER.y,
-  rotationZ: LANDED_EULER.z,
-  scaleX: 1,
-  scaleY: 1,
-  scaleZ: 1,
-};
-
-type MessagePaperDebug = {
-  visible: boolean;
-  positionX: number;
-  positionY: number;
-  positionZ: number;
-  rotationX: number;
-  rotationY: number;
-  rotationZ: number;
-  scaleX: number;
-  scaleY: number;
-  scaleZ: number;
-  width: number;
-  height: number;
-};
-
-const DEFAULT_MESSAGE_PAPER_DEBUG: MessagePaperDebug = {
-  visible: true,
-  positionX: 0,
-  positionY: -0.0199999999999996,
-  positionZ: -0.0300000000000002,
-  rotationX: -1.1907963267948967,
-  rotationY: 0.000407346410206788,
-  rotationZ: 0,
-  scaleX: 0.27,
-  scaleY: 0.22,
-  scaleZ: 1,
-  width: 1.7,
-  height: 2.3,
-};
-
-/** Development-only transform inspector shown after the airplane has landed. */
-function useLandedAirplaneDebug(airplaneMode: AirplaneMode) {
-  const [debug, setDebug] = useState<LandedAirplaneDebug>(() => ({
-    ...DEFAULT_LANDED_AIRPLANE_DEBUG,
-  }));
-  const debugRef = useRef(debug);
-  debugRef.current = debug;
-
-  useEffect(() => {
-    if (
-      process.env.NODE_ENV !== "development" ||
-      airplaneMode !== "landed"
-    ) {
-      return;
-    }
-
-    let gui: GUI | undefined;
-    let disposed = false;
-
-    void import("lil-gui").then(({ default: GUIConstructor }) => {
-      if (disposed) return;
-
-      const params = { ...debugRef.current };
-      gui = new GUIConstructor({ title: "Landed Airplane Debug", width: 330 });
-      gui.domElement.style.zIndex = "10020";
-
-      const commit = () => setDebug({ ...params });
-      const number = (
-        folder: GUI,
-        key: keyof LandedAirplaneDebug,
-        min: number,
-        max: number,
-        step: number,
-        label: string,
-      ) => folder.add(params, key, min, max, step).name(label).onChange(commit);
-
-      gui.add(params, "visible").name("Visible").onChange(commit);
-
-      const position = gui.addFolder("Position");
-      number(position, "positionX", -10, 10, 0.01, "X");
-      number(position, "positionY", -8, 5, 0.01, "Y");
-      number(
-        position,
-        "positionZ",
-        BEACH.landing[2] - 30,
-        BEACH.landing[2] + 30,
-        0.01,
-        "Z",
-      );
-
-      const rotation = gui.addFolder("Rotation");
-      number(rotation, "rotationX", -Math.PI, Math.PI, 0.001, "X");
-      number(rotation, "rotationY", -Math.PI, Math.PI, 0.001, "Y");
-      number(rotation, "rotationZ", -Math.PI, Math.PI, 0.001, "Z");
-
-      const scale = gui.addFolder("Scale");
-      number(scale, "scaleX", 0.05, 4, 0.01, "X");
-      number(scale, "scaleY", 0.05, 4, 0.01, "Y");
-      number(scale, "scaleZ", 0.05, 4, 0.01, "Z");
-
-      const actions = {
-        copySettings: () => {
-          const json = JSON.stringify(params, null, 2);
-          void navigator.clipboard?.writeText(json);
-          console.info("Landed Airplane Debug settings:\n", json);
-        },
-      };
-      gui.add(actions, "copySettings").name("Copy settings JSON");
-    });
-
-    return () => {
-      disposed = true;
-      gui?.destroy();
-    };
-  }, [airplaneMode]);
-
-  return debug;
-}
-
-/** Development-only inspector shown while the contact message paper is open. */
-function useMessagePaperDebug(contactOpen: boolean) {
-  const [debug, setDebug] = useState<MessagePaperDebug>(() => ({
-    ...DEFAULT_MESSAGE_PAPER_DEBUG,
-  }));
-  const debugRef = useRef(debug);
-  debugRef.current = debug;
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "development" || !contactOpen) return;
-
-    let gui: GUI | undefined;
-    let disposed = false;
-
-    void import("lil-gui").then(({ default: GUIConstructor }) => {
-      if (disposed) return;
-
-      const params = { ...debugRef.current };
-      gui = new GUIConstructor({ title: "Message Paper Debug", width: 330 });
-      gui.domElement.style.zIndex = "10020";
-
-      const commit = () => setDebug({ ...params });
-      const number = (
-        folder: GUI,
-        key: keyof MessagePaperDebug,
-        min: number,
-        max: number,
-        step: number,
-        label: string,
-      ) => folder.add(params, key, min, max, step).name(label).onChange(commit);
-
-      gui.add(params, "visible").name("Visible").onChange(commit);
-
-      const position = gui.addFolder("Position");
-      number(position, "positionX", -5, 5, 0.01, "X");
-      number(position, "positionY", -5, 5, 0.01, "Y");
-      number(position, "positionZ", -5, 5, 0.01, "Z");
-
-      const rotation = gui.addFolder("Rotation");
-      number(rotation, "rotationX", -Math.PI, Math.PI, 0.001, "X");
-      number(rotation, "rotationY", -Math.PI, Math.PI, 0.001, "Y");
-      number(rotation, "rotationZ", -Math.PI, Math.PI, 0.001, "Z");
-
-      const scale = gui.addFolder("Scale");
-      number(scale, "scaleX", 0.05, 4, 0.01, "X");
-      number(scale, "scaleY", 0.05, 4, 0.01, "Y");
-      number(scale, "scaleZ", 0.05, 4, 0.01, "Z");
-
-      const size = gui.addFolder("Paper Size");
-      number(size, "width", 0.25, 5, 0.01, "Width");
-      number(size, "height", 0.25, 6, 0.01, "Height");
-
-      const actions = {
-        copySettings: () => {
-          const json = JSON.stringify(params, null, 2);
-          void navigator.clipboard?.writeText(json);
-          console.info("Message Paper Debug settings:\n", json);
-        },
-      };
-      gui.add(actions, "copySettings").name("Copy settings JSON");
-    });
-
-    return () => {
-      disposed = true;
-      gui?.destroy();
-    };
-  }, [contactOpen]);
-
-  return debug;
-}
+const MESSAGE_PAPER_POSITION: [number, number, number] = [0, -0.02, -0.03];
+const MESSAGE_PAPER_ROTATION: [number, number, number] = [
+  -1.1907963267948967,
+  0.000407346410206788,
+  0,
+];
+const MESSAGE_PAPER_SCALE: [number, number, number] = [0.27, 0.22, 1];
+const MESSAGE_PAPER_SIZE: [number, number] = [1.7, 2.3];
 
 /**
  * PaperAirplaneActor — the journey's hero. Rests on the corridor table, flies
@@ -250,10 +52,8 @@ function useMessagePaperDebug(contactOpen: boolean) {
  * down onto the boardwalk, and unfolds into the contact letter.
  */
 export default function PaperAirplaneActor() {
-  const { airplaneMode, contactOpen } = useJourneyState();
+  const { airplaneMode } = useJourneyState();
   const { camera } = useThree();
-  const landedDebug = useLandedAirplaneDebug(airplaneMode);
-  const messagePaperDebug = useMessagePaperDebug(contactOpen);
 
   const rootRef = useRef<THREE.Group>(null);
   const planeRef = useRef<THREE.Group>(null);
@@ -286,8 +86,12 @@ export default function PaperAirplaneActor() {
         t: 0,
         kind: null,
         startQuaternion: new THREE.Quaternion(),
+        launchCurve: null,
+        launchStartQuaternion: new THREE.Quaternion(),
+        landingCurve: null,
+        landingStartQuaternion: new THREE.Quaternion(),
+        landingStartZ: null,
       } as ModeAnim,
-      relock: { from: new THREE.Vector3(), t: 1 },
     }),
     [],
   );
@@ -301,48 +105,42 @@ export default function PaperAirplaneActor() {
     planeRef,
     letterRef,
     modeAnim: scratch.modeAnim,
-    relock: scratch.relock,
     sendRequested,
   });
 
   /** The camera-locked flight pose (position + wobble quaternion). */
-  const computeLockedPose = useCallback(
-    (elapsed: number) => {
-      scratch.offset
-        .set(
-          AIRPLANE_CAMERA_OFFSET.x,
-          AIRPLANE_CAMERA_OFFSET.y,
-          AIRPLANE_CAMERA_OFFSET.z,
-        )
-        .applyQuaternion(camera.quaternion);
-      scratch.lockPos.copy(camera.position).add(scratch.offset);
+  const computeLockedPose = useCallback(() => {
+    scratch.offset
+      .set(
+        AIRPLANE_CAMERA_OFFSET.x,
+        AIRPLANE_CAMERA_OFFSET.y,
+        AIRPLANE_CAMERA_OFFSET.z,
+      )
+      .applyQuaternion(camera.quaternion);
+    scratch.lockPos.copy(camera.position).add(scratch.offset);
 
-      const w = AIRPLANE_WOBBLE;
-      const flightDistance = Math.max(
-        0,
-        JOURNEY.windowExitZ - camera.position.z,
-      );
-      const roll =
-        Math.sin(flightDistance * w.rollFrequency + elapsed * w.rollSpeed) *
-        w.rollStrength;
-      const pitch =
-        w.pitchBase +
-        Math.sin(flightDistance * w.pitchFrequency + elapsed * w.pitchSpeed) *
-          w.pitchStrength;
-      const yaw =
-        Math.sin(flightDistance * w.yawFrequency + elapsed * w.yawSpeed) *
-        w.yawStrength;
+    // Every maneuver phase comes from camera distance, not elapsed time, so
+    // the airplane freezes exactly when the scroll-driven camera does.
+    const w = AIRPLANE_WOBBLE;
+    const flightDistance = Math.max(
+      0,
+      JOURNEY.windowExitZ - camera.position.z,
+    );
+    const roll =
+      Math.sin(flightDistance * w.rollFrequency) * w.rollStrength;
+    const pitch =
+      w.pitchBase +
+      Math.sin(flightDistance * w.pitchFrequency) * w.pitchStrength;
+    const yaw = Math.sin(flightDistance * w.yawFrequency) * w.yawStrength;
 
-      scratch.wobbleEuler.set(pitch, yaw, roll);
-      scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
-      scratch.lockQuat.copy(camera.quaternion).multiply(scratch.wobbleQuat);
-    },
-    [camera, scratch],
-  );
+    scratch.wobbleEuler.set(pitch, yaw, roll);
+    scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
+    scratch.lockQuat.copy(camera.quaternion).multiply(scratch.wobbleQuat);
+  }, [camera, scratch]);
 
   /** Follow the active scripted curve; nose along the tangent. */
   const applyCurveFrame = useCallback(
-    (root: THREE.Group, elapsed: number) => {
+    (root: THREE.Group) => {
       const anim = scratch.modeAnim;
       if (!anim.curve) return;
 
@@ -356,19 +154,17 @@ export default function PaperAirplaneActor() {
       root.lookAt(scratch.lookTarget);
 
       if (anim.kind === "launch") {
-        // The open window releases an uneven gust: the plane lifts, slips
-        // sideways, and flutters before the airflow steadies outside.
-        const gustEnvelope = Math.sin(Math.PI * THREE.MathUtils.clamp(t, 0, 1));
+        // Gust motion is also a function of scroll progress, making it pause
+        // and reverse together with the launch path.
+        const gustEnvelope = Math.sin(Math.PI * t);
         root.position.x +=
-          (Math.sin(elapsed * 5.8 + t * 13) * 0.055 +
-            Math.sin(t * Math.PI * 3) * 0.09) *
+          (Math.sin(t * 22) * 0.055 + Math.sin(t * Math.PI * 3) * 0.09) *
           gustEnvelope;
         root.position.y +=
-          (Math.sin(elapsed * 7.1 + t * 9) * 0.035 + 0.075) * gustEnvelope;
+          (Math.sin(t * 27) * 0.035 + 0.075) * gustEnvelope;
 
         const bankFade = 1 - THREE.MathUtils.smoothstep(t, 0.25, 0.85);
-        const gustBank =
-          Math.sin(elapsed * 6.4 + t * 17) * 0.045 * gustEnvelope;
+        const gustBank = Math.sin(t * 25) * 0.045 * gustEnvelope;
         scratch.wobbleEuler.set(
           0,
           0,
@@ -389,7 +185,7 @@ export default function PaperAirplaneActor() {
       if (anim.kind === "launch" && t > 0.75) {
         // Blend into the camera-locked pose so the handoff is seamless.
         const blend = (t - 0.75) / 0.25;
-        computeLockedPose(elapsed);
+        computeLockedPose();
         root.position.lerp(scratch.lockPos, blend);
         root.quaternion.slerp(scratch.lockQuat, blend);
       } else if (
@@ -403,7 +199,7 @@ export default function PaperAirplaneActor() {
     [computeLockedPose, scratch],
   );
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const root = rootRef.current;
     if (!root) return;
     const t = state.clock.elapsedTime;
@@ -430,7 +226,7 @@ export default function PaperAirplaneActor() {
         // off the table and through the frame. At the exit, hand it to the
         // camera-relative flight pose used throughout the journey sections.
         scratch.modeAnim.t = windowProgressAt(camera.position.z);
-        applyCurveFrame(root, t);
+        applyCurveFrame(root);
 
         if (scratch.modeAnim.t >= 0.995) {
           setJourneyState({ airplaneMode: "locked" });
@@ -438,31 +234,43 @@ export default function PaperAirplaneActor() {
         break;
       }
 
-      case "landing":
+      case "landing": {
+        // Camera z is the landing timeline: wheel movement advances it, no
+        // movement freezes it, and back-scrolling reverses the same curve.
+        const landingStartZ =
+          scratch.modeAnim.landingStartZ ?? JOURNEY.landingTriggerZ;
+        scratch.modeAnim.t = landingProgressAt(
+          camera.position.z,
+          landingStartZ,
+        );
+        applyCurveFrame(root);
+
+        if (scratch.modeAnim.t >= 0.999) {
+          setJourneyState({ airplaneMode: "landed" });
+        } else if (camera.position.z >= landingStartZ) {
+          setJourneyState({ airplaneMode: "locked" });
+        }
+        break;
+      }
+
       case "sendoff": {
-        applyCurveFrame(root, t);
+        // Sending the contact letter remains an intentional one-shot cinematic.
+        applyCurveFrame(root);
         break;
       }
 
       case "locked": {
-        computeLockedPose(t);
-        scratch.relock.t = Math.min(1, scratch.relock.t + delta / 0.9);
-        const blend = THREE.MathUtils.smoothstep(scratch.relock.t, 0, 1);
-        if (blend >= 1) {
-          root.position.copy(scratch.lockPos);
-          root.quaternion.copy(scratch.lockQuat);
-        } else {
-          root.position.lerpVectors(
-            scratch.relock.from,
-            scratch.lockPos,
-            blend,
-          );
-          root.quaternion.slerp(scratch.lockQuat, Math.min(1, blend + 0.15));
-        }
+        computeLockedPose();
+        root.position.copy(scratch.lockPos);
+        root.quaternion.copy(scratch.lockQuat);
 
         const journey = getJourneyState();
-        if (
-          camera.position.z < JOURNEY.landingTriggerZ &&
+        const landingStartZ =
+          scratch.modeAnim.landingStartZ ?? JOURNEY.landingTriggerZ;
+        if (windowProgressAt(camera.position.z) < 0.99) {
+          setJourneyState({ airplaneMode: "launching" });
+        } else if (
+          camera.position.z < landingStartZ &&
           !journey.contactOpen
         ) {
           setJourneyState({ airplaneMode: "landing" });
@@ -471,31 +279,25 @@ export default function PaperAirplaneActor() {
       }
 
       case "landed": {
-        root.visible = landedDebug.visible;
-        root.position.set(
-          landedDebug.positionX,
-          landedDebug.positionY,
-          landedDebug.positionZ,
-        );
+        root.visible = true;
+        root.position.set(...BEACH.landing);
         root.rotation.set(
-          landedDebug.rotationX,
-          landedDebug.rotationY,
+          LANDED_EULER.x,
+          LANDED_EULER.y,
           // A landed paper plane still breathes a little in the sea breeze.
-          landedDebug.rotationZ + Math.sin(t * 1.4) * 0.012,
+          LANDED_EULER.z + Math.sin(t * 1.4) * 0.012,
         );
-        root.scale.set(
-          landedDebug.scaleX,
-          landedDebug.scaleY,
-          landedDebug.scaleZ,
-        );
+        root.scale.set(1, 1, 1);
 
         const journey = getJourneyState();
+        const landingStartZ =
+          scratch.modeAnim.landingStartZ ?? JOURNEY.landingTriggerZ;
         if (
-          camera.position.z > JOURNEY.landingTriggerZ + 3 &&
+          landingProgressAt(camera.position.z, landingStartZ) < 0.999 &&
           !journey.contactOpen &&
           !journey.cameraLocked
         ) {
-          setJourneyState({ airplaneMode: "locked" });
+          setJourneyState({ airplaneMode: "landing" });
         }
         break;
       }
@@ -568,7 +370,7 @@ export default function PaperAirplaneActor() {
       </group>
 
       {/* The unfolded letter with the contact form. The outer group owns the
-          fold animation; the inner group is safe to tune with the inspector. */}
+          fold animation while the inner group preserves the tuned layout. */}
       <group
         ref={letterRef}
         name="Contact Letter Animation"
@@ -576,27 +378,12 @@ export default function PaperAirplaneActor() {
       >
         <group
           name="Contact Letter"
-          visible={messagePaperDebug.visible}
-          position={[
-            messagePaperDebug.positionX,
-            messagePaperDebug.positionY,
-            messagePaperDebug.positionZ,
-          ]}
-          rotation={[
-            messagePaperDebug.rotationX,
-            messagePaperDebug.rotationY,
-            messagePaperDebug.rotationZ,
-          ]}
-          scale={[
-            messagePaperDebug.scaleX,
-            messagePaperDebug.scaleY,
-            messagePaperDebug.scaleZ,
-          ]}
+          position={MESSAGE_PAPER_POSITION}
+          rotation={MESSAGE_PAPER_ROTATION}
+          scale={MESSAGE_PAPER_SCALE}
         >
           <mesh name="Contact Letter Paper">
-            <planeGeometry
-              args={[messagePaperDebug.width, messagePaperDebug.height]}
-            />
+            <planeGeometry args={MESSAGE_PAPER_SIZE} />
             <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} fog />
             <Edges color="#8e8a82" fog />
           </mesh>
