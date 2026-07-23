@@ -13,7 +13,6 @@ import {
   windowProgressAt,
 } from "./journeyConfig";
 import { getJourneyState, setJourneyState } from "./journeyState";
-import { playFootstep } from "./walkAudio";
 import { corridor } from "@/data/portfolio";
 
 // Flight feel, inspired by ITom's About-room momentum controller.
@@ -28,15 +27,12 @@ const MOUSE_POSITION_X = 0.12;
 const MOUSE_POSITION_Y = 0.06;
 const MOUSE_YAW = 0.018;
 const MOUSE_PITCH = 0.012;
-/** World units of walking between footstep sounds. */
-const STEP_DISTANCE = 1.4;
 
 export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const { camera } = useThree();
 
   // The scroll controller is only active after entering the journey/corridor.
   const flightVelocity = useRef(0);
-  const stepAccumulator = useRef(0);
   const corridorFocuses = useMemo(
     () =>
       corridor.stations.map((station, index) => ({
@@ -48,7 +44,6 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     flightVelocity.current = 0;
-    stepAccumulator.current = 0;
   }, [enabled]);
 
   useEffect(() => {
@@ -116,15 +111,6 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     const positionLerp = 1 - Math.pow(0.02, delta);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, positionLerp);
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, positionLerp * 0.6);
-
-    // ── Footsteps while walking the corridor ──
-    if (phase === "corridor") {
-      stepAccumulator.current += Math.abs(nextZ - prevZ);
-      if (stepAccumulator.current >= STEP_DISTANCE) {
-        stepAccumulator.current = 0;
-        playFootstep(0.12);
-      }
-    }
 
     // ── Corridor reading focus: glance toward wall stations as you reach them ──
     let yawTarget = 0;

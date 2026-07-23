@@ -21,17 +21,18 @@ const CABINET = {
   revealFar: 16,
 } as const;
 
-/** Keep the illustrated front while covering only the top, left and right faces in wood grain. */
+/** Keep the illustrated front while giving the outer side panels their own artwork. */
 export default function CorridorCabinet() {
-  const woodenSidesRef = useRef<THREE.Group>(null);
-  const woodTexture = useTiledTexture(`${C}/floor_wood.webp`, 1, 1);
-  useFogFade(woodenSidesRef);
+  const outerSurfacesRef = useRef<THREE.Group>(null);
+  const topTexture = useTiledTexture(`${C}/floor_wood.webp`, 1, 1);
+  const sideTexture = useTiledTexture(`${C}/szafkaprzod_sides.png`, 1, 1);
+  useFogFade(outerSurfacesRef);
 
   useEffect(() => {
-    woodTexture.center.set(0.5, 0.5);
-    woodTexture.rotation = Math.PI / 2;
-    woodTexture.needsUpdate = true;
-  }, [woodTexture]);
+    topTexture.center.set(0.5, 0.5);
+    topTexture.rotation = Math.PI / 2;
+    topTexture.needsUpdate = true;
+  }, [topTexture]);
 
   return (
     <group
@@ -52,7 +53,7 @@ export default function CorridorCabinet() {
         revealFar={CABINET.revealFar}
       />
 
-      <group ref={woodenSidesRef} name="Corridor Cabinet Wooden Top and Sides">
+      <group ref={outerSurfacesRef} name="Corridor Cabinet Outer Surfaces">
         <mesh
           name="Corridor Cabinet Wooden Top"
           position={[0, CABINET.size / 2 + CABINET.sideOffset, 0]}
@@ -60,33 +61,33 @@ export default function CorridorCabinet() {
         >
           <planeGeometry args={[CABINET.size, CABINET.depth]} />
           <meshBasicMaterial
-            map={woodTexture}
+            map={topTexture}
             side={THREE.DoubleSide}
             fog
             toneMapped={false}
           />
         </mesh>
         <mesh
-          name="Corridor Cabinet Wooden Left Side"
+          name="Corridor Cabinet Illustrated Left Outer Side"
           position={[-CABINET.size / 2 - CABINET.sideOffset, 0, 0]}
           rotation={[0, -Math.PI / 2, 0]}
         >
           <planeGeometry args={[CABINET.depth, CABINET.size]} />
           <meshBasicMaterial
-            map={woodTexture}
+            map={sideTexture}
             side={THREE.DoubleSide}
             fog
             toneMapped={false}
           />
         </mesh>
         <mesh
-          name="Corridor Cabinet Wooden Right Side"
+          name="Corridor Cabinet Illustrated Right Outer Side"
           position={[CABINET.size / 2 + CABINET.sideOffset, 0, 0]}
           rotation={[0, Math.PI / 2, 0]}
         >
           <planeGeometry args={[CABINET.depth, CABINET.size]} />
           <meshBasicMaterial
-            map={woodTexture}
+            map={sideTexture}
             side={THREE.DoubleSide}
             fog
             toneMapped={false}

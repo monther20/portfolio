@@ -24,6 +24,7 @@ const CORRIDOR_ASSETS: (string | undefined)[] = [
   `${CORRIDOR_TEX}/drzewkowdoniczce.webp`,
   `${CORRIDOR_TEX}/kwiatekwdoniczce.webp`,
   `${CORRIDOR_TEX}/szafkaprzod.webp`,
+  `${CORRIDOR_TEX}/szafkaprzod_sides.png`,
   `${CORRIDOR_TEX}/kratkawentylacyjna.webp`,
   `${CORRIDOR_TEX}/ramkanazdjecieduza.webp`,
   `${CORRIDOR_TEX}/ramkanazdjecieduza_painted.webp`,

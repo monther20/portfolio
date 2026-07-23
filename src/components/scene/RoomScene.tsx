@@ -9,7 +9,6 @@ import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
 import { CORRIDOR } from "./journeyConfig";
-import { primeWalkAudio } from "./walkAudio";
 import { DEFAULT_SHADOW_CONFIG } from "./shadowConfig";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
@@ -77,7 +76,6 @@ export default function RoomScene({
 
   const handleDoorClick = () => {
     if (isTransitioning) return;
-    primeWalkAudio(); // unlock audio within this click gesture so footsteps work
     setIsOpen(true);
     setIsTransitioning(true);
 

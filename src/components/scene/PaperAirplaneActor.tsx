@@ -5,7 +5,12 @@ import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 
-import { AIRPLANE_CAMERA_OFFSET, CORRIDOR, JOURNEY } from "./journeyConfig";
+import {
+  AIRPLANE_CAMERA_OFFSET,
+  CORRIDOR,
+  JOURNEY,
+  windowProgressAt,
+} from "./journeyConfig";
 import { useFogFade } from "./useFogFade";
 import {
   getJourneyState,
@@ -140,12 +145,23 @@ export default function PaperAirplaneActor() {
       root.lookAt(scratch.lookTarget);
 
       if (anim.kind === "launch") {
-        // A tiny hand-made bank keeps the launch from feeling mechanically straight.
+        // The open window releases an uneven gust: the plane lifts, slips
+        // sideways, and flutters before the airflow steadies outside.
+        const gustEnvelope = Math.sin(Math.PI * THREE.MathUtils.clamp(t, 0, 1));
+        root.position.x +=
+          (Math.sin(elapsed * 5.8 + t * 13) * 0.055 +
+            Math.sin(t * Math.PI * 3) * 0.09) *
+          gustEnvelope;
+        root.position.y +=
+          (Math.sin(elapsed * 7.1 + t * 9) * 0.035 + 0.075) * gustEnvelope;
+
         const bankFade = 1 - THREE.MathUtils.smoothstep(t, 0.25, 0.85);
+        const gustBank =
+          Math.sin(elapsed * 6.4 + t * 17) * 0.045 * gustEnvelope;
         scratch.wobbleEuler.set(
           0,
           0,
-          Math.sin(t * Math.PI * 2.4) * 0.12 * bankFade,
+          Math.sin(t * Math.PI * 2.4) * 0.12 * bankFade + gustBank,
         );
         scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
         root.quaternion.multiply(scratch.wobbleQuat);
@@ -193,7 +209,19 @@ export default function PaperAirplaneActor() {
         break;
       }
 
-      case "launching":
+      case "launching": {
+        // The open window's scroll progress is the gust that carries the plane
+        // off the table and through the frame. At the exit, hand it to the
+        // camera-relative flight pose used throughout the journey sections.
+        scratch.modeAnim.t = windowProgressAt(camera.position.z);
+        applyCurveFrame(root, t);
+
+        if (scratch.modeAnim.t >= 0.995) {
+          setJourneyState({ airplaneMode: "locked" });
+        }
+        break;
+      }
+
       case "landing":
       case "sendoff": {
         applyCurveFrame(root, t);
