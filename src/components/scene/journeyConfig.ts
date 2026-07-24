@@ -217,10 +217,10 @@ export const CORRIDOR = {
   },
 
   /** Table beside the window (billboard decal standing on the floor). */
-  table: { x: 1.95, z: JOURNEY.corridorEndWallZ + 2.2 },
+  table: { x: 1.95, y: -2.24, z: -111.705 },
 
   /** Where the paper airplane rests above the table, nose angled toward the window. */
-  airplaneRest: [1.9, -1.12, JOURNEY.corridorEndWallZ + 2.4] as [
+  airplaneRest: [1.43, -1.49, -111.095] as [
     number,
     number,
     number,

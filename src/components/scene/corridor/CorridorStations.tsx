@@ -294,7 +294,7 @@ export default function CorridorStations() {
       <PaintSprite
         name="Corridor Window Table"
         sketch="/textures/shared/table.webp"
-        position={[CORRIDOR.table.x, CORRIDOR.floorY + 1.15, CORRIDOR.table.z]}
+        position={[CORRIDOR.table.x, CORRIDOR.table.y, CORRIDOR.table.z]}
         height={2.3}
         revealNear={9}
         revealFar={18}

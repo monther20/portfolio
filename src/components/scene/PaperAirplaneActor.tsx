@@ -211,13 +211,8 @@ export default function PaperAirplaneActor() {
 
     switch (airplaneMode) {
       case "resting": {
-        const rest = CORRIDOR.airplaneRest;
-        root.position.set(rest[0], rest[1] + Math.sin(t * 1.6) * 0.04, rest[2]);
-        root.rotation.set(
-          Math.sin(t * 1.1) * 0.02,
-          CORRIDOR.airplaneRestYaw + Math.sin(t * 0.8) * 0.06,
-          Math.sin(t * 1.3) * 0.03,
-        );
+        root.position.set(...CORRIDOR.airplaneRest);
+        root.rotation.set(0, CORRIDOR.airplaneRestYaw, 0);
         break;
       }
 

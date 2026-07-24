@@ -17,6 +17,7 @@ const WINDOW_FRAME_WIDTH_SCALE = 1.34;
 const WINDOW_FRAME_HEIGHT_SCALE = 0.96;
 const WINDOW_FRAME_DEPTH = 0.045;
 const WINDOW_FRAME_FRONT_Z = 0.09;
+const WINDOW_FRAME_SCALE_Y = 1.09;
 const WINDOW_LEFT_PIVOT_X = -1.28;
 const WINDOW_RIGHT_PIVOT_X = 1.27;
 const WINDOW_PANE_OFFSET_X = 0.6;
@@ -141,22 +142,26 @@ export default function CorridorWindow() {
   return (
     <group name="Corridor Window" position={[win.x, win.y, win.z]}>
       {/* The hand-drawn frame wraps around a thin mesh like the picture frame. */}
-      <WrappedImageMesh
-        name="Corridor Window Frame"
-        sketch={WINDOW_FRAME_TEXTURE}
-        width={
-          (win.height + 0.5) *
-          WINDOW_FRAME_IMAGE_ASPECT *
-          WINDOW_FRAME_WIDTH_SCALE
-        }
-        height={(win.height + 0.5) * WINDOW_FRAME_HEIGHT_SCALE}
-        depth={WINDOW_FRAME_DEPTH}
+      <group
+        name="Corridor Window Frame Transform"
         position={[0, 0, WINDOW_FRAME_FRONT_Z - WINDOW_FRAME_DEPTH / 2]}
-        horizontalBorderUv={0.11}
-        verticalBorderUv={0.1}
-        revealNear={8}
-        revealFar={16}
-      />
+        scale={[1, WINDOW_FRAME_SCALE_Y, 1]}
+      >
+        <WrappedImageMesh
+          name="Corridor Window Frame"
+          sketch={WINDOW_FRAME_TEXTURE}
+          alwaysPainted
+          width={
+            (win.height + 0.5) *
+            WINDOW_FRAME_IMAGE_ASPECT *
+            WINDOW_FRAME_WIDTH_SCALE
+          }
+          height={(win.height + 0.5) * WINDOW_FRAME_HEIGHT_SCALE}
+          depth={WINDOW_FRAME_DEPTH}
+          horizontalBorderUv={0.11}
+          verticalBorderUv={0.1}
+        />
+      </group>
 
       {/* Animated curved gust marks appear only during the opening motion. */}
       <group
@@ -194,14 +199,13 @@ export default function CorridorWindow() {
         <WrappedImageMesh
           name="Corridor Window Left Side"
           sketch={WINDOW_LEFT_SIDE_TEXTURE}
+          alwaysPainted
           width={win.height * WINDOW_LEFT_IMAGE_ASPECT}
           height={win.height}
           depth={WINDOW_PANE_DEPTH}
           position={[WINDOW_PANE_OFFSET_X, 0, -WINDOW_PANE_DEPTH / 2]}
           horizontalBorderUv={0.11}
           verticalBorderUv={0.06}
-          revealNear={8}
-          revealFar={16}
         />
       </group>
       <group
@@ -212,14 +216,13 @@ export default function CorridorWindow() {
         <WrappedImageMesh
           name="Corridor Window Right Side"
           sketch={WINDOW_RIGHT_SIDE_TEXTURE}
+          alwaysPainted
           width={win.height * WINDOW_RIGHT_IMAGE_ASPECT}
           height={win.height}
           depth={WINDOW_PANE_DEPTH}
           position={[-WINDOW_PANE_OFFSET_X, 0, -WINDOW_PANE_DEPTH / 2]}
           horizontalBorderUv={0.11}
           verticalBorderUv={0.06}
-          revealNear={8}
-          revealFar={16}
         />
       </group>
     </group>

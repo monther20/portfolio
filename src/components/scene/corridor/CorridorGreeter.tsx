@@ -163,9 +163,16 @@ export default function CorridorGreeter() {
   });
 
   return (
-    <group name="Corridor Greeter" position={[CORRIDOR.avatar.x, 0, CORRIDOR.avatar.z]}>
+    <group
+      name="Corridor Greeter"
+      position={[CORRIDOR.avatar.x, 0, CORRIDOR.avatar.z]}
+    >
       {/* The large name sits behind the avatar in real WebGL depth. */}
-      <group ref={nameLeftRef} name="Greeter Name Left Half" position={[0, NAME_Y, NAME_Z]}>
+      <group
+        ref={nameLeftRef}
+        name="Greeter Name Left Half"
+        position={[0, NAME_Y, NAME_Z]}
+      >
         <GreeterTextHalf
           name="Greeter Name MON"
           anchorX="right"
@@ -177,7 +184,11 @@ export default function CorridorGreeter() {
           MON
         </GreeterTextHalf>
       </group>
-      <group ref={nameRightRef} name="Greeter Name Right Half" position={[0, NAME_Y, NAME_Z]}>
+      <group
+        ref={nameRightRef}
+        name="Greeter Name Right Half"
+        position={[0, NAME_Y, NAME_Z]}
+      >
         <GreeterTextHalf
           name="Greeter Name THER"
           anchorX="left"
@@ -236,7 +247,7 @@ export default function CorridorGreeter() {
         </GreeterTextHalf>
       </group>
 
-      {FLOATING_ITEMS.map((item) => (
+      {/* {FLOATING_ITEMS.map((item) => (
         <Float
           key={item.label}
           name={`Greeter Doodle Float: ${item.label}`}
@@ -254,7 +265,7 @@ export default function CorridorGreeter() {
             revealFar={item.revealFar}
           />
         </Float>
-      ))}
+      ))} */}
     </group>
   );
 }

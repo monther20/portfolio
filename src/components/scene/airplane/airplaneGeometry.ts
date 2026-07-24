@@ -50,7 +50,7 @@ export const AIRPLANE_LOOK = {
 
 /** Scroll-distance-driven in-flight maneuver parameters. */
 export const AIRPLANE_WOBBLE = {
-  rollStrength: 0.18,
+  rollStrength: 0,
   rollFrequency: 0.28,
   pitchBase: 0.12,
   pitchStrength: 0.055,

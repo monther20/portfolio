@@ -133,7 +133,7 @@ export type JourneyMilestone = {
 /** Milestones shown floating in the sky right after the window. */
 export const journeyMilestones: JourneyMilestone[] = [
   {
-    year: "2020–Present",
+    year: "2020",
     title: "Computer Science @ JUST",
     text: "Studying Computer Science at Jordan University of Science and Technology.",
     island: `${JOURNEY_MILESTONES_BASE}/justwyspa.png`,

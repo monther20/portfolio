@@ -141,6 +141,8 @@ export type WrappedImageMeshProps = {
   verticalBorderUv?: number;
   revealNear?: number;
   revealFar?: number;
+  /** Skip the distance reveal and render the painted texture at all times. */
+  alwaysPainted?: boolean;
 };
 
 /** A thin box whose side UVs continue the matching borders of its front art. */
@@ -157,6 +159,7 @@ export default function WrappedImageMesh({
   verticalBorderUv = 0.08,
   revealNear = 14,
   revealFar = 34,
+  alwaysPainted = false,
 }: WrappedImageMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera, scene } = useThree();
@@ -172,7 +175,7 @@ export default function WrappedImageMesh({
       uniforms: {
         texSketch: { value: texSketch },
         texPaint: { value: texPaint },
-        reveal: { value: 0 },
+        reveal: { value: alwaysPainted ? 1 : 0 },
         fogColor: { value: new THREE.Color("#ffffff") },
         fogNear: { value: 5 },
         fogFar: { value: 45 },
@@ -186,7 +189,7 @@ export default function WrappedImageMesh({
       depthTest: true,
       side: THREE.DoubleSide,
     }),
-    [texPaint, texSketch],
+    [alwaysPainted, texPaint, texSketch],
   );
 
   useEffect(() => {
@@ -204,14 +207,19 @@ export default function WrappedImageMesh({
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    mesh.getWorldPosition(worldPosition);
-    const distance = worldPosition.distanceTo(camera.position);
-    const revealTarget = 1 - THREE.MathUtils.smoothstep(distance, revealNear, revealFar);
-    material.uniforms.reveal.value = THREE.MathUtils.lerp(
-      material.uniforms.reveal.value,
-      revealTarget,
-      0.08,
-    );
+    if (alwaysPainted) {
+      material.uniforms.reveal.value = 1;
+    } else {
+      mesh.getWorldPosition(worldPosition);
+      const distance = worldPosition.distanceTo(camera.position);
+      const revealTarget =
+        1 - THREE.MathUtils.smoothstep(distance, revealNear, revealFar);
+      material.uniforms.reveal.value = THREE.MathUtils.lerp(
+        material.uniforms.reveal.value,
+        revealTarget,
+        0.08,
+      );
+    }
 
     if (scene.fog instanceof THREE.Fog) {
       const { fadeNear, fadeFar } = getFogFadeRange(scene.fog);
