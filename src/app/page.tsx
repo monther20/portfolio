@@ -9,7 +9,6 @@ import SketchPreloader from "../components/SketchPreloader";
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
 
-/** Reports readiness only after the resolved scene has produced two WebGL frames. */
 function SceneReadySignal({ onReady }: { onReady: () => void }) {
   const renderedFrames = useRef(0);
   const reported = useRef(false);
@@ -27,7 +26,6 @@ function SceneReadySignal({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-/** Scene-aware preloader that remains until assets, fonts, shaders, and the first scene frames are ready. */
 function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
   const active = useProgress((state) => state.active);
   const progress = useProgress((state) => state.progress);
@@ -40,13 +38,12 @@ function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
   const [fontsReady, setFontsReady] = useState(false);
   const [documentReady, setDocumentReady] = useState(false);
 
-  /** Fire the sketch animation once, honouring the min display time. */
   const sketch = useCallback(() => {
     if (triggered.current) return;
     triggered.current = true;
 
     const elapsed = Date.now() - startTime.current;
-    const minMs = 1800; // keep overlay visible at least 1.8 s
+    const minMs = 1800;
     const remaining = Math.max(0, minMs - elapsed);
 
     window.setTimeout(() => {
@@ -58,7 +55,6 @@ function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
     }, remaining);
   }, []);
 
-  // Smoothly follow Three.js loader progress, but reserve the final step for true readiness.
   useEffect(() => {
     if (!active) return;
 
@@ -89,7 +85,6 @@ function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
     };
   }, []);
 
-  // Require a short stable idle period so a late loader cannot uncover an empty canvas.
   useEffect(() => {
     if (active || !sceneReady || !fontsReady || !documentReady) return;
 
@@ -97,7 +92,6 @@ function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
     return () => window.clearTimeout(timeout);
   }, [active, documentReady, fontsReady, sceneReady, sketch]);
 
-  // Keep the progress line moving while asynchronous loaders are working, but never finish early.
   useEffect(() => {
     if (isSketching || isGone) return;
 

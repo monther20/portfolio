@@ -15,20 +15,13 @@ import {
 import { getJourneyState, setJourneyState } from "./journeyState";
 import { corridor } from "@/data/portfolio";
 
-// Flight feel
-const FLIGHT_SPEED = 0.0028;
-/** Keep wheel input identical while walking and flying. */
-const WALK_SPEED_FACTOR = 1;
+const SCROLL_SPEED = 0.0028;
 const FRICTION = 0.92;
 const MIN_VELOCITY = 0.00015;
-/** Keep rapid wheel/trackpad gestures from building up runaway momentum. */
 const MAX_WHEEL_DELTA = 100;
-const MAX_FLIGHT_VELOCITY = 0.38;
-const MAX_WALK_VELOCITY = MAX_FLIGHT_VELOCITY;
-/** Avoid a large camera jump if a frame stalls while momentum is active. */
+const MAX_SCROLL_VELOCITY = 0.38;
 const MAX_FRAME_SCALE = 2;
 const CHUNK_LENGTH = 40;
-/** Subtle cursor-follow parallax; pointer values are normalized from -1 to 1. */
 const MOUSE_POSITION_X = 0.12;
 const MOUSE_POSITION_Y = 0.06;
 const MOUSE_YAW = 0.018;
@@ -37,7 +30,6 @@ const MOUSE_PITCH = 0.012;
 export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const { camera } = useThree();
 
-  // The scroll controller is only active after entering the journey/corridor.
   const flightVelocity = useRef(0);
   const corridorFocuses = useMemo(
     () =>
@@ -57,14 +49,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
 
     const handleWheel = (e: WheelEvent) => {
       const journey = getJourneyState();
-      // A gsap cinematic (window launch handoff, contact letter) owns the camera.
       if (journey.cameraLocked || journey.contactOpen) return;
 
-      const walking = journeyPhaseAt(camera.position.z) === "corridor";
-      const speedFactor = walking ? WALK_SPEED_FACTOR : 1;
-      const maxVelocity = walking ? MAX_WALK_VELOCITY : MAX_FLIGHT_VELOCITY;
-      // Wheel delta units vary by browser, so convert line/page deltas to an
-      // approximate pixel value before limiting both the gesture and momentum.
       const deltaMultiplier =
         e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
       const wheelDelta = THREE.MathUtils.clamp(
@@ -74,9 +60,9 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       );
 
       flightVelocity.current = THREE.MathUtils.clamp(
-        flightVelocity.current + wheelDelta * FLIGHT_SPEED * speedFactor,
-        -maxVelocity,
-        maxVelocity,
+        flightVelocity.current + wheelDelta * SCROLL_SPEED,
+        -MAX_SCROLL_VELOCITY,
+        MAX_SCROLL_VELOCITY,
       );
     };
 
@@ -89,25 +75,18 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
 
     const journey = getJourneyState();
     if (journey.cameraLocked || journey.contactOpen) {
-      // Bleed momentum while a cinematic owns the camera so it doesn't jump after.
       flightVelocity.current = 0;
       return;
     }
 
     const frameScale = Math.min(delta * 60, MAX_FRAME_SCALE);
 
-    // Momentum: velocity moves the camera, then decays. Back-scroll is allowed
-    // all the way into the corridor even after flying out through the window.
     const nearBound = JOURNEY.corridorStart;
     const prevZ = camera.position.z;
-    const maxVelocity =
-      journeyPhaseAt(prevZ) === "corridor"
-        ? MAX_WALK_VELOCITY
-        : MAX_FLIGHT_VELOCITY;
     flightVelocity.current = THREE.MathUtils.clamp(
       flightVelocity.current,
-      -maxVelocity,
-      maxVelocity,
+      -MAX_SCROLL_VELOCITY,
+      MAX_SCROLL_VELOCITY,
     );
     const proposedZ = prevZ - flightVelocity.current * frameScale;
     const nextZ = THREE.MathUtils.clamp(proposedZ, JOURNEY.farBound, nearBound);
@@ -116,7 +95,6 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       setJourneyState({ windowLaunched: false, airplaneMode: "resting" });
     }
 
-    // Stop pushing into the bounds.
     if (nextZ === JOURNEY.farBound || nextZ === nearBound) {
       flightVelocity.current *= 0.35;
     }
@@ -194,11 +172,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     if (flightDistance > 0) {
       const chunkProgress = (flightDistance % CHUNK_LENGTH) / CHUNK_LENGTH;
       const easeIn = Math.min(1, flightDistance / 8);
-      // Level out again while gliding down to the beach.
       const fade = easeIn * (1 - descent);
 
-      // A looping flight path (not tied to scroll direction), like ITom's About
-      // scene, so forward/backward scrolling still produces varied motion.
       bankTarget =
         (Math.sin(chunkProgress * Math.PI * 2) * 0.08 +
           Math.sin(chunkProgress * Math.PI * 5 + 0.8) * 0.025) *
@@ -209,17 +184,13 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         fade;
     }
 
-    // Nose up a touch while rising through the window, down while descending.
     const windowProgress = windowProgressAt(nextZ);
     pitchTarget += Math.sin(Math.PI * windowProgress) * 0.07;
     pitchTarget += Math.sin(Math.PI * descent) * -0.15;
 
-    // Follow the cursor slightly without overpowering station focus or flight motion.
     yawTarget -= mouseX * MOUSE_YAW;
     pitchTarget += mouseY * MOUSE_PITCH;
 
-    // Lerp the actual camera rotation toward the targets. Approaching (instead
-    // of assigning) keeps hand-offs from gsap cinematics snap-free.
     const rotationLerp = 1 - Math.pow(0.03, delta);
     camera.rotation.x = THREE.MathUtils.lerp(
       camera.rotation.x,

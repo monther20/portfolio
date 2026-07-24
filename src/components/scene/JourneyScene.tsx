@@ -15,7 +15,6 @@ import BeachContactSection from "./sections/BeachContactSection";
 import { JOURNEY } from "./journeyConfig";
 import { CLOUD_TEXTURE_URLS } from "./assetPaths";
 
-// Sky clouds live between the corridor window and the beach descent.
 const CLOUD_START_Z = JOURNEY.windowExitZ - 2;
 const CLOUD_CHUNKS = 8;
 const CLOUD_ITEMS_PER_CHUNK = 3;
@@ -35,7 +34,6 @@ type PlacedCloud = {
 
 type CloudPositionOverride = Partial<Pick<PlacedCloud, "x" | "y" | "z">>;
 
-/** Stable positions copied from the Journey debug panel. */
 const CLOUD_POSITION_OVERRIDES: Partial<Record<number, CloudPositionOverride>> = {
   5: { x: -1.74 },
   14: { y: -1.44, z: -172.02 },
@@ -44,7 +42,6 @@ const CLOUD_POSITION_OVERRIDES: Partial<Record<number, CloudPositionOverride>> =
 };
 
 function FlightClouds() {
-  // Chunked deterministic scatter: each chunk gets one left, one center, one right cloud.
   const placed = useMemo(() => {
     const out: PlacedCloud[] = [];
 
@@ -118,11 +115,6 @@ function FlightClouds() {
   );
 }
 
-/**
- * JourneyScene — everything beyond the door: the corridor walk, the window
- * launch, the sky flight (journey → skills → projects) and the beach landing
- * where the paper airplane unfolds into the contact form.
- */
 export default function JourneyScene({ scrollEnabled }: { scrollEnabled: boolean }) {
   return (
     <group name="Journey Scene">

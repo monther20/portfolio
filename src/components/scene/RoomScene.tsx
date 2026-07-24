@@ -13,7 +13,6 @@ import { DEFAULT_SHADOW_CONFIG } from "./shadowConfig";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 
-/** Stop close enough to greet the avatar without clipping through its sprite. */
 const AVATAR_APPROACH_DISTANCE = 7;
 
 export default function RoomScene({
@@ -79,17 +78,15 @@ export default function RoomScene({
     setIsOpen(true);
     setIsTransitioning(true);
 
-    // Disable scrolling
     document.body.style.overflow = "hidden";
 
     const tl = gsap.timeline({
       onComplete: () => {
-        setIsTransitioning(false); // Remount the scroll manager
+        setIsTransitioning(false);
         onTransitionComplete();
       },
     });
 
-    // Walk through the door and continue down the corridor to the avatar.
     tl.to(
       camera.position,
       {
@@ -101,7 +98,6 @@ export default function RoomScene({
       },
       "+=0.5",
     );
-    // Level the view to look straight down the journey (-z).
     tl.to(
       camera.rotation,
       { x: 0, y: 0, z: 0, duration: 2.5, ease: "power2.inOut" },
@@ -109,25 +105,14 @@ export default function RoomScene({
     );
   };
 
-  // RoomScene itself does not respond to scroll; JourneyScene enables scrolling
-  // only after the door transition finishes.
   return (
     <>
-      {/* Lighting */}
       <color attach="background" args={[sceneBackgroundColor]} />
       <fog
         attach="fog"
         args={[sceneFogColor, debug.scene.fogNear, debug.scene.fogFar]}
       />
 
-      {/* 
-        ENVIRONMENT MAP (HDRI)
-        This provides physical reflections for metallic objects (like the TVs).
-        Currently using a preset ("city"). 
-        To use your own custom map:
-        1. Place your .hdr file in the public folder (e.g., public/my-env.hdr).
-        2. Replace the line below with: <Environment files="/my-env.hdr" />
-      */}
       {debug.environment.studioHdri.visible && (
         <Environment
           files="/monochrome_studio_02_1k.hdr"
@@ -137,7 +122,6 @@ export default function RoomScene({
         />
       )}
 
-      {/* Structural Room Components (These stay stationary) */}
       <InteriorDetails
         isNight={isNight}
         toggleNight={toggleNight}
@@ -152,7 +136,6 @@ export default function RoomScene({
         debug={debug}
       />
 
-      {/* Keep the complete journey in the main loading boundary before uncovering the canvas. */}
       <group visible={isOpen}>
         <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
       </group>
