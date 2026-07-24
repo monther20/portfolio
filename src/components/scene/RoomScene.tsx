@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -152,12 +152,10 @@ export default function RoomScene({
         debug={debug}
       />
 
-      {/* Keep the journey mounted so corridor assets are ready when the door opens. */}
-      <Suspense fallback={null}>
-        <group visible={isOpen}>
-          <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
-        </group>
-      </Suspense>
+      {/* Keep the complete journey in the main loading boundary before uncovering the canvas. */}
+      <group visible={isOpen}>
+        <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
+      </group>
     </>
   );
 }

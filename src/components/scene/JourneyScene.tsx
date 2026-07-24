@@ -23,6 +23,7 @@ const CLOUD_CHUNK_DEPTH = 10.5;
 
 type PlacedCloud = {
   key: string;
+  number: number;
   tex: string;
   x: number;
   y: number;
@@ -30,6 +31,16 @@ type PlacedCloud = {
   height: number;
   speed: number;
   float: number;
+};
+
+type CloudPositionOverride = Partial<Pick<PlacedCloud, "x" | "y" | "z">>;
+
+/** Stable positions copied from the Journey debug panel. */
+const CLOUD_POSITION_OVERRIDES: Partial<Record<number, CloudPositionOverride>> = {
+  5: { x: -1.74 },
+  14: { y: -1.44, z: -172.02 },
+  20: { y: -0.66 },
+  23: { x: 3.81 },
 };
 
 function FlightClouds() {
@@ -46,12 +57,20 @@ function FlightClouds() {
           ? seededRange(`cloud-${i}-center-x`, -1.8, 1.8)
           : side * seededRange(`cloud-${i}-outer-x`, 2.4, 5.8);
 
+        const number = i + 1;
+        const override = CLOUD_POSITION_OVERRIDES[number];
+        const y = seededRange(`cloud-${i}-y`, -1.0, 2.0);
+        const z = CLOUD_START_Z
+          - chunk * CLOUD_CHUNK_DEPTH
+          - seededRange(`cloud-${i}-z`, 1.2, CLOUD_CHUNK_DEPTH - 1.1);
+
         out.push({
           key: `cloud-${i}`,
+          number,
           tex: CLOUD_TEXTURE_URLS[i % CLOUD_TEXTURE_URLS.length],
-          x,
-          y: seededRange(`cloud-${i}-y`, -1.0, 2.0),
-          z: CLOUD_START_Z - chunk * CLOUD_CHUNK_DEPTH - seededRange(`cloud-${i}-z`, 1.2, CLOUD_CHUNK_DEPTH - 1.1),
+          x: override?.x ?? x,
+          y: override?.y ?? y,
+          z: override?.z ?? z,
           height: seededRange(`cloud-${i}-height`, 1.1, 2.25),
           speed: seededRange(`cloud-${i}-speed`, 0.55, 1.25),
           float: seededRange(`cloud-${i}-float`, 0.24, 0.56),
@@ -64,26 +83,37 @@ function FlightClouds() {
 
   return (
     <group name="Flight Clouds">
-      {placed.map((cloud) => (
-        <PartingItem
-          key={cloud.key}
-          name={`Flight Cloud ${cloud.key}`}
-          home={[cloud.x, cloud.y, cloud.z]}
-          push={2.4}
-          lift={0.55}
-          forward={0.55}
-          influenceDistance={8.5}
-        >
-          <Float
-            speed={cloud.speed}
-            rotationIntensity={0.035}
-            floatIntensity={cloud.float}
-            floatingRange={[-0.2, 0.2]}
+      {placed.map((cloud) => {
+        const cloudNumber = String(cloud.number).padStart(2, "0");
+        const cloudName = `Flight Cloud ${cloudNumber}`;
+
+        return (
+          <PartingItem
+            key={cloud.key}
+            name={cloudName}
+            home={[cloud.x, cloud.y, cloud.z]}
+            push={2.4}
+            lift={0.55}
+            forward={0.55}
+            influenceDistance={8.5}
           >
-            <PaintSprite sketch={cloud.tex} height={cloud.height} autoReveal={false} billboard />
-          </Float>
-        </PartingItem>
-      ))}
+            <Float
+              speed={cloud.speed}
+              rotationIntensity={0.035}
+              floatIntensity={cloud.float}
+              floatingRange={[-0.2, 0.2]}
+            >
+              <PaintSprite
+                name={`${cloudName} Sprite`}
+                sketch={cloud.tex}
+                height={cloud.height}
+                autoReveal={false}
+                billboard
+              />
+            </Float>
+          </PartingItem>
+        );
+      })}
     </group>
   );
 }

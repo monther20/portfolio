@@ -2,7 +2,7 @@
 
 import SketchPreloader from "../components/SketchPreloader";
 
-/** loading.tsx — Next.js route-level loading UI. */
+/** Next.js route fallback stays covered until the client scene loader replaces it. */
 export default function Loading() {
-  return <SketchPreloader auto lineProgress={100} percentageText="100%" />;
+  return <SketchPreloader lineProgress={0} percentageText="0%" />;
 }

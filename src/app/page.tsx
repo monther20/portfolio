@@ -1,17 +1,34 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { useProgress } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Preload, useProgress } from "@react-three/drei";
 import * as THREE from "three";
 
 import SketchPreloader from "../components/SketchPreloader";
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
-import AssetPreloader from "../components/scene/AssetPreloader";
 
-/** Scene-aware preloader that keeps the shared sketch visual in sync with Drei loading progress. */
-function LoadingOverlay() {
+/** Reports readiness only after the resolved scene has produced two WebGL frames. */
+function SceneReadySignal({ onReady }: { onReady: () => void }) {
+  const renderedFrames = useRef(0);
+  const reported = useRef(false);
+
+  useFrame(() => {
+    if (reported.current) return;
+
+    renderedFrames.current += 1;
+    if (renderedFrames.current >= 2) {
+      reported.current = true;
+      onReady();
+    }
+  });
+
+  return null;
+}
+
+/** Scene-aware preloader that remains until assets, fonts, shaders, and the first scene frames are ready. */
+function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
   const active = useProgress((state) => state.active);
   const progress = useProgress((state) => state.progress);
   const startTime = useRef(Date.now());
@@ -20,6 +37,8 @@ function LoadingOverlay() {
   const [lineProgress, setLineProgress] = useState(0);
   const [isSketching, setIsSketching] = useState(false);
   const [isGone, setIsGone] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
+  const [documentReady, setDocumentReady] = useState(false);
 
   /** Fire the sketch animation once, honouring the min display time. */
   const sketch = useCallback(() => {
@@ -39,32 +58,55 @@ function LoadingOverlay() {
     }, remaining);
   }, []);
 
-  // Smoothly follow Three.js loader progress, but keep a little room for finish.
+  // Smoothly follow Three.js loader progress, but reserve the final step for true readiness.
   useEffect(() => {
-    if (active) {
-      const loaderProgress = Number.isFinite(progress) ? progress : 0;
-      setLineProgress((current) => {
-        const next = Math.max(current, Math.min(loaderProgress * 0.9, 96));
-        return Object.is(current, next) ? current : next;
-      });
-      return;
+    if (!active) return;
+
+    const loaderProgress = Number.isFinite(progress) ? progress : 0;
+    setLineProgress((current) => {
+      const next = Math.max(current, Math.min(loaderProgress * 0.9, 94));
+      return Object.is(current, next) ? current : next;
+    });
+  }, [active, progress]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void document.fonts.ready.then(() => {
+      if (!cancelled) setFontsReady(true);
+    });
+
+    const markDocumentReady = () => setDocumentReady(true);
+    if (document.readyState === "complete") {
+      markDocumentReady();
+    } else {
+      window.addEventListener("load", markDocumentReady, { once: true });
     }
 
-    if (progress >= 100) sketch();
-  }, [active, progress, sketch]);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", markDocumentReady);
+    };
+  }, []);
 
-  // Fallback: if no heavy assets ever load, fill the line and sketch after 2.2 s.
+  // Require a short stable idle period so a late loader cannot uncover an empty canvas.
   useEffect(() => {
+    if (active || !sceneReady || !fontsReady || !documentReady) return;
+
+    const timeout = window.setTimeout(sketch, 150);
+    return () => window.clearTimeout(timeout);
+  }, [active, documentReady, fontsReady, sceneReady, sketch]);
+
+  // Keep the progress line moving while asynchronous loaders are working, but never finish early.
+  useEffect(() => {
+    if (isSketching || isGone) return;
+
     const interval = window.setInterval(() => {
       setLineProgress((current) => Math.min(94, current + 1.8));
     }, 70);
-    const timeout = window.setTimeout(sketch, 2200);
 
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(timeout);
-    };
-  }, [sketch]);
+    return () => window.clearInterval(interval);
+  }, [isGone, isSketching]);
 
   if (isGone) return null;
 
@@ -75,6 +117,8 @@ function LoadingOverlay() {
 
 export default function MoodyHallwayScene() {
   const [entered, setEntered] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
+  const markSceneReady = useCallback(() => setSceneReady(true), []);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
@@ -90,13 +134,13 @@ export default function MoodyHallwayScene() {
       >
         <Suspense fallback={null}>
           <RoomScene onTransitionComplete={() => setEntered(true)} />
+          <Preload all />
+          <SceneReadySignal onReady={markSceneReady} />
         </Suspense>
       </Canvas>
 
-      <LoadingOverlay />
+      <LoadingOverlay sceneReady={sceneReady} />
       <JourneyHud visible={entered} />
-      {/* Warms the texture cache in the background (corridor → sky → beach). */}
-      <AssetPreloader />
     </div>
   );
 }

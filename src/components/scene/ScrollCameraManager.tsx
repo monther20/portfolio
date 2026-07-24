@@ -15,16 +15,16 @@ import {
 import { getJourneyState, setJourneyState } from "./journeyState";
 import { corridor } from "@/data/portfolio";
 
-// Flight feel, inspired by ITom's About-room momentum controller.
+// Flight feel
 const FLIGHT_SPEED = 0.0028;
-/** Walking through the corridor is slower than flying. */
-const WALK_SPEED_FACTOR = 0.55;
+/** Keep wheel input identical while walking and flying. */
+const WALK_SPEED_FACTOR = 1;
 const FRICTION = 0.92;
 const MIN_VELOCITY = 0.00015;
 /** Keep rapid wheel/trackpad gestures from building up runaway momentum. */
 const MAX_WHEEL_DELTA = 100;
-const MAX_WALK_VELOCITY = 0.22;
 const MAX_FLIGHT_VELOCITY = 0.38;
+const MAX_WALK_VELOCITY = MAX_FLIGHT_VELOCITY;
 /** Avoid a large camera jump if a frame stalls while momentum is active. */
 const MAX_FRAME_SCALE = 2;
 const CHUNK_LENGTH = 40;
@@ -65,11 +65,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       const maxVelocity = walking ? MAX_WALK_VELOCITY : MAX_FLIGHT_VELOCITY;
       // Wheel delta units vary by browser, so convert line/page deltas to an
       // approximate pixel value before limiting both the gesture and momentum.
-      const deltaMultiplier = e.deltaMode === 1
-        ? 16
-        : e.deltaMode === 2
-          ? window.innerHeight
-          : 1;
+      const deltaMultiplier =
+        e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
       const wheelDelta = THREE.MathUtils.clamp(
         e.deltaY * deltaMultiplier,
         -MAX_WHEEL_DELTA,
@@ -103,9 +100,10 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     // all the way into the corridor even after flying out through the window.
     const nearBound = JOURNEY.corridorStart;
     const prevZ = camera.position.z;
-    const maxVelocity = journeyPhaseAt(prevZ) === "corridor"
-      ? MAX_WALK_VELOCITY
-      : MAX_FLIGHT_VELOCITY;
+    const maxVelocity =
+      journeyPhaseAt(prevZ) === "corridor"
+        ? MAX_WALK_VELOCITY
+        : MAX_FLIGHT_VELOCITY;
     flightVelocity.current = THREE.MathUtils.clamp(
       flightVelocity.current,
       -maxVelocity,
@@ -136,14 +134,23 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     const mouseY = state.pointer.y;
 
     // ── Height + subtle mouse parallax around the journey's base camera path ──
-    const bob = phase === "corridor"
-      ? Math.sin(t * 2.1) * 0.015
-      : Math.sin(t * 1.7) * 0.025;
+    const bob =
+      phase === "corridor"
+        ? Math.sin(t * 2.1) * 0.015
+        : Math.sin(t * 1.7) * 0.025;
     const targetY = cameraYAt(nextZ) + bob + mouseY * MOUSE_POSITION_Y;
     const targetX = mouseX * MOUSE_POSITION_X;
     const positionLerp = 1 - Math.pow(0.02, delta);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, positionLerp);
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, positionLerp * 0.6);
+    camera.position.y = THREE.MathUtils.lerp(
+      camera.position.y,
+      targetY,
+      positionLerp,
+    );
+    camera.position.x = THREE.MathUtils.lerp(
+      camera.position.x,
+      targetX,
+      positionLerp * 0.6,
+    );
 
     // ── Corridor reading focus: glance toward wall stations as you reach them ──
     let yawTarget = 0;
@@ -159,7 +166,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         strongestInfluence = influence;
         yawTarget = -focus.side * CORRIDOR_INFO_STATIONS.focusYaw * influence;
         corridorPitchTarget = CORRIDOR_INFO_STATIONS.focusPitch * influence;
-        corridorRollTarget = focus.side * CORRIDOR_INFO_STATIONS.focusRoll * influence;
+        corridorRollTarget =
+          focus.side * CORRIDOR_INFO_STATIONS.focusRoll * influence;
       }
 
       const windowInfluence =
@@ -171,7 +179,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         );
       if (windowInfluence > strongestInfluence) {
         yawTarget = CORRIDOR_INFO_STATIONS.windowFocusYaw * windowInfluence;
-        corridorPitchTarget = CORRIDOR_INFO_STATIONS.windowFocusPitch * windowInfluence;
+        corridorPitchTarget =
+          CORRIDOR_INFO_STATIONS.windowFocusPitch * windowInfluence;
         corridorRollTarget = 0;
       }
     }
@@ -212,9 +221,21 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     // Lerp the actual camera rotation toward the targets. Approaching (instead
     // of assigning) keeps hand-offs from gsap cinematics snap-free.
     const rotationLerp = 1 - Math.pow(0.03, delta);
-    camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, pitchTarget, rotationLerp);
-    camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, bankTarget, rotationLerp);
-    camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, yawTarget, rotationLerp * (phase === "corridor" ? 0.9 : 0.5));
+    camera.rotation.x = THREE.MathUtils.lerp(
+      camera.rotation.x,
+      pitchTarget,
+      rotationLerp,
+    );
+    camera.rotation.z = THREE.MathUtils.lerp(
+      camera.rotation.z,
+      bankTarget,
+      rotationLerp,
+    );
+    camera.rotation.y = THREE.MathUtils.lerp(
+      camera.rotation.y,
+      yawTarget,
+      rotationLerp * (phase === "corridor" ? 0.9 : 0.5),
+    );
   });
 
   return null;
