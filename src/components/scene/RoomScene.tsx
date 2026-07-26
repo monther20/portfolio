@@ -22,7 +22,6 @@ export default function RoomScene({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isNight, setIsNight] = useState(false);
   const debugRef = useRef<RoomDebugState>(null!);
   const { camera, scene } = useThree();
   const shadowConfig = DEFAULT_SHADOW_CONFIG;
@@ -32,16 +31,9 @@ export default function RoomScene({
   }
 
   const debug = debugRef.current;
-  const sceneBackgroundColor = isNight
-    ? debug.scene.nightBackgroundColor
-    : debug.scene.dayBackgroundColor;
-  const sceneFogColor = isNight
-    ? debug.scene.nightFogColor
-    : debug.scene.dayFogColor;
-
-  const toggleNight = () => {
-    setIsNight((current) => !current);
-  };
+  const isNight = false;
+  const sceneBackgroundColor = debug.scene.dayBackgroundColor;
+  const sceneFogColor = debug.scene.dayFogColor;
 
   useEffect(() => {
     const targetBackgroundColor = new THREE.Color(sceneBackgroundColor);
@@ -124,7 +116,6 @@ export default function RoomScene({
 
       <InteriorDetails
         isNight={isNight}
-        toggleNight={toggleNight}
         shadowConfig={shadowConfig}
         debug={debug}
       />
