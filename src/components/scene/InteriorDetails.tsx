@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import gsap from "gsap";
@@ -22,16 +22,13 @@ import {
 
 export default function InteriorDetails({
   isNight,
-  toggleNight,
   shadowConfig,
   debug,
 }: {
   isNight: boolean;
-  toggleNight: () => void;
   shadowConfig: ShadowConfig;
   debug: RoomDebugState;
 }) {
-  const [lanternHovered, setLanternHovered] = useState(false);
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const pathMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const { lights, materials, meshes } = debug;
@@ -142,7 +139,7 @@ export default function InteriorDetails({
         />
       </mesh>
 
-      {/* ── LANTERNS (Clickable) ── */}
+      {/* ── LANTERNS ── */}
       <group>
         {/* ─── LEFT LANTERN ─── */}
         <Lantern
@@ -154,10 +151,6 @@ export default function InteriorDetails({
           texBase={lightTex}
           texOn={lightOnTex}
           isNight={isNight}
-          isHovered={lanternHovered}
-          onClick={toggleNight}
-          onPointerOver={() => setLanternHovered(true)}
-          onPointerOut={() => setLanternHovered(false)}
         />
 
         {/* Left lantern – SpotLight fans out to the LEFT */}
@@ -196,10 +189,6 @@ export default function InteriorDetails({
           texBase={lightTex}
           texOn={lightOnTex}
           isNight={isNight}
-          isHovered={lanternHovered}
-          onClick={toggleNight}
-          onPointerOver={() => setLanternHovered(true)}
-          onPointerOut={() => setLanternHovered(false)}
         />
 
         {/* Right lantern – SpotLight fans out to the RIGHT */}

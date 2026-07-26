@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Html } from "@react-three/drei";
 
 import type { PaperAirplaneContactFormDebug } from "../debug/createPaperAirplaneDebugGui";
+
+const HTML_SHARPNESS_SCALE = 2;
 
 export type LetterFields = {
   email: string;
@@ -40,8 +42,10 @@ function fieldStyle(field: PaperAirplaneContactFormDebug["fields"]["email"]): Re
     fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
     fontSize: field.fontSize,
     color: field.textColor,
+    caretColor: field.textColor,
     outline: "none",
     resize: "none",
+    appearance: "none",
   };
 }
 
@@ -58,29 +62,43 @@ export default function ContactLetterForm({
   onClose: () => void;
   debug: PaperAirplaneContactFormDebug;
 }) {
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
-  // Escape closes the letter.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const closeWithFold = useCallback(
+    (event?: Pick<KeyboardEvent | React.KeyboardEvent, "key" | "preventDefault" | "stopPropagation">) => {
+      if (event && event.key !== "Escape") return;
 
-  const handleSend = async (e: React.FormEvent) => {
+      event?.preventDefault();
+      event?.stopPropagation();
+      onClose();
+    },
+    [onClose],
+  );
+
+  // Escape folds the letter back into the airplane. Use capture so focused
+  // inputs/textareas cannot swallow the key before the close handler runs.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => closeWithFold(event);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [closeWithFold]);
+
+  const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (sent) return;
+
+    const formData = new FormData(e.currentTarget);
+    const fields = {
+      email: String(formData.get("email") ?? "").trim(),
+      subject: String(formData.get("subject") ?? "").trim(),
+      message: String(formData.get("message") ?? "").trim(),
+    };
 
     setSent(true);
     setError("");
 
-    const ok = await onSend({ email, subject, message });
+    const ok = await onSend(fields);
 
     if (!ok) {
       setSent(false);
@@ -96,14 +114,22 @@ export default function ContactLetterForm({
       transform
       position={[debug.html.x, debug.html.y, debug.html.z]}
       distanceFactor={debug.html.distanceFactor}
+      scale={1 / HTML_SHARPNESS_SCALE}
       occlude={debug.html.occlude}
       zIndexRange={[debug.html.zIndexNear, debug.html.zIndexFar]}
+      style={{
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transformStyle: "preserve-3d",
+        willChange: "transform",
+      }}
     >
       <form
         aria-label="Send Monther a message"
         onSubmit={handleSend}
         onWheel={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
+        onKeyDownCapture={closeWithFold}
         style={{
           width: debug.container.width,
           boxSizing: "border-box",
@@ -113,16 +139,20 @@ export default function ContactLetterForm({
           color: debug.container.color,
           background: "transparent",
           opacity: debug.container.opacity,
-          transform: `scale(${debug.container.scale})`,
+          transform: `scale(${debug.container.scale * HTML_SHARPNESS_SCALE}) translateZ(0)`,
           transformOrigin: "center center",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          WebkitFontSmoothing: "antialiased",
+          textRendering: "geometricPrecision",
+          willChange: "transform",
         }}
       >
         <input
           aria-label="Email"
           style={fieldStyle(debug.fields.email)}
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          name="email"
           placeholder={debug.fields.email.placeholder}
           autoComplete="email"
           maxLength={160}
@@ -132,8 +162,7 @@ export default function ContactLetterForm({
         <input
           aria-label="Subject"
           style={fieldStyle(debug.fields.subject)}
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          name="subject"
           placeholder={debug.fields.subject.placeholder}
           maxLength={160}
           required
@@ -143,8 +172,7 @@ export default function ContactLetterForm({
           aria-label="Message"
           style={fieldStyle(debug.fields.message)}
           rows={Math.max(2, Math.round(debug.fields.message.rows))}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          name="message"
           placeholder={debug.fields.message.placeholder}
           minLength={8}
           maxLength={1200}

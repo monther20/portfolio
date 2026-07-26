@@ -84,7 +84,7 @@ export default function Lantern({
   texBase,
   texOn,
   isNight,
-  isHovered,
+  isHovered = false,
   onClick,
   onPointerOver,
   onPointerOut,
@@ -97,13 +97,14 @@ export default function Lantern({
   texBase: THREE.Texture;
   texOn: THREE.Texture;
   isNight: boolean;
-  isHovered: boolean;
+  isHovered?: boolean;
   onClick?: () => void;
   onPointerOver?: (e: any) => void;
   onPointerOut?: (e: any) => void;
 }) {
   const materialRef = useRef<any>(null);
   const { scene } = useThree();
+  const interactive = Boolean(onClick || onPointerOver || onPointerOut);
 
   // Sync the manual fog uniforms with the scene's live fog each frame
   useFrame(() => {
@@ -146,20 +147,32 @@ export default function Lantern({
       scale={scale}
       visible={visible}
       renderOrder={renderOrder}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (onClick) onClick();
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "pointer";
-        if (onPointerOver) onPointerOver(e);
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "auto";
-        if (onPointerOut) onPointerOut(e);
-      }}
+      onClick={
+        interactive
+          ? (e) => {
+              e.stopPropagation();
+              onClick?.();
+            }
+          : undefined
+      }
+      onPointerOver={
+        interactive
+          ? (e) => {
+              e.stopPropagation();
+              document.body.style.cursor = "pointer";
+              onPointerOver?.(e);
+            }
+          : undefined
+      }
+      onPointerOut={
+        interactive
+          ? (e) => {
+              e.stopPropagation();
+              document.body.style.cursor = "auto";
+              onPointerOut?.(e);
+            }
+          : undefined
+      }
     >
       <planeGeometry args={[1.38, 3.39]} />
       <lanternMaterial
