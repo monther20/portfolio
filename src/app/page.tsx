@@ -116,20 +116,6 @@ export default function MoodyHallwayScene() {
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
-      <form
-        name="contact"
-        method="POST"
-        data-netlify="true"
-        netlify-honeypot="bot-field"
-        hidden
-      >
-        <input type="hidden" name="form-name" value="contact" />
-        <input name="bot-field" />
-        <input type="email" name="email" />
-        <input name="subject" />
-        <textarea name="message" />
-      </form>
-
       <Canvas
         camera={{
           position: [0.370000000000005, 1.06, 5.62],
