@@ -1,32 +1,49 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Html } from "@react-three/drei";
 
-import { projectUI } from "@/data/portfolio";
-
-const inkColor = "#111111";
-
-const fieldStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  background: "rgba(255, 255, 255, 0.78)",
-  border: "1.5px solid rgba(17, 17, 17, 0.72)",
-  borderRadius: 5,
-  padding: "7px 9px",
-  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.55)",
-  fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
-  fontSize: 14,
-  color: inkColor,
-  outline: "none",
-  resize: "none",
-};
+import type { PaperAirplaneContactFormDebug } from "../debug/createPaperAirplaneDebugGui";
 
 export type LetterFields = {
   email: string;
   subject: string;
   message: string;
 };
+
+function hexToRgba(hex: string, opacity: number) {
+  const clean = hex.replace("#", "").trim();
+  const normalized = clean.length === 3
+    ? clean.split("").map((char) => char + char).join("")
+    : clean.padEnd(6, "0").slice(0, 6);
+  const value = Number.parseInt(normalized, 16);
+
+  if (Number.isNaN(value)) return hex;
+
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+function fieldStyle(field: PaperAirplaneContactFormDebug["fields"]["email"]): React.CSSProperties {
+  return {
+    width: "100%",
+    boxSizing: "border-box",
+    marginTop: field.marginTop,
+    background: hexToRgba(field.backgroundColor, field.backgroundOpacity),
+    border: `${field.borderWidth}px solid ${hexToRgba(field.borderColor, field.borderOpacity)}`,
+    borderRadius: field.borderRadius,
+    padding: `${field.paddingY}px ${field.paddingX}px`,
+    boxShadow: "none",
+    fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+    fontSize: field.fontSize,
+    color: field.textColor,
+    outline: "none",
+    resize: "none",
+  };
+}
 
 /**
  * ContactLetterForm — the handwriting-styled form drawn onto the unfolded
@@ -35,26 +52,19 @@ export type LetterFields = {
 export default function ContactLetterForm({
   onSend,
   onClose,
+  debug,
 }: {
-  onSend: (fields: LetterFields) => void;
+  onSend: (fields: LetterFields) => Promise<boolean> | boolean;
   onClose: () => void;
+  debug: PaperAirplaneContactFormDebug;
 }) {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
-  const sendTimeout = useRef<number | null>(null);
+  const [error, setError] = useState("");
 
-  useEffect(
-    () => () => {
-      if (sendTimeout.current !== null) {
-        window.clearTimeout(sendTimeout.current);
-      }
-    },
-    [],
-  );
-
-  // Escape closes the letter (same as the ✕).
+  // Escape closes the letter.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -63,24 +73,31 @@ export default function ContactLetterForm({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (sent) return;
+
     setSent(true);
-    // Brief "sent ✓" beat before the letter folds itself back up.
-    sendTimeout.current = window.setTimeout(
-      () => onSend({ email, subject, message }),
-      800,
-    );
+    setError("");
+
+    const ok = await onSend({ email, subject, message });
+
+    if (!ok) {
+      setSent(false);
+      setError("Could not send. Please try again.");
+      return;
+    }
+
+    // The actor folds the paper after a successful send.
   };
 
   return (
     <Html
       transform
-      position={[0, 0, 0.03]}
-      distanceFactor={6}
-      occlude
-      zIndexRange={[10_000, 0]}
+      position={[debug.html.x, debug.html.y, debug.html.z]}
+      distanceFactor={debug.html.distanceFactor}
+      occlude={debug.html.occlude}
+      zIndexRange={[debug.html.zIndexNear, debug.html.zIndexFar]}
     >
       <form
         aria-label="Send Monther a message"
@@ -88,49 +105,25 @@ export default function ContactLetterForm({
         onWheel={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         style={{
-          width: 260,
+          width: debug.container.width,
           boxSizing: "border-box",
-          padding: "18px 18px 20px",
+          padding: `${debug.container.paddingTop}px ${debug.container.paddingRight}px ${debug.container.paddingBottom}px ${debug.container.paddingLeft}px`,
           position: "relative",
           userSelect: "none",
-          color: inkColor,
-          backgroundColor: "#f5f2e9",
-          backgroundImage: `url("${projectUI.paperTexture}")`,
-          backgroundPosition: "center",
-          backgroundSize: "cover",
-          border: "1.5px solid rgba(80, 74, 64, 0.38)",
-          borderRadius: 2,
-          boxShadow: "0 7px 18px rgba(31, 27, 20, 0.22)",
+          color: debug.container.color,
+          background: "transparent",
+          opacity: debug.container.opacity,
+          transform: `scale(${debug.container.scale})`,
+          transformOrigin: "center center",
         }}
       >
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 7,
-            border: "none",
-            background: "transparent",
-            fontFamily: "var(--font-caveat), 'Caveat', cursive",
-            fontSize: 20,
-            fontWeight: 700,
-            color: inkColor,
-            cursor: "pointer",
-            lineHeight: 1,
-          }}
-        >
-          ✕
-        </button>
-
         <input
           aria-label="Email"
-          style={fieldStyle}
+          style={fieldStyle(debug.fields.email)}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="email"
+          placeholder={debug.fields.email.placeholder}
           autoComplete="email"
           maxLength={160}
           required
@@ -138,56 +131,76 @@ export default function ContactLetterForm({
         />
         <input
           aria-label="Subject"
-          style={{ ...fieldStyle, marginTop: 7 }}
+          style={fieldStyle(debug.fields.subject)}
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          placeholder="subject"
+          placeholder={debug.fields.subject.placeholder}
           maxLength={160}
           required
           disabled={sent}
         />
         <textarea
           aria-label="Message"
-          style={{ ...fieldStyle, marginTop: 7 }}
-          rows={5}
+          style={fieldStyle(debug.fields.message)}
+          rows={Math.max(2, Math.round(debug.fields.message.rows))}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="message"
+          placeholder={debug.fields.message.placeholder}
           minLength={8}
           maxLength={1200}
           required
           disabled={sent}
         />
 
+        {error ? (
+          <div
+            role="alert"
+            style={{
+              marginTop: 7,
+              fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+              fontSize: 13,
+              color: "#8d1f1f",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </div>
+        ) : null}
+
         <button
           type="submit"
           disabled={sent}
           aria-live="polite"
           style={{
-            marginTop: 10,
-            width: "100%",
+            display: "block",
+            marginTop: debug.sendButton.marginTop,
+            marginLeft: "auto",
+            marginRight: "auto",
+            width: debug.sendButton.width,
             fontFamily: "var(--font-caveat), 'Caveat', cursive",
-            fontSize: 18,
-            fontWeight: 700,
-            color: inkColor,
-            background: "#ffffff",
-            border: "2px solid #111111",
-            borderRadius: 10,
-            padding: "6px 0",
+            fontSize: debug.sendButton.fontSize,
+            fontWeight: debug.sendButton.fontWeight,
+            color: debug.sendButton.textColor,
+            background: hexToRgba(debug.sendButton.backgroundColor, debug.sendButton.backgroundOpacity),
+            border: `${debug.sendButton.borderWidth}px solid ${debug.sendButton.borderColor}`,
+            borderRadius: debug.sendButton.borderRadius,
+            padding: `${debug.sendButton.paddingY}px 0`,
             cursor: sent ? "wait" : "pointer",
-            boxShadow: "2px 2px 0 #111111",
-            opacity: sent ? 0.72 : 1,
+            boxShadow: `${debug.sendButton.shadowX}px ${debug.sendButton.shadowY}px ${debug.sendButton.shadowBlur}px ${debug.sendButton.shadowColor}`,
+            opacity: sent ? debug.sendButton.sentOpacity : debug.sendButton.opacity,
             transition: "transform 160ms ease, opacity 160ms ease",
-            transform: sent ? "scale(0.98)" : undefined,
+            transform: sent ? `scale(${debug.sendButton.sentScale})` : undefined,
           }}
           onMouseEnter={(e) => {
-            if (!sent) e.currentTarget.style.transform = "rotate(-1deg) scale(1.03)";
+            if (!sent) {
+              e.currentTarget.style.transform = `rotate(${debug.sendButton.hoverRotation}deg) scale(${debug.sendButton.hoverScale})`;
+            }
           }}
           onMouseLeave={(e) => {
             if (!sent) e.currentTarget.style.transform = "none";
           }}
         >
-          {sent ? "opening mail app…" : "send ✈"}
+          {sent ? debug.sendButton.sendingLabel : debug.sendButton.label}
         </button>
       </form>
     </Html>
