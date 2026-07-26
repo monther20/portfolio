@@ -1,9 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as THREE from "three";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Edges } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useAnimations, useGLTF } from "@react-three/drei";
 
 import {
   AIRPLANE_CAMERA_OFFSET,
@@ -22,29 +30,120 @@ import {
 import {
   AIRPLANE_LOOK,
   AIRPLANE_WOBBLE,
-  createAirplaneGeometry,
-  FOLD_LINE_POINTS,
 } from "./airplane/airplaneGeometry";
 import {
   useAirplaneModeEffects,
+  type AirplaneFoldAnimationControls,
   type ModeAnim,
 } from "./airplane/useAirplaneModeEffects";
 import ContactLetterForm, {
   type LetterFields,
 } from "./airplane/ContactLetterForm";
-import { contact, projectUI } from "@/data/portfolio";
+import {
+  createPaperAirplaneDebugGui,
+  createPaperAirplaneDebugState,
+  type PaperAirplaneDebugState,
+} from "./debug/createPaperAirplaneDebugGui";
+import { contact } from "@/data/portfolio";
 
 /** The plane's resting pose once it has landed on the boardwalk. */
 const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
 
-const MESSAGE_PAPER_POSITION: [number, number, number] = [0, -0.02, -0.03];
-const MESSAGE_PAPER_ROTATION: [number, number, number] = [
-  -1.1907963267948967,
-  0.000407346410206788,
-  0,
-];
+const MESSAGE_PAPER_POSITION: [number, number, number] = [0, 0.04, 0];
+const MESSAGE_PAPER_ROTATION: [number, number, number] = [-Math.PI / 2, 0, 0];
 const MESSAGE_PAPER_SCALE: [number, number, number] = [0.27, 0.22, 1];
-const MESSAGE_PAPER_SIZE: [number, number] = [1.7, 2.3];
+const PAPER_AIRPLANE_MODEL_URL = "/paperairplane.glb";
+
+function PaperAirplaneModel({
+  debug,
+  foldAnimationRef,
+}: {
+  debug: PaperAirplaneDebugState;
+  foldAnimationRef: MutableRefObject<AirplaneFoldAnimationControls | null>;
+}) {
+  const gltf = useGLTF(PAPER_AIRPLANE_MODEL_URL);
+  const modelScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  const { actions, mixer } = useAnimations(gltf.animations, modelScene);
+  const foldClip = useMemo(
+    () =>
+      gltf.animations.find((clip) => clip.name.toLowerCase() === "fold") ??
+      gltf.animations.find((clip) => clip.name.toLowerCase().includes("fold")) ??
+      gltf.animations[0],
+    [gltf.animations],
+  );
+
+  useEffect(() => {
+    modelScene.traverse((child) => {
+      const mesh = child as THREE.Mesh<
+        THREE.BufferGeometry,
+        THREE.Material | THREE.Material[]
+      >;
+      if (!mesh.isMesh) return;
+
+      mesh.frustumCulled = false;
+      mesh.renderOrder = AIRPLANE_LOOK.renderOrder;
+
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      materials.forEach((material) => {
+        material.side = THREE.DoubleSide;
+        (material as THREE.Material & { fog?: boolean }).fog = true;
+        material.needsUpdate = true;
+      });
+    });
+  }, [modelScene]);
+
+  const setFoldProgress = useCallback(
+    (progress: number) => {
+      if (!foldClip) return;
+
+      const action = actions[foldClip.name];
+      if (!action) return;
+
+      action.enabled = true;
+      action.clampWhenFinished = true;
+      action.setLoop(THREE.LoopOnce, 1);
+      action.paused = false;
+      action.play();
+      mixer.setTime(foldClip.duration * THREE.MathUtils.clamp(progress, 0, 1));
+      action.paused = true;
+    },
+    [actions, foldClip, mixer],
+  );
+
+  useLayoutEffect(() => {
+    const controls: AirplaneFoldAnimationControls = {
+      duration: foldClip?.duration ?? 0,
+      setProgress: setFoldProgress,
+    };
+
+    foldAnimationRef.current = controls;
+    setFoldProgress(debug.animation.foldProgress);
+
+    return () => {
+      if (foldAnimationRef.current === controls) {
+        foldAnimationRef.current = null;
+      }
+    };
+  }, [debug.animation.foldProgress, foldAnimationRef, foldClip, setFoldProgress]);
+
+  return (
+    <group
+      name="Paper Airplane GLB Model"
+      visible={debug.model.visible}
+      position={[debug.model.x, debug.model.y, debug.model.z]}
+      rotation={[
+        THREE.MathUtils.degToRad(debug.model.rotationX),
+        THREE.MathUtils.degToRad(debug.model.rotationY),
+        THREE.MathUtils.degToRad(debug.model.rotationZ),
+      ]}
+      scale={debug.model.scale}
+    >
+      <primitive object={modelScene} />
+    </group>
+  );
+}
 
 /**
  * PaperAirplaneActor — the journey's hero. Rests on the corridor table, flies
@@ -58,15 +157,39 @@ export default function PaperAirplaneActor() {
   const rootRef = useRef<THREE.Group>(null);
   const planeRef = useRef<THREE.Group>(null);
   const letterRef = useRef<THREE.Group>(null);
+  const foldAnimationRef = useRef<AirplaneFoldAnimationControls | null>(null);
   const sendRequested = useRef(false);
-
-  const geometry = useMemo(createAirplaneGeometry, []);
-  const paperTex = useLoader(THREE.TextureLoader, projectUI.paperTexture);
+  const airplaneDebug = useMemo(() => createPaperAirplaneDebugState(), []);
+  const [, refreshAirplaneDebug] = useState(0);
 
   useEffect(() => {
-    paperTex.colorSpace = THREE.SRGBColorSpace;
-    paperTex.needsUpdate = true;
-  }, [paperTex]);
+    let gui: { destroy: () => void } | undefined;
+    let disposed = false;
+
+    createPaperAirplaneDebugGui({
+      state: airplaneDebug,
+      foldAnimationRef,
+      onChange: () => refreshAirplaneDebug((version) => version + 1),
+    })
+      .then((createdGui) => {
+        if (disposed) {
+          createdGui.destroy();
+          return;
+        }
+
+        gui = createdGui;
+      })
+      .catch((error) => {
+        if (!disposed) {
+          console.error("Failed to create paper airplane debug GUI", error);
+        }
+      });
+
+    return () => {
+      disposed = true;
+      gui?.destroy();
+    };
+  }, [airplaneDebug]);
 
   // Scratch objects — no per-frame allocations.
   const scratch = useMemo(
@@ -104,6 +227,7 @@ export default function PaperAirplaneActor() {
     rootRef,
     planeRef,
     letterRef,
+    foldAnimationRef,
     modeAnim: scratch.modeAnim,
     sendRequested,
   });
@@ -149,7 +273,7 @@ export default function PaperAirplaneActor() {
       anim.curve.getTangentAt(t, scratch.tangent);
       root.position.copy(scratch.curvePos);
 
-      // The geometry's nose points down -z, so look *away* from the tangent.
+      // The model's nose points down -z, so look *away* from the tangent.
       scratch.lookTarget.copy(scratch.curvePos).sub(scratch.tangent);
       root.lookAt(scratch.lookTarget);
 
@@ -331,41 +455,20 @@ export default function PaperAirplaneActor() {
       position={CORRIDOR.airplaneRest}
       rotation={[0, CORRIDOR.airplaneRestYaw, 0]}
     >
-      {/* The folded origami plane */}
+      {/* The folded paper airplane model from /public/paperairplane.glb. */}
       <group
         ref={planeRef}
         name="Folded Airplane"
-        scale={AIRPLANE_LOOK.scale}
         renderOrder={AIRPLANE_LOOK.renderOrder}
       >
-        <mesh name="Folded Airplane Mesh" geometry={geometry}>
-          <meshStandardMaterial
-            color={AIRPLANE_LOOK.paperColor}
-            roughness={AIRPLANE_LOOK.roughness}
-            metalness={AIRPLANE_LOOK.metalness}
-            side={THREE.DoubleSide}
-            fog
-          />
-          <Edges
-            linewidth={AIRPLANE_LOOK.edgeLinewidth}
-            threshold={AIRPLANE_LOOK.edgeThreshold}
-            color={AIRPLANE_LOOK.edgeColor}
-            fog
-          />
-        </mesh>
-        <line name="Fold Line">
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              args={[FOLD_LINE_POINTS, 3]}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color={AIRPLANE_LOOK.lineColor} fog />
-        </line>
+        <PaperAirplaneModel
+          debug={airplaneDebug}
+          foldAnimationRef={foldAnimationRef}
+        />
       </group>
 
-      {/* The unfolded letter with the contact form. The outer group owns the
-          fold animation while the inner group preserves the tuned layout. */}
+      {/* Input fields are projected over the unfolded GLB paper; no duplicate
+          paper mesh is shown during the contact interaction. */}
       <group
         ref={letterRef}
         name="Contact Letter Animation"
@@ -377,13 +480,12 @@ export default function PaperAirplaneActor() {
           rotation={MESSAGE_PAPER_ROTATION}
           scale={MESSAGE_PAPER_SCALE}
         >
-          <mesh name="Contact Letter Paper">
-            <planeGeometry args={MESSAGE_PAPER_SIZE} />
-            <meshBasicMaterial map={paperTex} side={THREE.DoubleSide} fog />
-            <Edges color="#8e8a82" fog />
-          </mesh>
           {letterOpen && (
-            <ContactLetterForm onSend={handleSend} onClose={handleClose} />
+            <ContactLetterForm
+              onSend={handleSend}
+              onClose={handleClose}
+              debug={airplaneDebug.contactForm}
+            />
           )}
         </group>
       </group>
