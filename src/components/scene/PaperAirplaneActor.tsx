@@ -44,8 +44,6 @@ import {
   createPaperAirplaneDebugState,
   type PaperAirplaneDebugState,
 } from "./debug/createPaperAirplaneDebugGui";
-import { contact } from "@/data/portfolio";
-
 /** The plane's resting pose once it has landed on the boardwalk. */
 const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
 
@@ -425,17 +423,34 @@ export default function PaperAirplaneActor() {
     }
   });
 
-  const handleSend = useCallback((fields: LetterFields) => {
-    sendRequested.current = true;
-    const subject = encodeURIComponent(fields.subject);
-    const body = encodeURIComponent(
-      `${fields.message}\n\nReply to: ${fields.email}`,
-    );
-    window.open(
-      `mailto:${contact.email}?subject=${subject}&body=${body}`,
-      "_self",
-    );
-    setJourneyState({ airplaneMode: "folding" });
+  const handleSend = useCallback(async (fields: LetterFields) => {
+    try {
+      const body = new URLSearchParams({
+        "form-name": "contact",
+        "bot-field": "",
+        email: fields.email,
+        subject: fields.subject,
+        message: fields.message,
+      });
+
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+      });
+
+      if (!response.ok) {
+        console.error("Contact form submission failed", await response.text());
+        return false;
+      }
+
+      sendRequested.current = true;
+      setJourneyState({ airplaneMode: "folding" });
+      return true;
+    } catch (error) {
+      console.error("Failed to submit contact form", error);
+      return false;
+    }
   }, []);
 
   const handleClose = useCallback(() => {

@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Html } from "@react-three/drei";
 
 import type { PaperAirplaneContactFormDebug } from "../debug/createPaperAirplaneDebugGui";
-
-const inkColor = "#111111";
 
 export type LetterFields = {
   email: string;
@@ -56,7 +54,7 @@ export default function ContactLetterForm({
   onClose,
   debug,
 }: {
-  onSend: (fields: LetterFields) => void;
+  onSend: (fields: LetterFields) => Promise<boolean> | boolean;
   onClose: () => void;
   debug: PaperAirplaneContactFormDebug;
 }) {
@@ -64,16 +62,7 @@ export default function ContactLetterForm({
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
-  const sendTimeout = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (sendTimeout.current !== null) {
-        window.clearTimeout(sendTimeout.current);
-      }
-    },
-    [],
-  );
+  const [error, setError] = useState("");
 
   // Escape closes the letter.
   useEffect(() => {
@@ -84,15 +73,22 @@ export default function ContactLetterForm({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (sent) return;
+
     setSent(true);
-    // Brief "sent ✓" beat before the letter folds itself back up.
-    sendTimeout.current = window.setTimeout(
-      () => onSend({ email, subject, message }),
-      800,
-    );
+    setError("");
+
+    const ok = await onSend({ email, subject, message });
+
+    if (!ok) {
+      setSent(false);
+      setError("Could not send. Please try again.");
+      return;
+    }
+
+    // The actor folds the paper after a successful send.
   };
 
   return (
@@ -155,6 +151,21 @@ export default function ContactLetterForm({
           required
           disabled={sent}
         />
+
+        {error ? (
+          <div
+            role="alert"
+            style={{
+              marginTop: 7,
+              fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+              fontSize: 13,
+              color: "#8d1f1f",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </div>
+        ) : null}
 
         <button
           type="submit"
