@@ -7,7 +7,6 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
@@ -40,10 +39,9 @@ import ContactLetterForm, {
   type LetterFields,
 } from "./airplane/ContactLetterForm";
 import {
-  createPaperAirplaneDebugGui,
   createPaperAirplaneDebugState,
   type PaperAirplaneDebugState,
-} from "./debug/createPaperAirplaneDebugGui";
+} from "./airplane/paperAirplaneDefaults";
 /** The plane's resting pose once it has landed on the boardwalk. */
 const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
 
@@ -158,36 +156,6 @@ export default function PaperAirplaneActor() {
   const foldAnimationRef = useRef<AirplaneFoldAnimationControls | null>(null);
   const sendRequested = useRef(false);
   const airplaneDebug = useMemo(() => createPaperAirplaneDebugState(), []);
-  const [, refreshAirplaneDebug] = useState(0);
-
-  useEffect(() => {
-    let gui: { destroy: () => void } | undefined;
-    let disposed = false;
-
-    createPaperAirplaneDebugGui({
-      state: airplaneDebug,
-      foldAnimationRef,
-      onChange: () => refreshAirplaneDebug((version) => version + 1),
-    })
-      .then((createdGui) => {
-        if (disposed) {
-          createdGui.destroy();
-          return;
-        }
-
-        gui = createdGui;
-      })
-      .catch((error) => {
-        if (!disposed) {
-          console.error("Failed to create paper airplane debug GUI", error);
-        }
-      });
-
-    return () => {
-      disposed = true;
-      gui?.destroy();
-    };
-  }, [airplaneDebug]);
 
   // Scratch objects — no per-frame allocations.
   const scratch = useMemo(
