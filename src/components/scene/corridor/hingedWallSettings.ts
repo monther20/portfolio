@@ -15,8 +15,8 @@ export const corridorHingedWallSettings = {
   textureRepeatY: 1.35,
 
   // Sequential lean / hinge behavior
-  restAngle: 0.015,
-  openAngle: 0.22,
+  restAngle: 0.032,
+  openAngle: 0.45,
   followDamping: 0.045,
 } as const;
 

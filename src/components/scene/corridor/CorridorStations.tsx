@@ -22,7 +22,6 @@ import {
 import { useTiledTexture } from "./useTiledTexture";
 
 const C = "/textures/corridor";
-const HANDWRITTEN_FONT = "/fonts/Caveat-Variable.ttf";
 
 type CorridorStation = (typeof corridor.stations)[number];
 type WallSide = CorridorStation["side"];
@@ -158,7 +157,7 @@ function WallText({
   position,
   fontSize,
   maxWidth,
-  color = "#2f2a22",
+  color = "#000000",
   weight = 600,
   rotation = 0,
 }: {
@@ -174,7 +173,6 @@ function WallText({
     <Text
       position={position}
       rotation={[0, 0, rotation]}
-      font={HANDWRITTEN_FONT}
       fontSize={fontSize}
       fontWeight={weight}
       color={color}
@@ -231,7 +229,7 @@ function InfoStation({
       <WallText
         position={[0, -1, 0]}
         fontSize={0.21}
-        color="#453f35"
+        color="#000000"
         maxWidth={3.35}
         rotation={side * 0.014}
       >
