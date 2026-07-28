@@ -7,12 +7,14 @@ import PaintSprite from "../PaintSprite";
 import PartingItem, { seededRange } from "../PartingItem";
 import { JOURNEY } from "../journeyConfig";
 import { journeyMilestones } from "@/data/portfolio";
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 /**
  * JourneySection — the first stop of the sky flight: milestones of my story
  * floating between the clouds, with a few paper lanterns drifting above.
  */
 export default function JourneySection({ zStart = JOURNEY.journeyAnchorZ }: { zStart?: number }) {
+  const responsive = useResponsiveExperience();
   const placed = useMemo(
     () =>
       journeyMilestones.map((milestone, i) => {
@@ -48,27 +50,56 @@ export default function JourneySection({ zStart = JOURNEY.journeyAnchorZ }: { zS
   return (
     <group name="Journey Milestones Section">
       {placed.map(({ milestone, pos, speed }) => (
-        <PartingItem key={milestone.title} name={`Journey Milestone: ${milestone.title}`} home={pos} push={2.7} lift={0.45}>
+        <PartingItem
+          key={milestone.title}
+          name={`Journey Milestone: ${milestone.title}`}
+          home={[pos[0] * responsive.laneScale, pos[1], pos[2]]}
+          push={2.7 * responsive.laneScale}
+          lift={0.45}
+        >
           <Float
-            speed={speed}
-            rotationIntensity={0.1}
-            floatIntensity={0.45}
-            floatingRange={[-0.18, 0.18]}
+            speed={speed * responsive.motionScale}
+            rotationIntensity={0.1 * responsive.motionScale}
+            floatIntensity={0.45 * responsive.motionScale}
+            floatingRange={[
+              -0.18 * responsive.motionScale,
+              0.18 * responsive.motionScale,
+            ]}
           >
             {milestone.island ? (
-              <PaintSprite name={`Journey Island: ${milestone.title}`} sketch={milestone.island} position={[0, -1.1, 0]} height={1.9} revealNear={8} revealFar={20} />
+              <PaintSprite
+                name={`Journey Island: ${milestone.title}`}
+                sketch={milestone.island}
+                position={[0, -1.1, 0]}
+                height={responsive.isPhone ? 2.1 : 1.9}
+                revealNear={8}
+                revealFar={20}
+              />
             ) : null}
           </Float>
         </PartingItem>
       ))}
 
       {lanterns.map((lantern) => (
-        <PartingItem key={lantern.key} name={`Journey Lantern: ${lantern.key}`} home={lantern.pos} push={2.4} lift={0.6}>
+        <PartingItem
+          key={lantern.key}
+          name={`Journey Lantern: ${lantern.key}`}
+          home={[
+            lantern.pos[0] * responsive.laneScale,
+            lantern.pos[1],
+            lantern.pos[2],
+          ]}
+          push={2.4 * responsive.laneScale}
+          lift={0.6}
+        >
           <Float
-            speed={lantern.speed}
-            rotationIntensity={0.15}
-            floatIntensity={0.6}
-            floatingRange={[-0.25, 0.25]}
+            speed={lantern.speed * responsive.motionScale}
+            rotationIntensity={0.15 * responsive.motionScale}
+            floatIntensity={0.6 * responsive.motionScale}
+            floatingRange={[
+              -0.25 * responsive.motionScale,
+              0.25 * responsive.motionScale,
+            ]}
           >
           </Float>
         </PartingItem>

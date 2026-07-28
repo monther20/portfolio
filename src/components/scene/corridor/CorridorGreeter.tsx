@@ -10,6 +10,7 @@ import PaintSprite from "../PaintSprite";
 import { CORRIDOR } from "../journeyConfig";
 import { useFogFade } from "../useFogFade";
 import { corridor } from "@/data/portfolio";
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 const HANDWRITTEN_FONT = "/fonts/Caveat-Variable.ttf";
 const NAME_Y = -1.25;
@@ -114,6 +115,7 @@ export default function CorridorGreeter() {
   const roleRightRef = useRef<THREE.Group>(null);
   const splitProgress = useRef(0);
   const { camera } = useThree();
+  const responsive = useResponsiveExperience();
 
   useFogFade(nameLeftRef, { preserveTransparency: true, visibleThreshold: 0 });
   useFogFade(nameRightRef, { preserveTransparency: true, visibleThreshold: 0 });
@@ -166,6 +168,7 @@ export default function CorridorGreeter() {
     <group
       name="Corridor Greeter"
       position={[CORRIDOR.avatar.x, 0, CORRIDOR.avatar.z]}
+      scale={responsive.greeterScale}
     >
       {/* The large name sits behind the avatar in real WebGL depth. */}
       <group
@@ -202,7 +205,11 @@ export default function CorridorGreeter() {
       </group>
 
       <group ref={avatarRef} name="Corridor Centered Avatar">
-        <AnimatedAvatar position={[0, -1.85, 0]} height={2.7} fps={28} />
+        <AnimatedAvatar
+          position={[0, -1.85, 0]}
+          height={2.7}
+          fps={28 * responsive.motionScale}
+        />
       </group>
 
       {/* The smaller role line sits in front of the avatar. */}

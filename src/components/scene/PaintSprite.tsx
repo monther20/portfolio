@@ -6,6 +6,7 @@ import { useLoader, useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";
 
 import { getFogFadeRange } from "./fogVisibility";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 
 /**
  * SketchPaintMaterial — blends a grayscale "pencil" look into the full-colour
@@ -138,19 +139,30 @@ export default function PaintSprite({
   const groupRef = useRef<THREE.Group>(null);
   const scaleRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
-  const { scene, camera } = useThree();
+  const { scene, camera, gl } = useThree();
+  const responsive = useResponsiveExperience();
 
   // useLoader must run unconditionally — load `painted` (or reuse sketch when absent).
   const texSketch = useLoader(THREE.TextureLoader, sketch);
   const texPaint = useLoader(THREE.TextureLoader, painted ?? sketch);
 
   useEffect(() => {
-    [texSketch, texPaint].forEach((t) => {
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 8;
-      t.needsUpdate = true;
+    const qualityAnisotropy = responsive.qualityTier === "low"
+      ? 2
+      : responsive.qualityTier === "medium"
+        ? 4
+        : 8;
+    const anisotropy = Math.min(
+      qualityAnisotropy,
+      gl.capabilities.getMaxAnisotropy(),
+    );
+
+    [texSketch, texPaint].forEach((texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = anisotropy;
+      texture.needsUpdate = true;
     });
-  }, [texSketch, texPaint]);
+  }, [gl, responsive.qualityTier, texSketch, texPaint]);
 
   // Derive plane size from the (painted) image's natural aspect ratio.
   const [w, h] = useMemo(() => {
@@ -196,28 +208,49 @@ export default function PaintSprite({
     }
   });
 
+  useEffect(
+    () => () => {
+      if (!responsive.isCoarsePointer) document.body.style.cursor = "auto";
+    },
+    [responsive.isCoarsePointer],
+  );
+
   const handlers = interactive
     ? {
         onClick: (e: any) => {
           e.stopPropagation();
+          setHovered(false);
           onClick?.(e);
         },
         onPointerEnter: (e: any) => {
           e.stopPropagation();
+          if (responsive.isCoarsePointer) return;
           setHovered(true);
           document.body.style.cursor = "pointer";
         },
         onPointerLeave: (e: any) => {
           e.stopPropagation();
           setHovered(false);
-          document.body.style.cursor = "auto";
+          if (!responsive.isCoarsePointer) document.body.style.cursor = "auto";
+        },
+        onPointerDown: (e: any) => {
+          e.stopPropagation();
+          if (responsive.isCoarsePointer) setHovered(true);
+        },
+        onPointerUp: (e: any) => {
+          e.stopPropagation();
+          if (responsive.isCoarsePointer) setHovered(false);
         },
       }
     : {};
 
   const plane = (
-    <group ref={scaleRef} name={`${debugName} Scale`}>
-      <mesh name={`${debugName} Mesh`} renderOrder={renderOrder} {...handlers}>
+    <group
+      ref={scaleRef}
+      name={`${debugName} Scale`}
+      {...handlers}
+    >
+      <mesh name={`${debugName} Mesh`} renderOrder={renderOrder}>
         <planeGeometry args={[w, h]} />
         <sketchPaintMaterial
           ref={matRef}
@@ -228,6 +261,23 @@ export default function PaintSprite({
           depthTest={depthTest}
         />
       </mesh>
+      {interactive && responsive.hitTargetScale > 1 ? (
+        <mesh name={`${debugName} Touch Target`} position={[0, 0, 0.002]}>
+          <planeGeometry
+            args={[
+              w * responsive.hitTargetScale,
+              h * responsive.hitTargetScale,
+            ]}
+          />
+          <meshBasicMaterial
+            transparent
+            opacity={0}
+            depthTest={false}
+            depthWrite={false}
+            colorWrite={false}
+          />
+        </mesh>
+      ) : null}
     </group>
   );
 

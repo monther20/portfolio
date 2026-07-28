@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Html } from "@react-three/drei";
 
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 import type { PaperAirplaneContactFormDebug } from "./paperAirplaneDefaults";
 
 const HTML_SHARPNESS_SCALE = 2;
@@ -29,7 +30,20 @@ function hexToRgba(hex: string, opacity: number) {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-function fieldStyle(field: PaperAirplaneContactFormDebug["fields"]["email"]): React.CSSProperties {
+function fieldStyle(
+  field: PaperAirplaneContactFormDebug["fields"]["email"],
+  minimumFontSize: number,
+  sketchRotation: number,
+): React.CSSProperties {
+  const borderWidth = Math.max(1.5, field.borderWidth);
+  const borderColor = hexToRgba(
+    field.borderColor,
+    Math.max(0.68, field.borderOpacity),
+  );
+  const pencilShadow = hexToRgba(field.borderColor, 0.24);
+  const faintPencilShadow = hexToRgba(field.borderColor, 0.13);
+  const radius = Math.max(4, field.borderRadius);
+
   return {
     width: `${field.width}%`,
     height: field.height > 0 ? field.height : undefined,
@@ -38,20 +52,22 @@ function fieldStyle(field: PaperAirplaneContactFormDebug["fields"]["email"]): Re
     left: field.positionX,
     top: field.positionY,
     marginTop: field.marginTop,
-    transform: `rotate(${field.rotation}deg) scale3d(${field.scaleX}, ${field.scaleY}, ${field.scaleZ})`,
+    transform: `rotate(${field.rotation + sketchRotation}deg) scale3d(${field.scaleX}, ${field.scaleY}, ${field.scaleZ})`,
     transformOrigin: "center center",
     background: hexToRgba(field.backgroundColor, field.backgroundOpacity),
-    border: `${field.borderWidth}px solid ${hexToRgba(field.borderColor, field.borderOpacity)}`,
-    borderRadius: field.borderRadius,
+    border: `${borderWidth}px solid ${borderColor}`,
+    borderRadius: `${radius + 2}px ${radius - 1}px ${radius + 3}px ${radius}px / ${radius}px ${radius + 3}px ${radius - 1}px ${radius + 2}px`,
     padding: `${field.paddingY}px ${field.paddingX}px`,
-    boxShadow: "none",
-    fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
-    fontSize: field.fontSize,
+    boxShadow: `0.9px 0.6px 0 ${pencilShadow}, -0.7px 1px 0 ${faintPencilShadow}, inset 0.5px -0.5px 0 ${faintPencilShadow}`,
+    fontFamily:
+      "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+    fontSize: Math.max(field.fontSize, minimumFontSize),
     color: field.textColor,
     caretColor: field.textColor,
     outline: "none",
     resize: "none",
     appearance: "none",
+    userSelect: "text",
   };
 }
 
@@ -63,10 +79,7 @@ function sendButtonTransform(
   return `rotate(${button.rotation + rotationOffset}deg) scale3d(${button.scaleX * scaleMultiplier}, ${button.scaleY * scaleMultiplier}, ${button.scaleZ * scaleMultiplier})`;
 }
 
-/**
- * ContactLetterForm — the handwriting-styled form drawn onto the unfolded
- * paper airplane. Pure UI: the actor decides what send/close actually do.
- */
+/** The email form is rendered directly on the GLB's unfolded paper surface. */
 export default function ContactLetterForm({
   onSend,
   onClose,
@@ -78,9 +91,25 @@ export default function ContactLetterForm({
 }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const responsive = useResponsiveExperience();
+  const minimumFieldFontSize = responsive.isCoarsePointer ? 16 : 0;
+  const sendButtonRadius = Math.max(8, debug.sendButton.borderRadius);
+  const sendButtonBorderColor = hexToRgba(
+    debug.sendButton.borderColor,
+    Math.max(0.68, debug.sendButton.borderOpacity),
+  );
+  const sendButtonPencilShadow = hexToRgba(
+    debug.sendButton.borderColor,
+    0.22,
+  );
 
   const closeWithFold = useCallback(
-    (event?: Pick<KeyboardEvent | React.KeyboardEvent, "key" | "preventDefault" | "stopPropagation">) => {
+    (
+      event?: Pick<
+        KeyboardEvent | React.KeyboardEvent,
+        "key" | "preventDefault" | "stopPropagation"
+      >,
+    ) => {
       if (event && event.key !== "Escape") return;
 
       event?.preventDefault();
@@ -90,19 +119,17 @@ export default function ContactLetterForm({
     [onClose],
   );
 
-  // Escape folds the letter back into the airplane. Use capture so focused
-  // inputs/textareas cannot swallow the key before the close handler runs.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => closeWithFold(event);
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [closeWithFold]);
 
-  const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSend = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (sent) return;
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(event.currentTarget);
     const fields = {
       email: String(formData.get("email") ?? "").trim(),
       subject: String(formData.get("subject") ?? "").trim(),
@@ -113,14 +140,10 @@ export default function ContactLetterForm({
     setError("");
 
     const ok = await onSend(fields);
-
     if (!ok) {
       setSent(false);
       setError("Could not send. Please try again.");
-      return;
     }
-
-    // The actor folds the paper after a successful send.
   };
 
   return (
@@ -131,6 +154,7 @@ export default function ContactLetterForm({
       scale={1 / HTML_SHARPNESS_SCALE}
       occlude={debug.html.occlude}
       zIndexRange={[debug.html.zIndexNear, debug.html.zIndexFar]}
+      pointerEvents="auto"
       style={{
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
@@ -139,10 +163,11 @@ export default function ContactLetterForm({
       }}
     >
       <form
+        className="contact-letter-form contact-letter-form--paper"
         aria-label="Send Monther a message"
         onSubmit={handleSend}
-        onWheel={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
+        onWheel={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
         onKeyDownCapture={closeWithFold}
         style={{
           width: debug.container.width,
@@ -164,8 +189,9 @@ export default function ContactLetterForm({
       >
         <input
           aria-label="Email"
-          style={fieldStyle(debug.fields.email)}
+          style={fieldStyle(debug.fields.email, minimumFieldFontSize, -0.28)}
           type="email"
+          inputMode="email"
           name="email"
           placeholder={debug.fields.email.placeholder}
           autoComplete="email"
@@ -175,7 +201,7 @@ export default function ContactLetterForm({
         />
         <input
           aria-label="Subject"
-          style={fieldStyle(debug.fields.subject)}
+          style={fieldStyle(debug.fields.subject, minimumFieldFontSize, 0.2)}
           name="subject"
           placeholder={debug.fields.subject.placeholder}
           maxLength={160}
@@ -184,7 +210,7 @@ export default function ContactLetterForm({
         />
         <textarea
           aria-label="Message"
-          style={fieldStyle(debug.fields.message)}
+          style={fieldStyle(debug.fields.message, minimumFieldFontSize, -0.14)}
           rows={Math.max(2, Math.round(debug.fields.message.rows))}
           name="message"
           placeholder={debug.fields.message.placeholder}
@@ -198,11 +224,18 @@ export default function ContactLetterForm({
           <div
             role="alert"
             style={{
-              marginTop: 7,
-              fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+              position: "absolute",
+              top: 10,
+              left: debug.container.paddingLeft,
+              right: debug.container.paddingRight,
+              margin: 0,
+              fontFamily:
+                "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
               fontSize: 13,
+              lineHeight: 1,
               color: "#8d1f1f",
               textAlign: "center",
+              pointerEvents: "none",
             }}
           >
             {error}
@@ -224,24 +257,33 @@ export default function ContactLetterForm({
             marginLeft: "auto",
             marginRight: "auto",
             width: debug.sendButton.width,
-            height: debug.sendButton.height > 0 ? debug.sendButton.height : undefined,
+            height:
+              debug.sendButton.height > 0
+                ? debug.sendButton.height
+                : undefined,
             boxSizing: "border-box",
             fontFamily: "var(--font-caveat), 'Caveat', cursive",
             fontSize: debug.sendButton.fontSize,
             fontWeight: debug.sendButton.fontWeight,
             color: debug.sendButton.textColor,
-            background: hexToRgba(debug.sendButton.backgroundColor, debug.sendButton.backgroundOpacity),
-            border: `${debug.sendButton.borderWidth}px solid ${hexToRgba(debug.sendButton.borderColor, debug.sendButton.borderOpacity)}`,
-            borderRadius: debug.sendButton.borderRadius,
-            padding: debug.sendButton.height > 0
-              ? 0
-              : `${debug.sendButton.paddingY}px 0`,
+            background: hexToRgba(
+              debug.sendButton.backgroundColor,
+              debug.sendButton.backgroundOpacity,
+            ),
+            border: `1.5px solid ${sendButtonBorderColor}`,
+            borderRadius: `${sendButtonRadius + 2}px ${sendButtonRadius - 1}px ${sendButtonRadius + 1}px ${sendButtonRadius - 2}px / ${sendButtonRadius - 1}px ${sendButtonRadius + 2}px ${sendButtonRadius - 2}px ${sendButtonRadius + 1}px`,
+            padding:
+              debug.sendButton.height > 0
+                ? 0
+                : `${debug.sendButton.paddingY}px 0`,
             lineHeight: 1,
             textAlign: "center",
             whiteSpace: "nowrap",
             cursor: sent ? "wait" : "pointer",
-            boxShadow: `${debug.sendButton.shadowX}px ${debug.sendButton.shadowY}px ${debug.sendButton.shadowBlur}px ${debug.sendButton.shadowColor}`,
-            opacity: sent ? debug.sendButton.sentOpacity : debug.sendButton.opacity,
+            boxShadow: `0.8px 0.7px 0 ${sendButtonPencilShadow}, -0.7px 0.9px 0 ${hexToRgba(debug.sendButton.borderColor, 0.12)}`,
+            opacity: sent
+              ? debug.sendButton.sentOpacity
+              : debug.sendButton.opacity,
             transition: "transform 160ms ease, opacity 160ms ease",
             transformOrigin: "center center",
             transform: sendButtonTransform(
@@ -249,22 +291,24 @@ export default function ContactLetterForm({
               sent ? debug.sendButton.sentScale : 1,
             ),
           }}
-          onMouseEnter={(e) => {
+          onMouseEnter={(event) => {
             if (!sent) {
-              e.currentTarget.style.transform = sendButtonTransform(
+              event.currentTarget.style.transform = sendButtonTransform(
                 debug.sendButton,
                 debug.sendButton.hoverScale,
                 debug.sendButton.hoverRotation,
               );
             }
           }}
-          onMouseLeave={(e) => {
+          onMouseLeave={(event) => {
             if (!sent) {
-              e.currentTarget.style.transform = sendButtonTransform(debug.sendButton);
+              event.currentTarget.style.transform = sendButtonTransform(
+                debug.sendButton,
+              );
             }
           }}
         >
-          {sent ? debug.sendButton.sendingLabel : debug.sendButton.label}
+          {sent ? "sending…" : debug.sendButton.label}
         </button>
       </form>
     </Html>

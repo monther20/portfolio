@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import PaintSprite from "../PaintSprite";
 import { seededRange } from "../PartingItem";
 
 import { projects, projectUI, type Project } from "@/data/portfolio";
+import { setJourneyState } from "../journeyState";
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 const PAPER_HEIGHT = 2.5;
 
@@ -84,6 +86,7 @@ function ProjectPaper({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
+  const responsive = useResponsiveExperience();
   const dir = useMemo(() => new THREE.Vector3(), []);
   const target = useMemo(() => new THREE.Vector3(), []);
   const debugPhase = debug?.phase ?? phase;
@@ -97,7 +100,12 @@ function ProjectPaper({
     if (focused) {
       // Fly to a fixed spot in front of the camera.
       camera.getWorldDirection(dir);
-      target.copy(camera.position).addScaledVector(dir, debug?.focusedDistance ?? 4.6);
+      target
+        .copy(camera.position)
+        .addScaledVector(
+          dir,
+          debug?.focusedDistance ?? responsive.projectFocusDistance,
+        );
       g.position.lerp(target, debug?.focusedLerp ?? 0.12);
       // Face the camera, upright.
       g.quaternion.slerp(camera.quaternion, debug?.focusedQuaternionLerp ?? 0.15);
@@ -112,14 +120,38 @@ function ProjectPaper({
       const side = home[0] >= 0 ? 1 : -1;
 
       target.set(
-        home[0] + Math.sin(t * 0.6 + debugPhase) * (debug?.driftX ?? 0.5) + side * influence * (debug?.push ?? 2.8),
-        home[1] + Math.sin(t * 0.9 + debugPhase * 1.3) * (debug?.driftY ?? 0.35) + influence * (debug?.lift ?? 0.5),
-        home[2] + Math.cos(t * 0.5 + debugPhase) * (debug?.driftZ ?? 0.3) + influence * (debug?.forward ?? 0.4)
+        home[0] +
+          Math.sin(t * 0.6 + debugPhase) *
+            (debug?.driftX ?? 0.5) *
+            responsive.motionScale +
+          side * influence * (debug?.push ?? 2.8 * responsive.laneScale),
+        home[1] +
+          Math.sin(t * 0.9 + debugPhase * 1.3) *
+            (debug?.driftY ?? 0.35) *
+            responsive.motionScale +
+          influence * (debug?.lift ?? 0.5),
+        home[2] +
+          Math.cos(t * 0.5 + debugPhase) *
+            (debug?.driftZ ?? 0.3) *
+            responsive.motionScale +
+          influence * (debug?.forward ?? 0.4),
       );
       g.position.lerp(target, debug?.lerp ?? 0.06);
       // Gentle sway — papers face roughly toward the incoming camera (+z).
-      g.rotation.z = THREE.MathUtils.lerp(g.rotation.z, Math.sin(t * 0.7 + debugPhase) * (debug?.swayZ ?? 0.12), debug?.swayLerp ?? 0.05);
-      g.rotation.y = THREE.MathUtils.lerp(g.rotation.y, Math.sin(t * 0.4 + debugPhase) * (debug?.swayY ?? 0.15), debug?.swayLerp ?? 0.05);
+      g.rotation.z = THREE.MathUtils.lerp(
+        g.rotation.z,
+        Math.sin(t * 0.7 + debugPhase) *
+          (debug?.swayZ ?? 0.12) *
+          responsive.motionScale,
+        debug?.swayLerp ?? 0.05,
+      );
+      g.rotation.y = THREE.MathUtils.lerp(
+        g.rotation.y,
+        Math.sin(t * 0.4 + debugPhase) *
+          (debug?.swayY ?? 0.15) *
+          responsive.motionScale,
+        debug?.swayLerp ?? 0.05,
+      );
       g.rotation.x = THREE.MathUtils.lerp(g.rotation.x, 0, debug?.swayLerp ?? 0.05);
     }
   });
@@ -137,7 +169,7 @@ function ProjectPaper({
       name={`Project Paper: ${project.name}`}
       position={home}
       visible={debug?.visible ?? true}
-      scale={debug?.scale ?? 1}
+      scale={(debug?.scale ?? 1) * (responsive.isPhone ? 1.08 : 1)}
       renderOrder={debug?.renderOrder ?? 0}
     >
       {/* The paper itself */}
@@ -194,6 +226,22 @@ export default function ProjectsSection({
   debug?: ProjectsSectionDebug;
 }) {
   const [active, setActive] = useState<number | null>(null);
+  const responsive = useResponsiveExperience();
+
+  useEffect(() => {
+    setJourneyState({ interactionLocked: active !== null });
+    return () => setJourneyState({ interactionLocked: false });
+  }, [active]);
+
+  useEffect(() => {
+    if (active === null) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActive(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [active]);
 
   const placed = useMemo(() => {
     const itemsPerChunk = 2;
@@ -214,7 +262,11 @@ export default function ProjectsSection({
     <group name="Projects Section">
       {placed.map(({ project, home, phase, i }) => {
         const itemDebug = debug?.items?.[i];
-        const debuggedHome = debugHome(itemDebug, home);
+        const debuggedHome = debugHome(itemDebug, [
+          home[0] * responsive.laneScale,
+          home[1],
+          home[2],
+        ]);
 
         return (
           <ProjectPaper

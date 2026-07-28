@@ -3,17 +3,26 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--background);
+}
+
+html {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -175,5 +184,288 @@ body {
 
 @keyframes sketch-preloader-fade {
   to { opacity: 0; visibility: hidden; }
+}
+
+/* ─── Responsive 3D experience shell ─────────────────────────────────── */
+
+.experience-root {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.experience-root canvas,
+.experience-canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+  touch-action: pan-x pinch-zoom;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.experience-canvas:focus-visible,
+.experience-root canvas:focus-visible {
+  outline: 2px dashed rgba(43, 43, 43, 0.72);
+  outline-offset: -4px;
+}
+
+.webgl-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  color: #252525;
+  background: #fffdf8;
+  text-align: center;
+  font-family: var(--font-patrick), "Patrick Hand", sans-serif;
+}
+
+.webgl-fallback h1,
+.webgl-fallback p {
+  margin: 0;
+}
+
+.webgl-fallback a {
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* ─── Journey input hint ─────────────────────────────────────────────── */
+
+.journey-hud {
+  position: fixed;
+  left: 50%;
+  bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.8rem));
+  z-index: 10001;
+  width: min(92vw, 34rem);
+  padding-inline: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right));
+  color: #2b2b2b;
+  font-family: var(--font-caveat), "Caveat", cursive;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(12px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  user-select: none;
+}
+
+.journey-hud.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.journey-hud__title {
+  font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.journey-hud__sections {
+  margin-top: 0.2rem;
+  color: #626262;
+  font-size: clamp(0.78rem, 2.6vw, 0.95rem);
+  letter-spacing: 0.1em;
+  line-height: 1.15;
+}
+
+.journey-hud__keyboard {
+  margin-top: 0.2rem;
+  color: #77716a;
+  font-family: var(--font-patrick), "Patrick Hand", sans-serif;
+  font-size: 0.78rem;
+}
+
+.journey-hud__arrow {
+  font-size: clamp(1.45rem, 5vw, 1.8rem);
+  line-height: 1;
+  animation: journey-bob 1.4s ease-in-out infinite;
+}
+
+@keyframes journey-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* ─── Contact letter ─────────────────────────────────────────────────── */
+
+.contact-letter-form {
+  position: relative;
+}
+
+.contact-letter-form__send:focus-visible {
+  outline: 2px solid #2b2b2b !important;
+  outline-offset: 2px;
+}
+
+.contact-letter-form__error {
+  margin-top: 0.5rem;
+  color: #8d1f1f;
+  font: 1rem/1.2 var(--font-patrick), "Patrick Hand", sans-serif;
+  text-align: center;
+}
+
+.contact-modal-portal,
+.contact-modal {
+  width: 100%;
+  height: 100%;
+}
+
+.contact-modal {
+  display: grid;
+  place-items: center;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  pointer-events: auto;
+  touch-action: pan-y pinch-zoom;
+}
+
+.contact-modal__paper {
+  width: min(92vw, 32rem);
+  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: auto;
+  padding: clamp(1.15rem, 4.5vw, 2rem);
+  border: 1.5px solid rgba(55, 48, 38, 0.48);
+  border-radius: 7px 14px 9px 12px;
+  color: #202020;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(98, 117, 128, 0.08) 0,
+      rgba(98, 117, 128, 0.08) 1px,
+      transparent 1px,
+      transparent 27px
+    ),
+    #f7f0dc;
+  box-shadow: 0 16px 50px rgba(47, 43, 34, 0.2);
+  scrollbar-width: thin;
+  transform: rotate(-0.35deg);
+  -webkit-overflow-scrolling: touch;
+}
+
+.contact-letter-form--compact {
+  width: 100%;
+  color: #202020;
+  font-family: var(--font-patrick), "Patrick Hand", sans-serif;
+  user-select: auto;
+}
+
+.contact-letter-form__title {
+  margin: 0 3rem 0.6rem 0;
+  font: 700 clamp(1.7rem, 7vw, 2.3rem)/1 var(--font-caveat), "Caveat", cursive;
+}
+
+.contact-letter-form--compact .contact-letter-form__send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8rem;
+  min-height: 48px;
+  margin: 1rem auto 0;
+  padding: 0.55rem 1.25rem;
+  border: 1.5px solid rgba(35, 35, 35, 0.68);
+  border-radius: 999px;
+  color: #202020;
+  background: rgba(255, 255, 255, 0.45);
+  font: 700 1.35rem/1 var(--font-caveat), "Caveat", cursive;
+  cursor: pointer;
+}
+
+.contact-letter-form--compact .contact-letter-form__send:disabled {
+  cursor: wait;
+  opacity: 0.66;
+}
+
+/* ─── Compact and short screens ──────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .sketch-preloader__content {
+    font-size: clamp(2rem, 11vw, 3rem);
+  }
+
+  .sketch-preloader__ring {
+    width: clamp(104px, 34vw, 132px);
+    height: clamp(104px, 34vw, 132px);
+  }
+
+  .journey-hud {
+    width: min(94vw, 26rem);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .sketch-preloader__ring {
+    width: 92px;
+    height: 92px;
+  }
+
+  .sketch-preloader__content {
+    font-size: clamp(1.8rem, 8vh, 2.6rem);
+  }
+
+  .journey-hud {
+    bottom: max(0.45rem, env(safe-area-inset-bottom));
+  }
+
+  .journey-hud__sections,
+  .journey-hud__keyboard {
+    display: none;
+  }
+
+  .contact-modal {
+    place-items: start center;
+    overflow: auto;
+  }
+
+  .contact-modal__paper {
+    width: min(80vw, 38rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 1rem 1.25rem;
+  }
+
+  .contact-letter-form__title {
+    margin-bottom: 0.2rem;
+    font-size: 1.65rem;
+  }
+
+  .contact-letter-form--compact textarea {
+    height: 5.5rem !important;
+    min-height: 5.5rem !important;
+  }
+
+  .contact-letter-form--compact .contact-letter-form__send {
+    min-height: 44px;
+    margin-top: 0.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sketch-preloader__ring::before,
+  .sketch-preloader__ring::after,
+  .journey-hud__arrow {
+    animation: none !important;
+  }
+
+  .journey-hud,
+  .contact-letter-form button {
+    transition-duration: 0.01ms !important;
+  }
 }
 

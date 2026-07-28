@@ -6,6 +6,7 @@ import gsap from "gsap";
 
 import { BEACH, JOURNEY } from "../journeyConfig";
 import { setJourneyState, type AirplaneMode } from "../journeyState";
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 import {
   createLandingCurve,
   createLaunchCurve,
@@ -65,12 +66,16 @@ export function useAirplaneModeEffects({
   modeAnim,
   sendRequested,
 }: Refs) {
+  const responsive = useResponsiveExperience();
+
   useEffect(() => {
     const root = rootRef.current;
     const plane = planeRef.current;
     const letter = letterRef.current;
     if (!root || !plane || !letter) return;
 
+    const motionDurationScale = responsive.reducedMotion ? 0.01 : 1;
+    const duration = (seconds: number) => seconds * motionDurationScale;
     const tweens: (gsap.core.Tween | gsap.core.Timeline)[] = [];
     const track = <T extends gsap.core.Tween | gsap.core.Timeline>(tween: T): T => {
       tweens.push(tween);
@@ -84,7 +89,7 @@ export function useAirplaneModeEffects({
           x: BEACH.landing[0],
           y: JOURNEY.beachY,
           z: JOURNEY.farBound,
-          duration: 1,
+          duration: duration(1),
           ease: "power2.inOut",
         }),
       );
@@ -93,10 +98,15 @@ export function useAirplaneModeEffects({
           x: 0,
           y: 0,
           z: 0,
-          duration: 1,
+          duration: duration(1),
           ease: "power2.inOut",
           onComplete: () =>
-            setJourneyState({ airplaneMode: "landed", cameraLocked: false, contactOpen: false }),
+            setJourneyState({
+              airplaneMode: "landed",
+              cameraLocked: false,
+              contactOpen: false,
+              interactionLocked: false,
+            }),
         }),
       );
     };
@@ -149,7 +159,7 @@ export function useAirplaneModeEffects({
             x: BEACH.landing[0],
             y: BEACH.landing[1] + CONTACT_CAMERA_DISTANCE,
             z: BEACH.landing[2],
-            duration: 1.4,
+            duration: duration(1.4),
             ease: "power2.inOut",
           }),
         );
@@ -158,11 +168,19 @@ export function useAirplaneModeEffects({
             x: -Math.PI / 2,
             y: 0,
             z: 0,
-            duration: 1.4,
+            duration: duration(1.4),
             ease: "power2.inOut",
           }),
         );
-        track(gsap.to(root.rotation, { x: 0, y: 0.15, z: 0, duration: 1, ease: "power2.inOut" }));
+        track(
+          gsap.to(root.rotation, {
+            x: 0,
+            y: 0.15,
+            z: 0,
+            duration: duration(1),
+            ease: "power2.inOut",
+          }),
+        );
 
         const foldProgress = { value: 1 };
         foldAnimationRef.current?.setProgress(foldProgress.value);
@@ -178,19 +196,28 @@ export function useAirplaneModeEffects({
             },
           }),
         );
-        // Run the GLB fold clip backward, then reveal the contact letter in two folds.
+        // Run the GLB fold clip backward, then reveal the contact form.
         unfold.to(
           foldProgress,
           {
             value: 0,
-            duration: foldAnimationRef.current?.duration ?? 0.9,
+            duration: duration(foldAnimationRef.current?.duration ?? 0.9),
             ease: "power2.inOut",
-            onUpdate: () => foldAnimationRef.current?.setProgress(foldProgress.value),
+            onUpdate: () =>
+              foldAnimationRef.current?.setProgress(foldProgress.value),
           },
-          0.35,
+          duration(0.35),
         );
-        unfold.to(letter.scale, { x: 1, duration: 0.45, ease: "power2.out" }, 0.95);
-        unfold.to(letter.scale, { y: 1, duration: 0.5, ease: "power2.out" }, 1.25);
+        unfold.to(
+          letter.scale,
+          { x: 1, duration: duration(0.45), ease: "power2.out" },
+          duration(0.95),
+        );
+        unfold.to(
+          letter.scale,
+          { y: 1, duration: duration(0.5), ease: "power2.out" },
+          duration(1.25),
+        );
         break;
       }
 
@@ -211,17 +238,26 @@ export function useAirplaneModeEffects({
             },
           }),
         );
-        fold.to(letter.scale, { y: 0.05, duration: 0.4, ease: "power2.in" });
-        fold.to(letter.scale, { x: 0.05, duration: 0.35, ease: "power2.in" });
+        fold.to(letter.scale, {
+          y: 0.05,
+          duration: duration(0.4),
+          ease: "power2.in",
+        });
+        fold.to(letter.scale, {
+          x: 0.05,
+          duration: duration(0.35),
+          ease: "power2.in",
+        });
         fold.to(
           foldProgress,
           {
             value: 1,
-            duration: foldAnimationRef.current?.duration ?? 0.9,
+            duration: duration(foldAnimationRef.current?.duration ?? 0.9),
             ease: "power2.inOut",
-            onUpdate: () => foldAnimationRef.current?.setProgress(foldProgress.value),
+            onUpdate: () =>
+              foldAnimationRef.current?.setProgress(foldProgress.value),
           },
-          0.2,
+          duration(0.2),
         );
         break;
       }
@@ -242,8 +278,16 @@ export function useAirplaneModeEffects({
           modeAnim.kind = "sendoffOut";
           modeAnim.t = 0;
         });
-        sendoff.to(modeAnim, { t: 1, duration: 3.2, ease: "power1.in" });
-        sendoff.to(camera.rotation, { x: -0.05, duration: 2.2, ease: "power2.inOut" }, 0.4);
+        sendoff.to(modeAnim, {
+          t: 1,
+          duration: duration(3.2),
+          ease: "power1.in",
+        });
+        sendoff.to(
+          camera.rotation,
+          { x: -0.05, duration: duration(2.2), ease: "power2.inOut" },
+          duration(0.4),
+        );
         // …then swoop back in and land, ready for the next message.
         sendoff.call(() => {
           modeAnim.startQuaternion.copy(root.quaternion);
@@ -251,7 +295,11 @@ export function useAirplaneModeEffects({
           modeAnim.kind = "sendoffReturn";
           modeAnim.t = 0;
         });
-        sendoff.to(modeAnim, { t: 1, duration: 2.2, ease: "power1.out" });
+        sendoff.to(modeAnim, {
+          t: 1,
+          duration: duration(2.2),
+          ease: "power1.out",
+        });
         break;
       }
     }

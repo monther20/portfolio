@@ -6,6 +6,7 @@ import PaintSprite from "../PaintSprite";
 import PartingItem, { seededRange } from "../PartingItem";
 
 import { skills } from "@/data/portfolio";
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 const SIZE_TO_HEIGHT: Record<"S" | "M" | "L", number> = { S: 1.3, M: 1.7, L: 2.1 };
 
@@ -68,6 +69,8 @@ export default function SkillsSection({
   zStart?: number;
   debug?: SkillsSectionDebug;
 }) {
+  const responsive = useResponsiveExperience();
+
   // Chunked deterministic scatter: each chunk gets one left, one center, one right item.
   const placed = useMemo(() => {
     const itemsPerChunk = 3;
@@ -96,9 +99,13 @@ export default function SkillsSection({
           <PartingItem
             key={skill.label}
             name={`Skill Balloon: ${skill.label}`}
-            home={debugHome(itemDebug, pos)}
+            home={debugHome(itemDebug, [
+              pos[0] * responsive.laneScale,
+              pos[1],
+              pos[2],
+            ])}
             side={side}
-            push={itemDebug?.push ?? 2.7}
+            push={itemDebug?.push ?? 2.7 * responsive.laneScale}
             lift={itemDebug?.lift ?? 0.5}
             forward={itemDebug?.forward ?? 0.4}
             influenceDistance={itemDebug?.influenceDistance ?? 9.5}
@@ -107,14 +114,17 @@ export default function SkillsSection({
             <group
               name={`Skill Balloon Body: ${skill.label}`}
               visible={itemDebug?.visible ?? true}
-              scale={itemDebug?.scale ?? 1}
+              scale={itemDebug?.scale ?? (responsive.isPhone ? 1.08 : 1)}
               renderOrder={itemDebug?.renderOrder ?? 0}
             >
               <Float
-                speed={itemDebug?.floatSpeed ?? speed}
-                rotationIntensity={itemDebug?.rotationIntensity ?? 0.2}
-                floatIntensity={itemDebug?.floatIntensity ?? 0.7}
-                floatingRange={debugFloatingRange(itemDebug, [-0.3, 0.3])}
+                speed={(itemDebug?.floatSpeed ?? speed) * responsive.motionScale}
+                rotationIntensity={(itemDebug?.rotationIntensity ?? 0.2) * responsive.motionScale}
+                floatIntensity={(itemDebug?.floatIntensity ?? 0.7) * responsive.motionScale}
+                floatingRange={debugFloatingRange(itemDebug, [
+                  -0.3 * responsive.motionScale,
+                  0.3 * responsive.motionScale,
+                ])}
               >
                 <PaintSprite
                   name={`Skill Sprite: ${skill.label}`}

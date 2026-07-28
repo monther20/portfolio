@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Float } from "@react-three/drei";
 
 import PaintSprite from "./PaintSprite";
@@ -14,6 +14,7 @@ import ProjectsSection from "./sections/ProjectsSection";
 import BeachContactSection from "./sections/BeachContactSection";
 import { JOURNEY } from "./journeyConfig";
 import { CLOUD_TEXTURE_URLS } from "./assetPaths";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 
 const CLOUD_START_Z = JOURNEY.windowExitZ - 2;
 const CLOUD_CHUNKS = 8;
@@ -42,6 +43,7 @@ const CLOUD_POSITION_OVERRIDES: Partial<Record<number, CloudPositionOverride>> =
 };
 
 function FlightClouds() {
+  const responsive = useResponsiveExperience();
   const placed = useMemo(() => {
     const out: PlacedCloud[] = [];
 
@@ -88,17 +90,20 @@ function FlightClouds() {
           <PartingItem
             key={cloud.key}
             name={cloudName}
-            home={[cloud.x, cloud.y, cloud.z]}
+            home={[cloud.x * responsive.laneScale, cloud.y, cloud.z]}
             push={2.4}
             lift={0.55}
             forward={0.55}
             influenceDistance={8.5}
           >
             <Float
-              speed={cloud.speed}
-              rotationIntensity={0.035}
-              floatIntensity={cloud.float}
-              floatingRange={[-0.2, 0.2]}
+              speed={cloud.speed * responsive.motionScale}
+              rotationIntensity={0.035 * responsive.motionScale}
+              floatIntensity={cloud.float * responsive.motionScale}
+              floatingRange={[
+                -0.2 * responsive.motionScale,
+                0.2 * responsive.motionScale,
+              ]}
             >
               <PaintSprite
                 name={`${cloudName} Sprite`}
@@ -116,18 +121,45 @@ function FlightClouds() {
 }
 
 export default function JourneyScene({ scrollEnabled }: { scrollEnabled: boolean }) {
+  const [loadDistantScenes, setLoadDistantScenes] = useState(false);
+
+  useEffect(() => {
+    if (!scrollEnabled || loadDistantScenes) return;
+
+    const timeout = window.setTimeout(() => setLoadDistantScenes(true), 350);
+    return () => window.clearTimeout(timeout);
+  }, [loadDistantScenes, scrollEnabled]);
+
   return (
     <group name="Journey Scene">
       <ScrollCameraManager enabled={scrollEnabled} />
-      <CorridorScene />
-      <PaperAirplaneActor />
-      <FlightClouds />
 
-      <JourneySection zStart={JOURNEY.journeyAnchorZ} />
-      <SkillsSection zStart={JOURNEY.skillsAnchorZ} />
-      <ProjectsSection zStart={JOURNEY.projectsAnchorZ} />
+      <Suspense fallback={null}>
+        <CorridorScene />
+      </Suspense>
+      <Suspense fallback={null}>
+        <PaperAirplaneActor />
+      </Suspense>
 
-      <BeachContactSection />
+      {loadDistantScenes ? (
+        <>
+          <Suspense fallback={null}>
+            <FlightClouds />
+          </Suspense>
+          <Suspense fallback={null}>
+            <JourneySection zStart={JOURNEY.journeyAnchorZ} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <SkillsSection zStart={JOURNEY.skillsAnchorZ} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ProjectsSection zStart={JOURNEY.projectsAnchorZ} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <BeachContactSection />
+          </Suspense>
+        </>
+      ) : null}
     </group>
   );
 }
