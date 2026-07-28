@@ -304,29 +304,7 @@ body {
   position: relative;
 }
 
-.contact-letter-form__close {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid rgba(35, 35, 35, 0.48);
-  border-radius: 999px;
-  color: #242424;
-  background: rgba(255, 255, 255, 0.42);
-  font: 700 22px/1 var(--font-caveat), "Caveat", cursive;
-  cursor: pointer;
-}
-
-.contact-letter-form__close:focus-visible,
-.contact-letter-form__send:focus-visible,
-.contact-letter-form input:focus-visible,
-.contact-letter-form textarea:focus-visible {
+.contact-letter-form__send:focus-visible {
   outline: 2px solid #2b2b2b !important;
   outline-offset: 2px;
 }
@@ -387,15 +365,6 @@ body {
   color: #202020;
   font-family: var(--font-patrick), "Patrick Hand", sans-serif;
   user-select: auto;
-}
-
-.contact-letter-form--compact .contact-letter-form__close {
-  top: -0.35rem;
-  right: -0.35rem;
-  width: 44px;
-  height: 44px;
-  background: rgba(247, 240, 220, 0.92);
-  font-size: 2rem;
 }
 
 .contact-letter-form__title {

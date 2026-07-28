@@ -3,7 +3,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Html } from "@react-three/drei";
 
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 import type { PaperAirplaneContactFormDebug } from "./paperAirplaneDefaults";
+
+const HTML_SHARPNESS_SCALE = 2;
 
 export type LetterFields = {
   email: string;
@@ -11,33 +14,72 @@ export type LetterFields = {
   message: string;
 };
 
-function fieldStyle(multiline = false): React.CSSProperties {
+function hexToRgba(hex: string, opacity: number) {
+  const clean = hex.replace("#", "").trim();
+  const normalized = clean.length === 3
+    ? clean.split("").map((char) => char + char).join("")
+    : clean.padEnd(6, "0").slice(0, 6);
+  const value = Number.parseInt(normalized, 16);
+
+  if (Number.isNaN(value)) return hex;
+
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+function fieldStyle(
+  field: PaperAirplaneContactFormDebug["fields"]["email"],
+  minimumFontSize: number,
+  sketchRotation: number,
+): React.CSSProperties {
+  const borderWidth = Math.max(1.5, field.borderWidth);
+  const borderColor = hexToRgba(
+    field.borderColor,
+    Math.max(0.68, field.borderOpacity),
+  );
+  const pencilShadow = hexToRgba(field.borderColor, 0.24);
+  const faintPencilShadow = hexToRgba(field.borderColor, 0.13);
+  const radius = Math.max(4, field.borderRadius);
+
   return {
-    position: "static",
-    width: "100%",
-    height: multiline ? "clamp(8rem, 24dvh, 12rem)" : 48,
-    minHeight: multiline ? 128 : 48,
+    width: `${field.width}%`,
+    height: field.height > 0 ? field.height : undefined,
     boxSizing: "border-box",
-    marginTop: 12,
-    padding: multiline ? "12px 14px" : "0 14px",
-    border: "1.5px solid rgba(35, 35, 35, 0.58)",
-    borderRadius: 8,
-    color: "#111111",
-    caretColor: "#111111",
-    background: "rgba(255, 255, 255, 0.56)",
-    boxShadow: "none",
+    position: "relative",
+    left: field.positionX,
+    top: field.positionY,
+    marginTop: field.marginTop,
+    transform: `rotate(${field.rotation + sketchRotation}deg) scale3d(${field.scaleX}, ${field.scaleY}, ${field.scaleZ})`,
+    transformOrigin: "center center",
+    background: hexToRgba(field.backgroundColor, field.backgroundOpacity),
+    border: `${borderWidth}px solid ${borderColor}`,
+    borderRadius: `${radius + 2}px ${radius - 1}px ${radius + 3}px ${radius}px / ${radius}px ${radius + 3}px ${radius - 1}px ${radius + 2}px`,
+    padding: `${field.paddingY}px ${field.paddingX}px`,
+    boxShadow: `0.9px 0.6px 0 ${pencilShadow}, -0.7px 1px 0 ${faintPencilShadow}, inset 0.5px -0.5px 0 ${faintPencilShadow}`,
+    fontFamily:
+      "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+    fontSize: Math.max(field.fontSize, minimumFontSize),
+    color: field.textColor,
+    caretColor: field.textColor,
     outline: "none",
     resize: "none",
     appearance: "none",
-    fontFamily: "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
-    fontSize: 16,
-    lineHeight: 1.25,
-    transform: "none",
     userSelect: "text",
   };
 }
 
-/** A viewport-level paper form that stays readable at every camera FOV. */
+function sendButtonTransform(
+  button: PaperAirplaneContactFormDebug["sendButton"],
+  scaleMultiplier = 1,
+  rotationOffset = 0,
+) {
+  return `rotate(${button.rotation + rotationOffset}deg) scale3d(${button.scaleX * scaleMultiplier}, ${button.scaleY * scaleMultiplier}, ${button.scaleZ * scaleMultiplier})`;
+}
+
+/** The email form is rendered directly on the GLB's unfolded paper surface. */
 export default function ContactLetterForm({
   onSend,
   onClose,
@@ -49,9 +91,25 @@ export default function ContactLetterForm({
 }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const responsive = useResponsiveExperience();
+  const minimumFieldFontSize = responsive.isCoarsePointer ? 16 : 0;
+  const sendButtonRadius = Math.max(8, debug.sendButton.borderRadius);
+  const sendButtonBorderColor = hexToRgba(
+    debug.sendButton.borderColor,
+    Math.max(0.68, debug.sendButton.borderOpacity),
+  );
+  const sendButtonPencilShadow = hexToRgba(
+    debug.sendButton.borderColor,
+    0.22,
+  );
 
   const closeWithFold = useCallback(
-    (event?: Pick<KeyboardEvent | React.KeyboardEvent, "key" | "preventDefault" | "stopPropagation">) => {
+    (
+      event?: Pick<
+        KeyboardEvent | React.KeyboardEvent,
+        "key" | "preventDefault" | "stopPropagation"
+      >,
+    ) => {
       if (event && event.key !== "Escape") return;
 
       event?.preventDefault();
@@ -90,90 +148,169 @@ export default function ContactLetterForm({
 
   return (
     <Html
-      fullscreen
-      zIndexRange={[20_000, 10_001]}
-      wrapperClass="contact-modal-portal"
+      transform
+      position={[debug.html.x, debug.html.y, debug.html.z]}
+      distanceFactor={debug.html.distanceFactor}
+      scale={1 / HTML_SHARPNESS_SCALE}
+      occlude={debug.html.occlude}
+      zIndexRange={[debug.html.zIndexNear, debug.html.zIndexFar]}
       pointerEvents="auto"
-      style={{ pointerEvents: "auto" }}
+      style={{
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transformStyle: "preserve-3d",
+        willChange: "transform",
+      }}
     >
-      <div
-        className="contact-modal"
+      <form
+        className="contact-letter-form contact-letter-form--paper"
+        aria-label="Send Monther a message"
+        onSubmit={handleSend}
+        onWheel={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
+        onKeyDownCapture={closeWithFold}
+        style={{
+          width: debug.container.width,
+          boxSizing: "border-box",
+          padding: `${debug.container.paddingTop}px ${debug.container.paddingRight}px ${debug.container.paddingBottom}px ${debug.container.paddingLeft}px`,
+          position: "relative",
+          userSelect: "none",
+          color: debug.container.color,
+          background: "transparent",
+          opacity: debug.container.opacity,
+          transform: `scale(${debug.container.scale * HTML_SHARPNESS_SCALE}) translateZ(0)`,
+          transformOrigin: "center center",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          WebkitFontSmoothing: "antialiased",
+          textRendering: "geometricPrecision",
+          willChange: "transform",
+        }}
       >
-        <div className="contact-modal__paper">
-          <form
-            className="contact-letter-form contact-letter-form--compact"
-            aria-labelledby="contact-letter-title"
-            role="dialog"
-            aria-modal="true"
-            onSubmit={handleSend}
-            onWheel={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-            onKeyDownCapture={closeWithFold}
+        <input
+          aria-label="Email"
+          style={fieldStyle(debug.fields.email, minimumFieldFontSize, -0.28)}
+          type="email"
+          inputMode="email"
+          name="email"
+          placeholder={debug.fields.email.placeholder}
+          autoComplete="email"
+          maxLength={160}
+          required
+          disabled={sent}
+        />
+        <input
+          aria-label="Subject"
+          style={fieldStyle(debug.fields.subject, minimumFieldFontSize, 0.2)}
+          name="subject"
+          placeholder={debug.fields.subject.placeholder}
+          maxLength={160}
+          required
+          disabled={sent}
+        />
+        <textarea
+          aria-label="Message"
+          style={fieldStyle(debug.fields.message, minimumFieldFontSize, -0.14)}
+          rows={Math.max(2, Math.round(debug.fields.message.rows))}
+          name="message"
+          placeholder={debug.fields.message.placeholder}
+          minLength={8}
+          maxLength={1200}
+          required
+          disabled={sent}
+        />
+
+        {error ? (
+          <div
+            role="alert"
+            style={{
+              position: "absolute",
+              top: 10,
+              left: debug.container.paddingLeft,
+              right: debug.container.paddingRight,
+              margin: 0,
+              fontFamily:
+                "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
+              fontSize: 13,
+              lineHeight: 1,
+              color: "#8d1f1f",
+              textAlign: "center",
+              pointerEvents: "none",
+            }}
           >
-            <button
-              type="button"
-              className="contact-letter-form__close"
-              aria-label="Close message form"
-              onClick={onClose}
-            >
-              <span aria-hidden="true">×</span>
-            </button>
+            {error}
+          </div>
+        ) : null}
 
-            <h2 id="contact-letter-title" className="contact-letter-form__title">
-              Send a message
-            </h2>
-
-            <input
-              aria-label="Email"
-              style={fieldStyle()}
-              type="email"
-              inputMode="email"
-              name="email"
-              placeholder={debug.fields.email.placeholder}
-              autoComplete="email"
-              maxLength={160}
-              required
-              disabled={sent}
-            />
-            <input
-              aria-label="Subject"
-              style={fieldStyle()}
-              name="subject"
-              placeholder={debug.fields.subject.placeholder}
-              maxLength={160}
-              required
-              disabled={sent}
-            />
-            <textarea
-              aria-label="Message"
-              style={fieldStyle(true)}
-              rows={Math.max(2, Math.round(debug.fields.message.rows))}
-              name="message"
-              placeholder={debug.fields.message.placeholder}
-              minLength={8}
-              maxLength={1200}
-              required
-              disabled={sent}
-            />
-
-            {error ? (
-              <div className="contact-letter-form__error" role="alert">
-                {error}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              className="contact-letter-form__send"
-              disabled={sent}
-              aria-live="polite"
-            >
-              {sent ? "sending…" : debug.sendButton.label}
-            </button>
-          </form>
-        </div>
-      </div>
+        <button
+          type="submit"
+          disabled={sent}
+          aria-live="polite"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            left: debug.sendButton.positionX,
+            top: debug.sendButton.positionY,
+            marginTop: debug.sendButton.marginTop,
+            marginLeft: "auto",
+            marginRight: "auto",
+            width: debug.sendButton.width,
+            height:
+              debug.sendButton.height > 0
+                ? debug.sendButton.height
+                : undefined,
+            boxSizing: "border-box",
+            fontFamily: "var(--font-caveat), 'Caveat', cursive",
+            fontSize: debug.sendButton.fontSize,
+            fontWeight: debug.sendButton.fontWeight,
+            color: debug.sendButton.textColor,
+            background: hexToRgba(
+              debug.sendButton.backgroundColor,
+              debug.sendButton.backgroundOpacity,
+            ),
+            border: `1.5px solid ${sendButtonBorderColor}`,
+            borderRadius: `${sendButtonRadius + 2}px ${sendButtonRadius - 1}px ${sendButtonRadius + 1}px ${sendButtonRadius - 2}px / ${sendButtonRadius - 1}px ${sendButtonRadius + 2}px ${sendButtonRadius - 2}px ${sendButtonRadius + 1}px`,
+            padding:
+              debug.sendButton.height > 0
+                ? 0
+                : `${debug.sendButton.paddingY}px 0`,
+            lineHeight: 1,
+            textAlign: "center",
+            whiteSpace: "nowrap",
+            cursor: sent ? "wait" : "pointer",
+            boxShadow: `0.8px 0.7px 0 ${sendButtonPencilShadow}, -0.7px 0.9px 0 ${hexToRgba(debug.sendButton.borderColor, 0.12)}`,
+            opacity: sent
+              ? debug.sendButton.sentOpacity
+              : debug.sendButton.opacity,
+            transition: "transform 160ms ease, opacity 160ms ease",
+            transformOrigin: "center center",
+            transform: sendButtonTransform(
+              debug.sendButton,
+              sent ? debug.sendButton.sentScale : 1,
+            ),
+          }}
+          onMouseEnter={(event) => {
+            if (!sent) {
+              event.currentTarget.style.transform = sendButtonTransform(
+                debug.sendButton,
+                debug.sendButton.hoverScale,
+                debug.sendButton.hoverRotation,
+              );
+            }
+          }}
+          onMouseLeave={(event) => {
+            if (!sent) {
+              event.currentTarget.style.transform = sendButtonTransform(
+                debug.sendButton,
+              );
+            }
+          }}
+        >
+          {sent ? "sending…" : debug.sendButton.label}
+        </button>
+      </form>
     </Html>
   );
 }

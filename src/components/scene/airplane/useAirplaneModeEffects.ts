@@ -6,7 +6,6 @@ import gsap from "gsap";
 
 import { BEACH, JOURNEY } from "../journeyConfig";
 import { setJourneyState, type AirplaneMode } from "../journeyState";
-import { AIRPLANE_LOOK } from "./airplaneGeometry";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import {
   createLandingCurve,
@@ -23,6 +22,11 @@ const CONTACT_CAMERA_DISTANCE = 3.2;
  * advances launch/landing progress while gsap advances the contact send-off;
  * PaperAirplaneActor remains the single writer for the airplane transform.
  */
+export type AirplaneFoldAnimationControls = {
+  duration: number;
+  setProgress: (progress: number) => void;
+};
+
 export type ModeAnim = {
   curve: THREE.CatmullRomCurve3 | null;
   t: number;
@@ -43,6 +47,7 @@ type Refs = {
   rootRef: MutableRefObject<THREE.Group | null>;
   planeRef: MutableRefObject<THREE.Group | null>;
   letterRef: MutableRefObject<THREE.Group | null>;
+  foldAnimationRef: MutableRefObject<AirplaneFoldAnimationControls | null>;
   modeAnim: ModeAnim;
   sendRequested: MutableRefObject<boolean>;
 };
@@ -57,6 +62,7 @@ export function useAirplaneModeEffects({
   rootRef,
   planeRef,
   letterRef,
+  foldAnimationRef,
   modeAnim,
   sendRequested,
 }: Refs) {
@@ -176,46 +182,53 @@ export function useAirplaneModeEffects({
           }),
         );
 
+        const foldProgress = { value: 1 };
+        foldAnimationRef.current?.setProgress(foldProgress.value);
         plane.visible = true;
         letter.visible = true;
         letter.scale.set(0.05, 0.05, 1);
         const unfold = track(
           gsap.timeline({
             onComplete: () => {
-              plane.visible = false;
+              foldAnimationRef.current?.setProgress(0);
+              plane.visible = true;
               setJourneyState({ airplaneMode: "unfolded" });
             },
           }),
         );
+        // Run the GLB fold clip backward, then reveal the contact form.
         unfold.to(
-          plane.scale,
+          foldProgress,
           {
-            x: 0.4,
-            y: 0.02,
-            z: 0.4,
-            duration: duration(0.7),
+            value: 0,
+            duration: duration(foldAnimationRef.current?.duration ?? 0.9),
             ease: "power2.inOut",
+            onUpdate: () =>
+              foldAnimationRef.current?.setProgress(foldProgress.value),
           },
           duration(0.35),
         );
         unfold.to(
           letter.scale,
           { x: 1, duration: duration(0.45), ease: "power2.out" },
-          duration(0.8),
+          duration(0.95),
         );
         unfold.to(
           letter.scale,
           { y: 1, duration: duration(0.5), ease: "power2.out" },
-          duration(1.1),
+          duration(1.25),
         );
         break;
       }
 
       case "folding": {
         plane.visible = true;
+        const foldProgress = { value: 0 };
+        foldAnimationRef.current?.setProgress(foldProgress.value);
         const fold = track(
           gsap.timeline({
             onComplete: () => {
+              foldAnimationRef.current?.setProgress(1);
               letter.visible = false;
               if (sendRequested.current) {
                 setJourneyState({ airplaneMode: "sendoff" });
@@ -235,13 +248,17 @@ export function useAirplaneModeEffects({
           duration: duration(0.35),
           ease: "power2.in",
         });
-        fold.to(plane.scale, {
-          x: AIRPLANE_LOOK.scale,
-          y: AIRPLANE_LOOK.scale,
-          z: AIRPLANE_LOOK.scale,
-          duration: duration(0.5),
-          ease: "back.out(2)",
-        });
+        fold.to(
+          foldProgress,
+          {
+            value: 1,
+            duration: duration(foldAnimationRef.current?.duration ?? 0.9),
+            ease: "power2.inOut",
+            onUpdate: () =>
+              foldAnimationRef.current?.setProgress(foldProgress.value),
+          },
+          duration(0.2),
+        );
         break;
       }
 
