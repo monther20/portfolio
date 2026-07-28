@@ -29,6 +29,8 @@ export type JourneyStateShape = {
   cameraLocked: boolean;
   /** The contact letter is open (used to swallow wheel input + show the form). */
   contactOpen: boolean;
+  /** A focused scene control, such as a project card, temporarily owns input. */
+  interactionLocked: boolean;
 };
 
 const state: JourneyStateShape = {
@@ -36,6 +38,7 @@ const state: JourneyStateShape = {
   airplaneMode: "resting",
   cameraLocked: false,
   contactOpen: false,
+  interactionLocked: false,
 };
 
 const listeners = new Set<() => void>();

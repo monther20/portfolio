@@ -2,12 +2,17 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Preload, useProgress } from "@react-three/drei";
+import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
 
 import SketchPreloader from "../components/SketchPreloader";
+import {
+  ResponsiveExperienceProvider,
+  useResponsiveExperience,
+} from "../components/ResponsiveExperience";
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
+import ResponsiveCamera from "../components/scene/ResponsiveCamera";
 
 function SceneReadySignal({ onReady }: { onReady: () => void }) {
   const renderedFrames = useRef(0);
@@ -109,32 +114,88 @@ function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
   );
 }
 
-export default function MoodyHallwayScene() {
+function browserSupportsWebGL2(): boolean {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const canvas = document.createElement("canvas");
+    return Boolean(
+      window.WebGL2RenderingContext && canvas.getContext("webgl2"),
+    );
+  } catch {
+    return false;
+  }
+}
+
+function WebGLFallback() {
+  return (
+    <div className="webgl-fallback" role="status">
+      <h1>Monther Abdelrazek</h1>
+      <p>This browser could not start the interactive 3D portfolio.</p>
+      <a href="mailto:monther.abdelrazek@gmail.com">Contact Monther</a>
+    </div>
+  );
+}
+
+function ResponsiveHallwayScene() {
   const [entered, setEntered] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
+  const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
+  const responsive = useResponsiveExperience();
+
+  useEffect(() => {
+    setWebglSupported(browserSupportsWebGL2());
+  }, []);
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
-      <Canvas
-        camera={{
-          position: [0.370000000000005, 1.06, 5.62],
-          fov: 30,
-          near: 0.1,
-          far: 770,
-        }}
-        onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
-        gl={{ toneMapping: THREE.NoToneMapping }}
-      >
-        <Suspense fallback={null}>
-          <RoomScene onTransitionComplete={() => setEntered(true)} />
-          <Preload all />
-          <SceneReadySignal onReady={markSceneReady} />
-        </Suspense>
-      </Canvas>
+    <main
+      className="experience-root"
+      data-layout={responsive.layout}
+      data-quality={responsive.qualityTier}
+    >
+      {webglSupported === false ? <WebGLFallback /> : null}
 
-      <LoadingOverlay sceneReady={sceneReady} />
-      <JourneyHud visible={entered} />
-    </div>
+      {webglSupported === true ? (
+        <Canvas
+          className="experience-canvas"
+          aria-label="Interactive 3D portfolio. Open the door, then scroll, swipe, or use the arrow keys to explore."
+          tabIndex={0}
+          dpr={responsive.maxDpr}
+          performance={{ min: 0.5, debounce: 200 }}
+          camera={{
+            position: [0.370000000000005, 1.06, 5.62],
+            fov: responsive.cameraFov,
+            near: 0.1,
+            far: 770,
+          }}
+          onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
+          gl={{
+            toneMapping: THREE.NoToneMapping,
+            powerPreference: "high-performance",
+            antialias: true,
+          }}
+        >
+          <ResponsiveCamera />
+          <Suspense fallback={null}>
+            <RoomScene onTransitionComplete={() => setEntered(true)} />
+            <SceneReadySignal onReady={markSceneReady} />
+          </Suspense>
+        </Canvas>
+      ) : null}
+
+      {webglSupported !== false ? (
+        <LoadingOverlay sceneReady={sceneReady} />
+      ) : null}
+      {webglSupported === true ? <JourneyHud visible={entered} /> : null}
+    </main>
+  );
+}
+
+export default function MoodyHallwayScene() {
+  return (
+    <ResponsiveExperienceProvider>
+      <ResponsiveHallwayScene />
+    </ResponsiveExperienceProvider>
   );
 }

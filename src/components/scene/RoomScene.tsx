@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -12,6 +12,7 @@ import { CORRIDOR } from "./journeyConfig";
 import { DEFAULT_SHADOW_CONFIG } from "./shadowConfig";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 
 const AVATAR_APPROACH_DISTANCE = 7;
 
@@ -24,6 +25,7 @@ export default function RoomScene({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const debugRef = useRef<RoomDebugState>(null!);
   const { camera, scene } = useThree();
+  const responsive = useResponsiveExperience();
   const shadowConfig = DEFAULT_SHADOW_CONFIG;
 
   if (!debugRef.current) {
@@ -72,6 +74,8 @@ export default function RoomScene({
 
     document.body.style.overflow = "hidden";
 
+    const transitionDuration = responsive.reducedMotion ? 0.01 : 2.5;
+    const transitionDelay = responsive.reducedMotion ? 0 : 0.5;
     const tl = gsap.timeline({
       onComplete: () => {
         setIsTransitioning(false);
@@ -85,14 +89,20 @@ export default function RoomScene({
         x: 0,
         y: -1.5,
         z: CORRIDOR.avatar.z + AVATAR_APPROACH_DISTANCE,
-        duration: 2.5,
+        duration: transitionDuration,
         ease: "power2.inOut",
       },
-      "+=0.5",
+      `+=${transitionDelay}`,
     );
     tl.to(
       camera.rotation,
-      { x: 0, y: 0, z: 0, duration: 2.5, ease: "power2.inOut" },
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: transitionDuration,
+        ease: "power2.inOut",
+      },
       "<",
     );
   };
@@ -105,14 +115,15 @@ export default function RoomScene({
         args={[sceneFogColor, debug.scene.fogNear, debug.scene.fogFar]}
       />
 
-      {debug.environment.studioHdri.visible && (
-        <Environment
-          files="/monochrome_studio_02_1k.hdr"
-          environmentIntensity={
-            debug.environment.studioHdri.environmentIntensity
-          }
-        />
-      )}
+      {debug.environment.studioHdri.visible &&
+        responsive.qualityTier !== "low" && (
+          <Environment
+            files="/monochrome_studio_02_1k.hdr"
+            environmentIntensity={
+              debug.environment.studioHdri.environmentIntensity
+            }
+          />
+        )}
 
       <InteriorDetails
         isNight={isNight}
@@ -127,9 +138,13 @@ export default function RoomScene({
         debug={debug}
       />
 
-      <group visible={isOpen}>
-        <JourneyScene scrollEnabled={isOpen && !isTransitioning} />
-      </group>
+      {isOpen ? (
+        <group>
+          <Suspense fallback={null}>
+            <JourneyScene scrollEnabled={!isTransitioning} />
+          </Suspense>
+        </group>
+      ) : null}
     </>
   );
 }

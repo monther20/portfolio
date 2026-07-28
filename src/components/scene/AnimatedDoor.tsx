@@ -12,6 +12,7 @@ import {
   vector3Tuple,
   type RoomDebugState,
 } from "./roomDebug/types";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 
 // Same wipe shader as the lanterns — blends from texBase to texOn top-to-bottom
 const DoorWipeMaterial = shaderMaterial(
@@ -113,6 +114,7 @@ export default function AnimatedDoor({
   const handleMaterialRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
   const { scene } = useThree();
+  const responsive = useResponsiveExperience();
   const { materials, meshes } = debug;
   const doorFrameColor = isNight
     ? (materials.doorFrame.nightColor ?? materials.doorFrame.color)
@@ -186,11 +188,11 @@ export default function AnimatedDoor({
     if (!handleMaterialRef.current) return;
     gsap.to(handleMaterialRef.current, {
       progress: hovered ? 1 : 0,
-      duration: 0.25,
+      duration: responsive.reducedMotion ? 0.01 : 0.25,
       ease: "power2.out",
       overwrite: "auto",
     });
-  }, [hovered]);
+  }, [hovered, responsive.reducedMotion]);
 
   // Rotate door open/closed. The debug rotation is the base pose;
   // opening adds a 90-degree swing on top of that base Y rotation.
@@ -200,7 +202,7 @@ export default function AnimatedDoor({
         x: meshes.doorPanelPivot.rotation.x,
         y: meshes.doorPanelPivot.rotation.y + (isOpen ? Math.PI / 2 : 0),
         z: meshes.doorPanelPivot.rotation.z,
-        duration: 1.2,
+        duration: responsive.reducedMotion ? 0.01 : 1.2,
         ease: "power2.inOut",
       });
     }
@@ -209,6 +211,7 @@ export default function AnimatedDoor({
     meshes.doorPanelPivot.rotation.x,
     meshes.doorPanelPivot.rotation.y,
     meshes.doorPanelPivot.rotation.z,
+    responsive.reducedMotion,
   ]);
 
   // Dim the door frame and the custom door shader at night.
@@ -282,13 +285,22 @@ export default function AnimatedDoor({
         }}
         onPointerEnter={(e) => {
           e.stopPropagation();
+          if (responsive.isCoarsePointer) return;
           setHovered(true);
           document.body.style.cursor = "pointer";
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          if (responsive.isCoarsePointer) setHovered(true);
+        }}
+        onPointerUp={(e) => {
+          e.stopPropagation();
+          if (responsive.isCoarsePointer) setHovered(false);
         }}
         onPointerLeave={(e) => {
           e.stopPropagation();
           setHovered(false);
-          document.body.style.cursor = "auto";
+          if (!responsive.isCoarsePointer) document.body.style.cursor = "auto";
         }}
       >
         <group position={[2.555, 0, 0]}>

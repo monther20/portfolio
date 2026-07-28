@@ -20,6 +20,7 @@ import {
   hingedWallContentZ,
 } from "./hingedWallSettings";
 import { useTiledTexture } from "./useTiledTexture";
+import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 const C = "/textures/corridor";
 
@@ -202,6 +203,7 @@ function InfoStation({
   index: number;
 }) {
   const side = station.side;
+  const responsive = useResponsiveExperience();
 
   return (
     <HingedMiniWall
@@ -220,7 +222,7 @@ function InfoStation({
           sketch={station.art}
           billboard={false}
           position={[0, 0, 0.132]}
-          height={1.3}
+          height={responsive.isPhone ? 1.42 : 1.3}
           revealNear={7}
           revealFar={15}
         />
@@ -228,9 +230,9 @@ function InfoStation({
 
       <WallText
         position={[0, -1, 0]}
-        fontSize={0.21}
+        fontSize={responsive.isCompact ? 0.235 : 0.21}
         color="#000000"
-        maxWidth={3.35}
+        maxWidth={responsive.isCompact ? 3.15 : 3.35}
         rotation={side * 0.014}
       >
         {station.lines.join("\n")}

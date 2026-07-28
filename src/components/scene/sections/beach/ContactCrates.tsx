@@ -10,6 +10,7 @@ import { BEACH } from "../../journeyConfig";
 import { getJourneyState, setJourneyState } from "../../journeyState";
 import { contact } from "@/data/portfolio";
 import { CONTACT_BUTTON_TEXTURES } from "../../assetPaths";
+import { useResponsiveExperience } from "../../../ResponsiveExperience";
 
 type ContactCrateKey = (typeof BEACH.crates)[number]["key"];
 
@@ -33,7 +34,12 @@ function crateAction(key: string) {
   if (key === "message") {
     // Only when the airplane is parked — it becomes the letter.
     if (getJourneyState().airplaneMode === "landed") {
-      setJourneyState({ cameraLocked: true, contactOpen: true, airplaneMode: "unfolding" });
+      setJourneyState({
+        cameraLocked: true,
+        contactOpen: true,
+        interactionLocked: false,
+        airplaneMode: "unfolding",
+      });
     }
     return;
   }
@@ -55,6 +61,7 @@ function ContactBarrel({
   position: [number, number, number];
 }) {
   const bobRef = useRef<THREE.Group>(null);
+  const responsive = useResponsiveExperience();
   const phase = useMemo(() => seededRange(crate.key, 0, Math.PI * 2), [crate.key]);
 
   useFrame((state) => {
@@ -63,9 +70,12 @@ function ContactBarrel({
     const t = state.clock.elapsedTime;
 
     // Local bobbing only; the parent position stays anchored.
-    bob.position.y = Math.sin(t * 1.15 + phase) * 0.065;
-    bob.rotation.z = Math.sin(t * 0.9 + phase) * 0.035;
-    bob.rotation.x = Math.cos(t * 0.75 + phase) * 0.025;
+    bob.position.y =
+      Math.sin(t * 1.15 + phase) * 0.065 * responsive.motionScale;
+    bob.rotation.z =
+      Math.sin(t * 0.9 + phase) * 0.035 * responsive.motionScale;
+    bob.rotation.x =
+      Math.cos(t * 0.75 + phase) * 0.025 * responsive.motionScale;
   });
 
   return (
@@ -90,6 +100,7 @@ function ContactBarrel({
 
 /** ContactCrates — available actions centered as a welcoming fan beyond the pier. */
 export default function ContactCrates() {
+  const responsive = useResponsiveExperience();
   const availableCrates = BEACH.crates.filter(
     (crate) => crate.key !== "linkedin" || Boolean(contact.linkedin),
   );
@@ -104,12 +115,18 @@ export default function ContactCrates() {
         const centerDistance = Math.abs(index - middle);
         const x = BEACH.boardwalk.x + (index - middle) * CONTACT_BUTTON_SPACING;
         const z = CONTACT_BUTTON_Z + centerDistance * 0.18;
-        const position: [number, number, number] =
+        const basePosition: [number, number, number] =
           TUNED_CONTACT_BUTTON_POSITIONS[crate.key] ?? [
             x,
             CONTACT_BUTTON_Y,
             z,
           ];
+        const position: [number, number, number] = [
+          BEACH.boardwalk.x +
+            (basePosition[0] - BEACH.boardwalk.x) * responsive.laneScale,
+          basePosition[1],
+          basePosition[2],
+        ];
 
         return (
           <ContactBarrel key={crate.key} crate={crate} position={position} />

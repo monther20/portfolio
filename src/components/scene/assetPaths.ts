@@ -5,7 +5,7 @@ const CLOUD_TEXTURE_BASE = "/textures/journey/clouds";
 const AVATAR_FRAME_COUNT = 33;
 export const AVATAR_FRAME_URLS = Array.from(
   { length: AVATAR_FRAME_COUNT },
-  (_, index) => `${CORRIDOR_TEXTURE_BASE}/avatar_anim_warp/${String(index + 1).padStart(3, "0")}.png`,
+  (_, index) => `${CORRIDOR_TEXTURE_BASE}/avatar_anim_warp/${String(index + 1).padStart(3, "0")}.webp`,
 );
 
 const CLOUD_TEXTURE_FILES = [

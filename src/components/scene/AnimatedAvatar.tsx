@@ -7,6 +7,7 @@ import { Billboard } from "@react-three/drei";
 
 import { AVATAR_FRAME_URLS } from "./assetPaths";
 import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 
 function pingPongFrameIndex(step: number, count: number) {
   if (count <= 1) return 0;
@@ -32,7 +33,15 @@ export default function AnimatedAvatar({
   const lastFrame = useRef(-1);
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const { camera, scene, gl } = useThree();
-  const frames = useLoader(THREE.TextureLoader, AVATAR_FRAME_URLS);
+  const responsive = useResponsiveExperience();
+  const frameUrls = useMemo(
+    () =>
+      responsive.qualityTier === "low"
+        ? AVATAR_FRAME_URLS.filter((_, index) => index % 2 === 0)
+        : AVATAR_FRAME_URLS,
+    [responsive.qualityTier],
+  );
+  const frames = useLoader(THREE.TextureLoader, frameUrls);
 
   useEffect(() => {
     const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
@@ -42,6 +51,7 @@ export default function AnimatedAvatar({
       texture.anisotropy = Math.min(8, maxAnisotropy);
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
       texture.needsUpdate = true;
 
       // Upload every generated frame once so playback does not hitch.
