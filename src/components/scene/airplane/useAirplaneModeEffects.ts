@@ -13,6 +13,9 @@ import {
   createSendoffCurve,
 } from "./flightPaths";
 
+/** Preserve the existing framing while viewing the contact paper face-on. */
+const CONTACT_CAMERA_DISTANCE = 3.2;
+
 /**
  * The scripted route the frame loop is currently following. Scroll position
  * advances launch/landing progress while gsap advances the contact send-off;
@@ -76,7 +79,15 @@ export function useAirplaneModeEffects({
 
     /** Ease the camera back to the scroll path and hand control back. */
     const releaseToBeach = () => {
-      track(gsap.to(camera.position, { x: 0.35, y: JOURNEY.beachY, duration: 1, ease: "power2.inOut" }));
+      track(
+        gsap.to(camera.position, {
+          x: BEACH.landing[0],
+          y: JOURNEY.beachY,
+          z: JOURNEY.farBound,
+          duration: 1,
+          ease: "power2.inOut",
+        }),
+      );
       track(
         gsap.to(camera.rotation, {
           x: 0,
@@ -131,9 +142,26 @@ export function useAirplaneModeEffects({
       }
 
       case "unfolding": {
-        // The cinematic owns the camera (cameraLocked was set by the crate click).
-        track(gsap.to(camera.position, { x: 0.35, y: -0.85, z: BEACH.landing[2] + 2.7, duration: 1.4, ease: "power2.inOut" }));
-        track(gsap.to(camera.rotation, { x: -0.52, y: 0, z: 0, duration: 1.4, ease: "power2.inOut" }));
+        // Move directly above the horizontal paper so the camera meets its
+        // surface at 90 degrees instead of viewing the form in perspective.
+        track(
+          gsap.to(camera.position, {
+            x: BEACH.landing[0],
+            y: BEACH.landing[1] + CONTACT_CAMERA_DISTANCE,
+            z: BEACH.landing[2],
+            duration: 1.4,
+            ease: "power2.inOut",
+          }),
+        );
+        track(
+          gsap.to(camera.rotation, {
+            x: -Math.PI / 2,
+            y: 0,
+            z: 0,
+            duration: 1.4,
+            ease: "power2.inOut",
+          }),
+        );
         track(gsap.to(root.rotation, { x: 0, y: 0.15, z: 0, duration: 1, ease: "power2.inOut" }));
 
         const foldProgress = { value: 1 };

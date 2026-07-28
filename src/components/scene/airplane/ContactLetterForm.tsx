@@ -31,9 +31,15 @@ function hexToRgba(hex: string, opacity: number) {
 
 function fieldStyle(field: PaperAirplaneContactFormDebug["fields"]["email"]): React.CSSProperties {
   return {
-    width: "100%",
+    width: `${field.width}%`,
+    height: field.height > 0 ? field.height : undefined,
     boxSizing: "border-box",
+    position: "relative",
+    left: field.positionX,
+    top: field.positionY,
     marginTop: field.marginTop,
+    transform: `rotate(${field.rotation}deg) scale3d(${field.scaleX}, ${field.scaleY}, ${field.scaleZ})`,
+    transformOrigin: "center center",
     background: hexToRgba(field.backgroundColor, field.backgroundOpacity),
     border: `${field.borderWidth}px solid ${hexToRgba(field.borderColor, field.borderOpacity)}`,
     borderRadius: field.borderRadius,
@@ -47,6 +53,14 @@ function fieldStyle(field: PaperAirplaneContactFormDebug["fields"]["email"]): Re
     resize: "none",
     appearance: "none",
   };
+}
+
+function sendButtonTransform(
+  button: PaperAirplaneContactFormDebug["sendButton"],
+  scaleMultiplier = 1,
+  rotationOffset = 0,
+) {
+  return `rotate(${button.rotation + rotationOffset}deg) scale3d(${button.scaleX * scaleMultiplier}, ${button.scaleY * scaleMultiplier}, ${button.scaleZ * scaleMultiplier})`;
 }
 
 /**
@@ -200,32 +214,54 @@ export default function ContactLetterForm({
           disabled={sent}
           aria-live="polite"
           style={{
-            display: "block",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            left: debug.sendButton.positionX,
+            top: debug.sendButton.positionY,
             marginTop: debug.sendButton.marginTop,
             marginLeft: "auto",
             marginRight: "auto",
             width: debug.sendButton.width,
+            height: debug.sendButton.height > 0 ? debug.sendButton.height : undefined,
+            boxSizing: "border-box",
             fontFamily: "var(--font-caveat), 'Caveat', cursive",
             fontSize: debug.sendButton.fontSize,
             fontWeight: debug.sendButton.fontWeight,
             color: debug.sendButton.textColor,
             background: hexToRgba(debug.sendButton.backgroundColor, debug.sendButton.backgroundOpacity),
-            border: `${debug.sendButton.borderWidth}px solid ${debug.sendButton.borderColor}`,
+            border: `${debug.sendButton.borderWidth}px solid ${hexToRgba(debug.sendButton.borderColor, debug.sendButton.borderOpacity)}`,
             borderRadius: debug.sendButton.borderRadius,
-            padding: `${debug.sendButton.paddingY}px 0`,
+            padding: debug.sendButton.height > 0
+              ? 0
+              : `${debug.sendButton.paddingY}px 0`,
+            lineHeight: 1,
+            textAlign: "center",
+            whiteSpace: "nowrap",
             cursor: sent ? "wait" : "pointer",
             boxShadow: `${debug.sendButton.shadowX}px ${debug.sendButton.shadowY}px ${debug.sendButton.shadowBlur}px ${debug.sendButton.shadowColor}`,
             opacity: sent ? debug.sendButton.sentOpacity : debug.sendButton.opacity,
             transition: "transform 160ms ease, opacity 160ms ease",
-            transform: sent ? `scale(${debug.sendButton.sentScale})` : undefined,
+            transformOrigin: "center center",
+            transform: sendButtonTransform(
+              debug.sendButton,
+              sent ? debug.sendButton.sentScale : 1,
+            ),
           }}
           onMouseEnter={(e) => {
             if (!sent) {
-              e.currentTarget.style.transform = `rotate(${debug.sendButton.hoverRotation}deg) scale(${debug.sendButton.hoverScale})`;
+              e.currentTarget.style.transform = sendButtonTransform(
+                debug.sendButton,
+                debug.sendButton.hoverScale,
+                debug.sendButton.hoverRotation,
+              );
             }
           }}
           onMouseLeave={(e) => {
-            if (!sent) e.currentTarget.style.transform = "none";
+            if (!sent) {
+              e.currentTarget.style.transform = sendButtonTransform(debug.sendButton);
+            }
           }}
         >
           {sent ? debug.sendButton.sendingLabel : debug.sendButton.label}

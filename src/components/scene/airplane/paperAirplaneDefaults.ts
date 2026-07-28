@@ -1,5 +1,13 @@
 export type PaperAirplaneContactFormFieldDebug = {
   placeholder: string;
+  positionX: number;
+  positionY: number;
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
+  width: number;
+  height: number;
+  rotation: number;
   marginTop: number;
   fontSize: number;
   paddingX: number;
@@ -42,13 +50,21 @@ export type PaperAirplaneContactFormDebug = {
   sendButton: {
     label: string;
     sendingLabel: string;
+    positionX: number;
+    positionY: number;
+    scaleX: number;
+    scaleY: number;
+    scaleZ: number;
     width: number;
+    height: number;
+    rotation: number;
     marginTop: number;
     fontSize: number;
     fontWeight: number;
     paddingY: number;
     borderWidth: number;
     borderRadius: number;
+    borderOpacity: number;
     backgroundColor: string;
     backgroundOpacity: number;
     borderColor: string;
@@ -83,10 +99,18 @@ export type PaperAirplaneDebugState = {
 };
 
 const FIELD_DEFAULTS: Omit<PaperAirplaneContactFormFieldDebug, "placeholder" | "marginTop" | "rows"> = {
+  positionX: 0,
+  positionY: 0,
+  scaleX: 1,
+  scaleY: 1,
+  scaleZ: 1,
+  width: 100,
+  height: 0,
+  rotation: 0,
   fontSize: 14,
   paddingX: 9,
   paddingY: 7,
-  borderWidth: 1.5,
+  borderWidth: 0,
   borderRadius: 5,
   backgroundColor: "#ffffff",
   backgroundOpacity: 0,
@@ -143,21 +167,45 @@ export function createPaperAirplaneDebugState(): PaperAirplaneDebugState {
       fields: {
         email: {
           ...createFieldDefaults("email", 0),
+          positionX: 4,
+          positionY: -20,
+          width: 98,
+          height: 27,
           backgroundColor: "#eaeaea",
         },
-        subject: createFieldDefaults("subject", 7),
-        message: createFieldDefaults("message", 7, 5),
+        subject: {
+          ...createFieldDefaults("subject", 7),
+          positionX: 4,
+          positionY: -12,
+          width: 96,
+          height: 27,
+        },
+        message: {
+          ...createFieldDefaults("message", 7, 5),
+          positionX: 9,
+          positionY: 4,
+          width: 87,
+          height: 157,
+        },
       },
       sendButton: {
-        label: "send ✈",
+        label: "send ",
         sendingLabel: "opening mail app…",
-        width: 78,
+        positionX: 2,
+        positionY: 7,
+        scaleX: 1,
+        scaleY: 1,
+        scaleZ: 1,
+        width: 60,
+        height: 23,
+        rotation: 0,
         marginTop: 10,
         fontSize: 18,
         fontWeight: 700,
         paddingY: 6,
-        borderWidth: 2,
+        borderWidth: 0,
         borderRadius: 10,
+        borderOpacity: 1,
         backgroundColor: "#ffffff",
         backgroundOpacity: 0,
         borderColor: "#111111",
