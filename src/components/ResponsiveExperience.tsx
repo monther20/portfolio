@@ -96,7 +96,7 @@ function buildProfile(signals: BrowserSignals): ResponsiveExperienceProfile {
       ? 38
       : isPortrait
         ? 37
-        : height < 800
+        : isTablet
           ? 33
           : 30;
 

@@ -26,6 +26,7 @@ const MAX_WHEEL_DELTA = 100;
 const MAX_SCROLL_VELOCITY = 0.38;
 const MAX_FRAME_SCALE = 2;
 const TOUCH_DELTA_MULTIPLIER = 1.25;
+const PHONE_TOUCH_DELTA_MULTIPLIER = 1.4;
 const KEYBOARD_DELTA = 78;
 const CHUNK_LENGTH = 40;
 const MOUSE_POSITION_X = 0.12;
@@ -109,7 +110,10 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       if (Math.abs(deltaY) < 0.5) return;
 
       event.preventDefault();
-      applyInputDelta(deltaY * TOUCH_DELTA_MULTIPLIER);
+      const touchMultiplier = responsive.isPhone
+        ? PHONE_TOUCH_DELTA_MULTIPLIER
+        : TOUCH_DELTA_MULTIPLIER;
+      applyInputDelta(deltaY * touchMultiplier);
     };
 
     const releasePointer = (event: PointerEvent) => {
@@ -151,7 +155,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       window.removeEventListener("pointerup", releasePointer);
       window.removeEventListener("pointercancel", releasePointer);
     };
-  }, [enabled, gl]);
+  }, [enabled, gl, responsive.isPhone]);
 
   useFrame((state, delta) => {
     if (!enabled) return;
