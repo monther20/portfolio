@@ -21,6 +21,7 @@ import {
   windowProgressAt,
 } from "./journeyConfig";
 import { useFogFade } from "./useFogFade";
+import { PAPER_AIRPLANE_MODEL_URL } from "./assetPaths";
 import {
   getJourneyState,
   setJourneyState,
@@ -49,7 +50,6 @@ const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
 const MESSAGE_PAPER_POSITION: [number, number, number] = [0, 0.04, 0];
 const MESSAGE_PAPER_ROTATION: [number, number, number] = [-Math.PI / 2, 0, 0];
 const MESSAGE_PAPER_SCALE: [number, number, number] = [0.27, 0.22, 1];
-const PAPER_AIRPLANE_MODEL_URL = "/paperairplane (1).glb";
 
 function PaperAirplaneModel({
   debug,

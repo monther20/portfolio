@@ -13,6 +13,7 @@ import {
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
 import ResponsiveCamera from "../components/scene/ResponsiveCamera";
+import BehindDoorAssetPreloader from "../components/scene/BehindDoorAssetPreloader";
 
 function SceneReadySignal({ onReady }: { onReady: () => void }) {
   const renderedFrames = useRef(0);
@@ -31,11 +32,18 @@ function SceneReadySignal({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
+function LoadingOverlay({
+  sceneReady,
+  onComplete,
+}: {
+  sceneReady: boolean;
+  onComplete: () => void;
+}) {
   const active = useProgress((state) => state.active);
   const progress = useProgress((state) => state.progress);
   const startTime = useRef(Date.now());
   const triggered = useRef(false);
+  const completionReported = useRef(false);
 
   const [lineProgress, setLineProgress] = useState(0);
   const [isSketching, setIsSketching] = useState(false);
@@ -107,6 +115,13 @@ function LoadingOverlay({ sceneReady }: { sceneReady: boolean }) {
     return () => window.clearInterval(interval);
   }, [isGone, isSketching]);
 
+  useEffect(() => {
+    if (!isGone || completionReported.current) return;
+
+    completionReported.current = true;
+    onComplete();
+  }, [isGone, onComplete]);
+
   if (isGone) return null;
 
   return (
@@ -140,8 +155,13 @@ function WebGLFallback() {
 function ResponsiveHallwayScene() {
   const [entered, setEntered] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
+  const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
+  const markInitialLoadingComplete = useCallback(
+    () => setInitialLoadingComplete(true),
+    [],
+  );
   const responsive = useResponsiveExperience();
 
   useEffect(() => {
@@ -177,6 +197,7 @@ function ResponsiveHallwayScene() {
           }}
         >
           <ResponsiveCamera />
+          <BehindDoorAssetPreloader enabled={initialLoadingComplete} />
           <Suspense fallback={null}>
             <RoomScene onTransitionComplete={() => setEntered(true)} />
             <SceneReadySignal onReady={markSceneReady} />
@@ -184,8 +205,11 @@ function ResponsiveHallwayScene() {
         </Canvas>
       ) : null}
 
-      {webglSupported !== false ? (
-        <LoadingOverlay sceneReady={sceneReady} />
+      {webglSupported !== false && !initialLoadingComplete ? (
+        <LoadingOverlay
+          sceneReady={sceneReady}
+          onComplete={markInitialLoadingComplete}
+        />
       ) : null}
       {webglSupported === true ? <JourneyHud visible={entered} /> : null}
     </main>
