@@ -10,7 +10,7 @@ import {
 } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useAnimations, useGLTF } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 
 import {
   AIRPLANE_CAMERA_OFFSET,
@@ -51,6 +51,58 @@ const MESSAGE_PAPER_POSITION: [number, number, number] = [0, 0.04, 0];
 const MESSAGE_PAPER_ROTATION: [number, number, number] = [-Math.PI / 2, 0, 0];
 const MESSAGE_PAPER_SCALE: [number, number, number] = [0.27, 0.22, 1];
 
+const AIRPLANE_FOLD_STEP_NAMES = ["step 1", "step 2", "step 3"] as const;
+const MORPH_FOLD_DURATION = 0.9;
+
+type MorphTargetMesh = THREE.Mesh<
+  THREE.BufferGeometry,
+  THREE.Material | THREE.Material[]
+> & {
+  morphTargetInfluences: number[];
+  morphTargetDictionary?: Record<string, number>;
+};
+
+function normalizeMorphTargetName(name: string) {
+  return name.toLowerCase().replace(/[\s_-]+/g, "");
+}
+
+function isMorphTargetMesh(object: THREE.Object3D): object is MorphTargetMesh {
+  const mesh = object as THREE.Mesh<
+    THREE.BufferGeometry,
+    THREE.Material | THREE.Material[]
+  >;
+
+  return Boolean(mesh.isMesh && mesh.morphTargetInfluences?.length);
+}
+
+function getMorphTargetIndex(
+  mesh: MorphTargetMesh,
+  targetName: string,
+  fallbackIndex: number,
+) {
+  const dictionary = mesh.morphTargetDictionary;
+  if (!dictionary) return fallbackIndex;
+
+  const exactMatch = dictionary[targetName];
+  if (exactMatch !== undefined) return exactMatch;
+
+  const normalizedTargetName = normalizeMorphTargetName(targetName);
+  return (
+    Object.entries(dictionary).find(
+      ([name]) => normalizeMorphTargetName(name) === normalizedTargetName,
+    )?.[1] ?? fallbackIndex
+  );
+}
+
+function foldStepWeight(progress: number, stepIndex: number) {
+  const stepCount = AIRPLANE_FOLD_STEP_NAMES.length;
+  return THREE.MathUtils.smoothstep(
+    progress,
+    stepIndex / stepCount,
+    (stepIndex + 1) / stepCount,
+  );
+}
+
 function PaperAirplaneModel({
   debug,
   foldAnimationRef,
@@ -60,14 +112,17 @@ function PaperAirplaneModel({
 }) {
   const gltf = useGLTF(PAPER_AIRPLANE_MODEL_URL);
   const modelScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
-  const { actions, mixer } = useAnimations(gltf.animations, modelScene);
-  const foldClip = useMemo(
-    () =>
-      gltf.animations.find((clip) => clip.name.toLowerCase() === "fold") ??
-      gltf.animations.find((clip) => clip.name.toLowerCase().includes("fold")) ??
-      gltf.animations[0],
-    [gltf.animations],
-  );
+  const morphTargetMeshes = useMemo(() => {
+    const meshes: MorphTargetMesh[] = [];
+
+    modelScene.traverse((child) => {
+      if (isMorphTargetMesh(child)) {
+        meshes.push(child);
+      }
+    });
+
+    return meshes;
+  }, [modelScene]);
 
   useEffect(() => {
     modelScene.traverse((child) => {
@@ -84,7 +139,20 @@ function PaperAirplaneModel({
         ? mesh.material
         : [mesh.material];
       materials.forEach((material) => {
+        const paperMaterial = material as THREE.MeshStandardMaterial & {
+          map?: THREE.Texture | null;
+        };
+
         material.side = THREE.DoubleSide;
+        if (paperMaterial.color && !paperMaterial.map) {
+          paperMaterial.color.set(AIRPLANE_LOOK.paperColor);
+        }
+        if ("roughness" in paperMaterial) {
+          paperMaterial.roughness = AIRPLANE_LOOK.roughness;
+        }
+        if ("metalness" in paperMaterial) {
+          paperMaterial.metalness = AIRPLANE_LOOK.metalness;
+        }
         (material as THREE.Material & { fog?: boolean }).fog = true;
         material.needsUpdate = true;
       });
@@ -93,25 +161,34 @@ function PaperAirplaneModel({
 
   const setFoldProgress = useCallback(
     (progress: number) => {
-      if (!foldClip) return;
+      const clampedProgress = THREE.MathUtils.clamp(progress, 0, 1);
 
-      const action = actions[foldClip.name];
-      if (!action) return;
+      morphTargetMeshes.forEach((mesh) => {
+        const influences = mesh.morphTargetInfluences;
+        influences.fill(0);
 
-      action.enabled = true;
-      action.clampWhenFinished = true;
-      action.setLoop(THREE.LoopOnce, 1);
-      action.paused = false;
-      action.play();
-      mixer.setTime(foldClip.duration * THREE.MathUtils.clamp(progress, 0, 1));
-      action.paused = true;
+        AIRPLANE_FOLD_STEP_NAMES.forEach((targetName, stepIndex) => {
+          const targetIndex = getMorphTargetIndex(
+            mesh,
+            targetName,
+            stepIndex,
+          );
+
+          if (targetIndex < 0 || targetIndex >= influences.length) return;
+
+          influences[targetIndex] = foldStepWeight(
+            clampedProgress,
+            stepIndex,
+          );
+        });
+      });
     },
-    [actions, foldClip, mixer],
+    [morphTargetMeshes],
   );
 
   useLayoutEffect(() => {
     const controls: AirplaneFoldAnimationControls = {
-      duration: foldClip?.duration ?? 0,
+      duration: MORPH_FOLD_DURATION,
       setProgress: setFoldProgress,
     };
 
@@ -123,7 +200,7 @@ function PaperAirplaneModel({
         foldAnimationRef.current = null;
       }
     };
-  }, [debug.animation.foldProgress, foldAnimationRef, foldClip, setFoldProgress]);
+  }, [debug.animation.foldProgress, foldAnimationRef, setFoldProgress]);
 
   return (
     <group
@@ -439,7 +516,7 @@ export default function PaperAirplaneActor() {
       position={CORRIDOR.airplaneRest}
       rotation={[0, CORRIDOR.airplaneRestYaw, 0]}
     >
-      {/* GLB transform values match the tuned model settings on master. */}
+      {/* GLB transform values match the shape-key paper-plane model. */}
       <group
         ref={planeRef}
         name="Folded Airplane"

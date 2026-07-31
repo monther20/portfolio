@@ -1,4 +1,4 @@
-export const PAPER_AIRPLANE_MODEL_URL = "/paperairplane (1).glb";
+export const PAPER_AIRPLANE_MODEL_URL = "/animated paper-plane.glb";
 
 const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";
