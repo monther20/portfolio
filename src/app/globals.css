@@ -304,6 +304,11 @@ body {
   position: relative;
 }
 
+.contact-letter-form__close:focus-visible {
+  outline: 2px solid #2b2b2b;
+  outline-offset: 2px;
+}
+
 .contact-letter-form__send:focus-visible {
   outline: 2px solid #2b2b2b !important;
   outline-offset: 2px;

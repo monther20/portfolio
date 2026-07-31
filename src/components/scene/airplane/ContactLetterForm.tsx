@@ -8,6 +8,39 @@ import type { PaperAirplaneContactFormDebug } from "./paperAirplaneDefaults";
 
 const HTML_SHARPNESS_SCALE = 2;
 
+const CLOSE_BUTTON_STYLE: React.CSSProperties = {
+  position: "absolute",
+  top: 8,
+  right: 14,
+  zIndex: 2,
+  display: "grid",
+  placeItems: "center",
+  width: 26,
+  height: 26,
+  padding: 0,
+  border: "1.5px solid #111111",
+  borderRadius: "50%",
+  color: "#ffffff",
+  background: "rgba(17, 17, 17, 0.9)",
+  boxShadow: "0.8px 0.8px 0 rgba(17, 17, 17, 0.28)",
+  cursor: "pointer",
+  transform: "rotate(1.5deg)",
+  transformOrigin: "center",
+  transition:
+    "transform 140ms ease, color 140ms ease, background 140ms ease",
+  appearance: "none",
+};
+
+const CLOSE_ICON_STYLE: React.CSSProperties = {
+  width: 12,
+  height: 12,
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2.25,
+  strokeLinecap: "round",
+  pointerEvents: "none",
+};
+
 export type LetterFields = {
   email: string;
   subject: string;
@@ -187,6 +220,36 @@ export default function ContactLetterForm({
           willChange: "transform",
         }}
       >
+        <button
+          type="button"
+          className="contact-letter-form__close"
+          aria-label="Close email form"
+          style={CLOSE_BUTTON_STYLE}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeWithFold();
+          }}
+          onMouseEnter={(event) => {
+            event.currentTarget.style.color = "#111111";
+            event.currentTarget.style.background = "#ffffff";
+            event.currentTarget.style.transform = "rotate(-2deg) scale(1.04)";
+          }}
+          onMouseLeave={(event) => {
+            event.currentTarget.style.color = "#ffffff";
+            event.currentTarget.style.background = "rgba(17, 17, 17, 0.9)";
+            event.currentTarget.style.transform = "rotate(1.5deg)";
+          }}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            style={CLOSE_ICON_STYLE}
+          >
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
+
         <input
           aria-label="Email"
           style={fieldStyle(debug.fields.email, minimumFieldFontSize, -0.28)}
