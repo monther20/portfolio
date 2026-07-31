@@ -113,6 +113,7 @@ export default function AnimatedDoor({
   const doorMaterialRef = useRef<any>(null);
   const handleMaterialRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
+  const interactive = Boolean(onClick);
   const { scene } = useThree();
   const responsive = useResponsiveExperience();
   const { materials, meshes } = debug;
@@ -182,6 +183,13 @@ export default function AnimatedDoor({
       material.fogFar = fog.far;
     });
   });
+
+  useEffect(() => {
+    if (interactive || !hovered) return;
+
+    setHovered(false);
+    document.body.style.cursor = "auto";
+  }, [hovered, interactive]);
 
   // Only the separate handle artwork changes on door hover.
   useEffect(() => {
@@ -279,29 +287,51 @@ export default function AnimatedDoor({
         scale={scaleTuple(meshes.doorPanelPivot.scale)}
         renderOrder={meshes.doorPanelPivot.renderOrder}
         visible={meshes.doorPanelPivot.visible}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (onClick) onClick();
-        }}
-        onPointerEnter={(e) => {
-          e.stopPropagation();
-          if (responsive.isCoarsePointer) return;
-          setHovered(true);
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerDown={(e) => {
-          e.stopPropagation();
-          if (responsive.isCoarsePointer) setHovered(true);
-        }}
-        onPointerUp={(e) => {
-          e.stopPropagation();
-          if (responsive.isCoarsePointer) setHovered(false);
-        }}
-        onPointerLeave={(e) => {
-          e.stopPropagation();
-          setHovered(false);
-          if (!responsive.isCoarsePointer) document.body.style.cursor = "auto";
-        }}
+        onClick={
+          interactive
+            ? (e) => {
+                e.stopPropagation();
+                onClick?.();
+              }
+            : undefined
+        }
+        onPointerEnter={
+          interactive
+            ? (e) => {
+                e.stopPropagation();
+                if (responsive.isCoarsePointer) return;
+                setHovered(true);
+                document.body.style.cursor = "pointer";
+              }
+            : undefined
+        }
+        onPointerDown={
+          interactive
+            ? (e) => {
+                e.stopPropagation();
+                if (responsive.isCoarsePointer) setHovered(true);
+              }
+            : undefined
+        }
+        onPointerUp={
+          interactive
+            ? (e) => {
+                e.stopPropagation();
+                if (responsive.isCoarsePointer) setHovered(false);
+              }
+            : undefined
+        }
+        onPointerLeave={
+          interactive
+            ? (e) => {
+                e.stopPropagation();
+                setHovered(false);
+                if (!responsive.isCoarsePointer) {
+                  document.body.style.cursor = "auto";
+                }
+              }
+            : undefined
+        }
       >
         <group position={[2.555, 0, 0]}>
           <mesh
