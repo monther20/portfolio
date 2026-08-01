@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
-import { Text, useGLTF } from "@react-three/drei";
+import { Text, useGLTF, useProgress } from "@react-three/drei";
 
 import {
   corridor,
@@ -153,15 +153,57 @@ function StageComplete({ onComplete }: { onComplete: () => void }) {
   return null;
 }
 
+function StageProgressReporter({
+  stageIndex,
+  onProgress,
+}: {
+  stageIndex: number;
+  onProgress: (progress: number) => void;
+}) {
+  useEffect(() => {
+    let frame = 0;
+    let started = false;
+
+    const report = (state: ReturnType<typeof useProgress.getState>) => {
+      if (state.active) started = true;
+      if (!started) return;
+
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const stageProgress = THREE.MathUtils.clamp(
+          Number.isFinite(state.progress) ? state.progress / 100 : 0,
+          0,
+          1,
+        );
+        onProgress(
+          (stageIndex + stageProgress) / BEHIND_DOOR_ASSET_STAGES.length,
+        );
+      });
+    };
+
+    const unsubscribe = useProgress.subscribe(report);
+    report(useProgress.getState());
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      unsubscribe();
+    };
+  }, [onProgress, stageIndex]);
+
+  return null;
+}
+
 /**
- * Loads journey assets after the room loader has gone. Nothing is added to the
- * visible scene; useLoader/useGLTF only warm their shared parsed-asset caches.
+ * Warms journey assets while the entrance room remains interactive. Nothing is
+ * added to the visible scene; useLoader/useGLTF only populate their caches.
  */
 export default function BehindDoorAssetPreloader({
   enabled,
+  onProgress,
   onReady,
 }: {
   enabled: boolean;
+  onProgress: (progress: number) => void;
   onReady: () => void;
 }) {
   const [stageIndex, setStageIndex] = useState(0);
@@ -174,6 +216,18 @@ export default function BehindDoorAssetPreloader({
   const allStagesReady = stageIndex >= BEHIND_DOOR_ASSET_STAGES.length;
 
   useEffect(() => {
+    if (!enabled) return;
+
+    onProgress(
+      THREE.MathUtils.clamp(
+        stageIndex / BEHIND_DOOR_ASSET_STAGES.length,
+        0,
+        1,
+      ),
+    );
+  }, [enabled, onProgress, stageIndex]);
+
+  useEffect(() => {
     if (!enabled || !allStagesReady || readyReported.current) return;
 
     readyReported.current = true;
@@ -184,15 +238,22 @@ export default function BehindDoorAssetPreloader({
   if (!enabled || !stage) return null;
 
   return (
-    <Suspense key={stage.id} fallback={null}>
-      {stage.textures.length > 0 ? (
-        <TextureAssetBatch urls={stage.textures} />
-      ) : null}
-      {stage.models && stage.models.length > 0 ? (
-        <ModelAssetBatch urls={stage.models} />
-      ) : null}
-      {stage.fonts ? <CorridorFontBatch /> : null}
-      <StageComplete onComplete={completeStage} />
-    </Suspense>
+    <>
+      <StageProgressReporter
+        key={`progress-${stage.id}`}
+        stageIndex={stageIndex}
+        onProgress={onProgress}
+      />
+      <Suspense key={stage.id} fallback={null}>
+        {stage.textures.length > 0 ? (
+          <TextureAssetBatch urls={stage.textures} />
+        ) : null}
+        {stage.models && stage.models.length > 0 ? (
+          <ModelAssetBatch urls={stage.models} />
+        ) : null}
+        {stage.fonts ? <CorridorFontBatch /> : null}
+        <StageComplete onComplete={completeStage} />
+      </Suspense>
+    </>
   );
 }

@@ -24,6 +24,7 @@ const CONTACT_CAMERA_DISTANCE = 3.2;
  */
 export type AirplaneFoldAnimationControls = {
   duration: number;
+  /** 0 = Basis flat paper, 1 = fully folded through step 3. */
   setProgress: (progress: number) => void;
 };
 
@@ -196,7 +197,7 @@ export function useAirplaneModeEffects({
             },
           }),
         );
-        // Run the GLB fold clip backward, then reveal the contact form.
+        // Run the GLB shape-key fold sequence backward, then reveal the contact form.
         unfold.to(
           foldProgress,
           {

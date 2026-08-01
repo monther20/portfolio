@@ -42,6 +42,32 @@ export type PaperAirplaneContactFormDebug = {
     opacity: number;
     color: string;
   };
+  closeButton: {
+    visible: boolean;
+    top: number;
+    right: number;
+    zIndex: number;
+    size: number;
+    iconSize: number;
+    iconStrokeWidth: number;
+    borderWidth: number;
+    borderRadius: number;
+    borderColor: string;
+    borderOpacity: number;
+    backgroundColor: string;
+    backgroundOpacity: number;
+    textColor: string;
+    hoverBackgroundColor: string;
+    hoverTextColor: string;
+    shadowColor: string;
+    shadowOpacity: number;
+    shadowX: number;
+    shadowY: number;
+    shadowBlur: number;
+    rotation: number;
+    hoverRotation: number;
+    hoverScale: number;
+  };
   fields: {
     email: PaperAirplaneContactFormFieldDebug;
     subject: PaperAirplaneContactFormFieldDebug;
@@ -140,7 +166,7 @@ export function createPaperAirplaneDebugState(): PaperAirplaneDebugState {
       y: 0.03,
       z: 0,
       rotationX: 0,
-      rotationY: 90,
+      rotationY: 0,
       rotationZ: 0,
       scale: 0.34,
     },
@@ -156,7 +182,7 @@ export function createPaperAirplaneDebugState(): PaperAirplaneDebugState {
       },
       container: {
         width: 206,
-        paddingTop: 55,
+        paddingTop: 62,
         paddingRight: 18,
         paddingBottom: 20,
         paddingLeft: 18,
@@ -164,35 +190,61 @@ export function createPaperAirplaneDebugState(): PaperAirplaneDebugState {
         opacity: 1,
         color: "#111111",
       },
+      closeButton: {
+        visible: true,
+        top: 23.5,
+        right: 14,
+        zIndex: 2,
+        size: 26,
+        iconSize: 12,
+        iconStrokeWidth: 2.25,
+        borderWidth: 1.5,
+        borderRadius: 50,
+        borderColor: "#000000",
+        borderOpacity: 0,
+        backgroundColor: "#111111",
+        backgroundOpacity: 0,
+        textColor: "#000000",
+        hoverBackgroundColor: "#ffffff",
+        hoverTextColor: "#111111",
+        shadowColor: "#111111",
+        shadowOpacity: 0.28,
+        shadowX: 0.8,
+        shadowY: 0.8,
+        shadowBlur: 0,
+        rotation: 1.5,
+        hoverRotation: -2,
+        hoverScale: 1.04,
+      },
       fields: {
         email: {
           ...createFieldDefaults("email", 0),
           positionX: 4,
-          positionY: -20,
-          width: 98,
-          height: 27,
+          positionY: -7,
+          width: 96,
+          height: 24.5,
           backgroundColor: "#eaeaea",
         },
         subject: {
           ...createFieldDefaults("subject", 7),
           positionX: 4,
-          positionY: -12,
+          positionY: -8.5,
           width: 96,
           height: 27,
         },
         message: {
           ...createFieldDefaults("message", 7, 5),
-          positionX: 9,
-          positionY: 4,
-          width: 87,
-          height: 157,
+          positionX: 7,
+          positionY: -6,
+          width: 93.5,
+          height: 140,
         },
       },
       sendButton: {
         label: "send ",
         sendingLabel: "opening mail app…",
         positionX: 2,
-        positionY: 7,
+        positionY: -15,
         scaleX: 1,
         scaleY: 1,
         scaleZ: 1,

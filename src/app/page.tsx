@@ -156,6 +156,7 @@ function ResponsiveHallwayScene() {
   const [entered, setEntered] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
+  const [corridorLoadProgress, setCorridorLoadProgress] = useState(0);
   const [corridorAssetsReady, setCorridorAssetsReady] = useState(false);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
@@ -163,6 +164,10 @@ function ResponsiveHallwayScene() {
     () => setInitialLoadingComplete(true),
     [],
   );
+  const updateCorridorLoadProgress = useCallback((progress: number) => {
+    const next = THREE.MathUtils.clamp(progress, 0, 1);
+    setCorridorLoadProgress((current) => Math.max(current, next));
+  }, []);
   const markCorridorAssetsReady = useCallback(
     () => setCorridorAssetsReady(true),
     [],
@@ -204,10 +209,12 @@ function ResponsiveHallwayScene() {
           <ResponsiveCamera />
           <BehindDoorAssetPreloader
             enabled={initialLoadingComplete}
+            onProgress={updateCorridorLoadProgress}
             onReady={markCorridorAssetsReady}
           />
           <Suspense fallback={null}>
             <RoomScene
+              corridorLoadProgress={corridorLoadProgress}
               corridorAssetsReady={corridorAssetsReady}
               onTransitionComplete={() => setEntered(true)}
             />
