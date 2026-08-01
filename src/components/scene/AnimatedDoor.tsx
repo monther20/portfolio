@@ -100,11 +100,17 @@ declare module "@react-three/fiber" {
 export default function AnimatedDoor({
   isOpen,
   isNight,
+  loadProgress,
+  assetsReady,
+  onReady,
   onClick,
   debug,
 }: {
   isOpen: boolean;
   isNight: boolean;
+  loadProgress: number;
+  assetsReady: boolean;
+  onReady: () => void;
   onClick?: () => void;
   debug: RoomDebugState;
 }) {
@@ -112,6 +118,8 @@ export default function AnimatedDoor({
   const frameMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
   const doorMaterialRef = useRef<any>(null);
   const handleMaterialRef = useRef<any>(null);
+  const readyTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const readyCuePlayedRef = useRef(false);
   const [hovered, setHovered] = useState(false);
   const interactive = Boolean(onClick);
   const { scene } = useThree();
@@ -124,32 +132,28 @@ export default function AnimatedDoor({
     ? (materials.doorPanel.nightColor ?? materials.doorPanel.color)
     : materials.doorPanel.color;
 
-  const doorDefaultTexture = useLoader(
-    THREE.TextureLoader,
+  const [
+    doorSketchTexture,
+    doorColoredTexture,
+    doorDisplacementTexture,
+    doorHandleTexture,
+    doorHandleOpenTexture,
+    frameTexture,
+  ] = useLoader(THREE.TextureLoader, [
+    "/textures/room/door.webp",
     "/textures/room/door_colored.webp",
-  );
-  const doorDisplacementTexture = useLoader(
-    THREE.TextureLoader,
     "/textures/room/door_displacement.png",
-  );
-  const doorHandleTexture = useLoader(
-    THREE.TextureLoader,
     "/textures/room/door_handle.webp",
-  );
-  const doorHandleOpenTexture = useLoader(
-    THREE.TextureLoader,
     "/textures/room/door_handle_open.webp",
-  );
-  const frameTexture = useLoader(
-    THREE.TextureLoader,
     "/textures/room/door_frame.webp",
-  );
+  ]);
 
   // These are color/albedo textures. Without SRGBColorSpace three.js treats
   // them as linear data, which makes image colors render noticeably washed out.
   useEffect(() => {
     [
-      doorDefaultTexture,
+      doorSketchTexture,
+      doorColoredTexture,
       doorHandleTexture,
       doorHandleOpenTexture,
       frameTexture,
@@ -158,7 +162,8 @@ export default function AnimatedDoor({
       texture.needsUpdate = true;
     });
   }, [
-    doorDefaultTexture,
+    doorSketchTexture,
+    doorColoredTexture,
     doorHandleTexture,
     doorHandleOpenTexture,
     frameTexture,
@@ -190,6 +195,76 @@ export default function AnimatedDoor({
     setHovered(false);
     document.body.style.cursor = "auto";
   }, [hovered, interactive]);
+
+  // Paint the monochrome door from top to bottom as journey assets load. Once
+  // the final color reaches the bottom, move the handle down and back once to
+  // signal that the entrance is ready.
+  useEffect(() => {
+    const material = doorMaterialRef.current;
+    if (!material) return;
+
+    const targetProgress = THREE.MathUtils.clamp(loadProgress, 0, 1);
+    const distance = Math.abs(targetProgress - material.progress);
+    const duration = responsive.reducedMotion
+      ? 0.01
+      : Math.max(0.24, distance * 1.8);
+
+    const tween = gsap.to(material, {
+      progress: targetProgress,
+      duration,
+      ease: "power1.out",
+      overwrite: "auto",
+      onComplete: () => {
+        if (
+          targetProgress < 1 ||
+          !assetsReady ||
+          readyCuePlayedRef.current
+        ) {
+          return;
+        }
+
+        readyCuePlayedRef.current = true;
+        const handleMaterial = handleMaterialRef.current;
+        if (!handleMaterial) {
+          onReady();
+          return;
+        }
+
+        gsap.killTweensOf(handleMaterial);
+        const cueDuration = responsive.reducedMotion ? 0.01 : 0.32;
+        const timeline = gsap.timeline({
+          onComplete: () => {
+            readyTimelineRef.current = null;
+            onReady();
+          },
+        });
+        readyTimelineRef.current = timeline;
+        timeline
+          .to(handleMaterial, {
+            progress: 1,
+            duration: cueDuration,
+            ease: "power2.inOut",
+          })
+          .to(handleMaterial, {
+            progress: 0,
+            duration: cueDuration,
+            delay: responsive.reducedMotion ? 0 : 0.08,
+            ease: "power2.inOut",
+          });
+      },
+    });
+
+    return () => {
+      tween.kill();
+    };
+  }, [assetsReady, loadProgress, onReady, responsive.reducedMotion]);
+
+  useEffect(
+    () => () => {
+      readyTimelineRef.current?.kill();
+    },
+    [],
+  );
 
   // Only the separate handle artwork changes on door hover.
   useEffect(() => {
@@ -351,8 +426,8 @@ export default function AnimatedDoor({
             />
             <doorWipeMaterial
               ref={doorMaterialRef}
-              texBase={doorDefaultTexture}
-              texOn={doorDefaultTexture}
+              texBase={doorSketchTexture}
+              texOn={doorColoredTexture}
               displacementMap={doorDisplacementTexture}
               displacementScale={DOOR_DISPLACEMENT_SCALE}
               displacementBias={DOOR_DISPLACEMENT_BIAS}

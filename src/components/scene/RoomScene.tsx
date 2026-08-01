@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -17,14 +17,17 @@ import { useResponsiveExperience } from "../ResponsiveExperience";
 const AVATAR_APPROACH_DISTANCE = 7;
 
 export default function RoomScene({
+  corridorLoadProgress,
   corridorAssetsReady,
   onTransitionComplete,
 }: {
+  corridorLoadProgress: number;
   corridorAssetsReady: boolean;
   onTransitionComplete: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [doorReady, setDoorReady] = useState(false);
   const debugRef = useRef<RoomDebugState>(null!);
   const { camera, scene } = useThree();
   const responsive = useResponsiveExperience();
@@ -69,8 +72,10 @@ export default function RoomScene({
     sceneFogColor,
   ]);
 
+  const markDoorReady = useCallback(() => setDoorReady(true), []);
+
   const handleDoorClick = () => {
-    if (!corridorAssetsReady || isOpen || isTransitioning) return;
+    if (!corridorAssetsReady || !doorReady || isOpen || isTransitioning) return;
     setIsOpen(true);
     setIsTransitioning(true);
 
@@ -136,8 +141,11 @@ export default function RoomScene({
       <AnimatedDoor
         isOpen={isOpen}
         isNight={isNight}
+        loadProgress={corridorLoadProgress}
+        assetsReady={corridorAssetsReady}
+        onReady={markDoorReady}
         onClick={
-          corridorAssetsReady && !isOpen && !isTransitioning
+          doorReady && !isOpen && !isTransitioning
             ? handleDoorClick
             : undefined
         }
