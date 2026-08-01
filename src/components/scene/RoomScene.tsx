@@ -17,8 +17,10 @@ import { useResponsiveExperience } from "../ResponsiveExperience";
 const AVATAR_APPROACH_DISTANCE = 7;
 
 export default function RoomScene({
+  corridorAssetsReady,
   onTransitionComplete,
 }: {
+  corridorAssetsReady: boolean;
   onTransitionComplete: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function RoomScene({
   ]);
 
   const handleDoorClick = () => {
-    if (isTransitioning) return;
+    if (!corridorAssetsReady || isOpen || isTransitioning) return;
     setIsOpen(true);
     setIsTransitioning(true);
 
@@ -134,7 +136,11 @@ export default function RoomScene({
       <AnimatedDoor
         isOpen={isOpen}
         isNight={isNight}
-        onClick={handleDoorClick}
+        onClick={
+          corridorAssetsReady && !isOpen && !isTransitioning
+            ? handleDoorClick
+            : undefined
+        }
         debug={debug}
       />
 

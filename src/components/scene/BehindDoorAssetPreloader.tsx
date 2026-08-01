@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import { Text, useGLTF } from "@react-three/drei";
@@ -159,13 +159,26 @@ function StageComplete({ onComplete }: { onComplete: () => void }) {
  */
 export default function BehindDoorAssetPreloader({
   enabled,
+  onReady,
 }: {
   enabled: boolean;
+  onReady: () => void;
 }) {
   const [stageIndex, setStageIndex] = useState(0);
+  const readyReported = useRef(false);
   const completeStage = useCallback(() => {
-    setStageIndex((current) => current + 1);
+    setStageIndex((current) =>
+      Math.min(current + 1, BEHIND_DOOR_ASSET_STAGES.length),
+    );
   }, []);
+  const allStagesReady = stageIndex >= BEHIND_DOOR_ASSET_STAGES.length;
+
+  useEffect(() => {
+    if (!enabled || !allStagesReady || readyReported.current) return;
+
+    readyReported.current = true;
+    onReady();
+  }, [allStagesReady, enabled, onReady]);
 
   const stage = BEHIND_DOOR_ASSET_STAGES[stageIndex];
   if (!enabled || !stage) return null;

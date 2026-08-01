@@ -156,10 +156,15 @@ function ResponsiveHallwayScene() {
   const [entered, setEntered] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
+  const [corridorAssetsReady, setCorridorAssetsReady] = useState(false);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
   const markInitialLoadingComplete = useCallback(
     () => setInitialLoadingComplete(true),
+    [],
+  );
+  const markCorridorAssetsReady = useCallback(
+    () => setCorridorAssetsReady(true),
     [],
   );
   const responsive = useResponsiveExperience();
@@ -197,9 +202,15 @@ function ResponsiveHallwayScene() {
           }}
         >
           <ResponsiveCamera />
-          <BehindDoorAssetPreloader enabled={initialLoadingComplete} />
+          <BehindDoorAssetPreloader
+            enabled={initialLoadingComplete}
+            onReady={markCorridorAssetsReady}
+          />
           <Suspense fallback={null}>
-            <RoomScene onTransitionComplete={() => setEntered(true)} />
+            <RoomScene
+              corridorAssetsReady={corridorAssetsReady}
+              onTransitionComplete={() => setEntered(true)}
+            />
             <SceneReadySignal onReady={markSceneReady} />
           </Suspense>
         </Canvas>
