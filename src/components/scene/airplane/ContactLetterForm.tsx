@@ -14,9 +14,6 @@ function closeButtonStyle(
   button: CloseButtonDebug,
   hovered: boolean,
 ): React.CSSProperties {
-  const hasBorder = button.borderWidth > 0 && button.borderOpacity > 0;
-  const hasBackground = button.backgroundOpacity > 0;
-
   return {
     position: "absolute",
     top: button.top,
@@ -28,21 +25,10 @@ function closeButtonStyle(
     height: button.size,
     boxSizing: "border-box",
     padding: 0,
-    border: hasBorder
-      ? `${button.borderWidth}px solid ${hexToRgba(
-          button.borderColor,
-          button.borderOpacity,
-        )}`
-      : "none",
-    borderRadius: `${button.borderRadius}%`,
+    border: "none",
     color: hovered ? button.hoverTextColor : button.textColor,
-    background: hasBackground
-      ? hexToRgba(
-          hovered ? button.hoverBackgroundColor : button.backgroundColor,
-          button.backgroundOpacity,
-        )
-      : "transparent",
-    boxShadow: `${button.shadowX}px ${button.shadowY}px ${button.shadowBlur}px ${hexToRgba(button.shadowColor, button.shadowOpacity)}`,
+    background: "transparent",
+    boxShadow: "none",
     cursor: "pointer",
     transform: `rotate(${hovered ? button.hoverRotation : button.rotation}deg) scale(${hovered ? button.hoverScale : 1})`,
     transformOrigin: "center",
