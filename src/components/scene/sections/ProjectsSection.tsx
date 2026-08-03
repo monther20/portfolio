@@ -8,6 +8,7 @@ import { seededRange } from "../PartingItem";
 
 import { projects, projectUI, type Project } from "@/data/portfolio";
 import { setJourneyState } from "../journeyState";
+import { JOURNEY } from "../journeyConfig";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 const PAPER_HEIGHT = 2.5;
@@ -56,6 +57,27 @@ type ProjectsSectionDebug = {
   items?: ProjectPaperDebug[];
 };
 
+const PROJECTS_SPACE_FROM_SKILLS = 40;
+
+const PROJECT_PLACEMENT = [
+  {
+    name: "Reachlet",
+    x: -0.88,
+    y: 2.38,
+    zOffset: -3.9,
+    moveStartBefore: 27.6,
+    moveDistance: 39.995,
+  },
+  {
+    name: "eZorro",
+    x: 0.77,
+    y: -0.03,
+    zOffset: -1.318,
+    moveStartBefore: 28,
+    moveDistance: 26.801,
+  },
+] as const;
+
 function debugHome(debug: ProjectPaperDebug | undefined, fallback: [number, number, number]): [number, number, number] {
   return [debug?.x ?? fallback[0], debug?.y ?? fallback[1], debug?.z ?? fallback[2]];
 }
@@ -64,10 +86,14 @@ function debugSpritePosition(debug: ProjectPaperDebug | undefined): [number, num
   return [debug?.spriteX ?? 0, debug?.spriteY ?? 0, debug?.spriteZ ?? 0];
 }
 
+function clamp01(value: number) {
+  return THREE.MathUtils.clamp(value, 0, 1);
+}
+
 /**
- * A single project "paper". Drifts in the wind at its home spot; when focused
- * it flies to a fixed point in front of the camera, paints in fully, and shows
- * its details + an "open live project" button.
+ * A single project "paper". Scroll wind carries it from left to right; when
+ * focused it flies to a fixed point in front of the camera, paints in fully,
+ * and shows its details + an "open live project" button.
  */
 function ProjectPaper({
   project,
@@ -76,6 +102,8 @@ function ProjectPaper({
   focused,
   onToggle,
   debug,
+  moveStartBefore,
+  moveDistance,
 }: {
   project: Project;
   home: [number, number, number];
@@ -83,6 +111,8 @@ function ProjectPaper({
   focused: boolean;
   onToggle: () => void;
   debug?: ProjectPaperDebug;
+  moveStartBefore: number;
+  moveDistance: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
@@ -91,13 +121,32 @@ function ProjectPaper({
   const target = useMemo(() => new THREE.Vector3(), []);
   const debugPhase = debug?.phase ?? phase;
   const paperHeight = debug?.height ?? PAPER_HEIGHT;
+  const scrollWind = useMemo(() => {
+    const leftX = -(responsive.isPhone ? 4.7 : 7.0) * responsive.laneScale;
+    const rightX = (responsive.isPhone ? 4.8 : 7.2) * responsive.laneScale;
+    const startZ = home[2] + moveStartBefore;
+    const distance = moveDistance;
 
-  useFrame((state) => {
+    return {
+      startZ,
+      endZ: startZ - distance,
+      startOffsetX: leftX - home[0],
+      endOffsetX: rightX - home[0],
+      sway: seededRange(`${project.name}-wind-sway`, 0.25, 0.62) * responsive.motionScale,
+      phase: debugPhase,
+      cycles: seededRange(`${project.name}-wind-cycles`, 1.05, 2.2),
+      tilt: seededRange(`${project.name}-wind-tilt`, 0.11, 0.24) * responsive.motionScale,
+      wobble: seededRange(`${project.name}-wind-wobble`, 0.045, 0.1) * responsive.motionScale,
+      yaw: seededRange(`${project.name}-wind-yaw`, 0.05, 0.14) * responsive.motionScale,
+    };
+  }, [debugPhase, home, moveDistance, moveStartBefore, project.name, responsive.isPhone, responsive.laneScale, responsive.motionScale]);
+
+  useFrame(() => {
     const g = groupRef.current;
     if (!g) return;
-    const t = state.clock.elapsedTime;
 
     if (focused) {
+      g.visible = debug?.visible ?? true;
       // Fly to a fixed spot in front of the camera.
       camera.getWorldDirection(dir);
       target
@@ -110,49 +159,34 @@ function ProjectPaper({
       // Face the camera, upright.
       g.quaternion.slerp(camera.quaternion, debug?.focusedQuaternionLerp ?? 0.15);
     } else {
-      // Wind drift around the home position. If the paper is in front of the
-      // airplane and close, part it to the side like the clouds.
-      const airplaneZ = camera.position.z - 2.85;
-      const distanceInFront = airplaneZ - home[2];
-      const influence = distanceInFront >= 0
-        ? 1 - THREE.MathUtils.smoothstep(distanceInFront, 0.5, debug?.influenceDistance ?? 9.5)
-        : 0;
-      const side = home[0] >= 0 ? 1 : -1;
+      const rawProgress =
+        (scrollWind.startZ - camera.position.z) /
+        (scrollWind.startZ - scrollWind.endZ);
+      const progress = clamp01(rawProgress);
 
-      target.set(
+      g.visible = (debug?.visible ?? true) && rawProgress > 0 && rawProgress < 1;
+      if (!g.visible) return;
+
+      const eased = THREE.MathUtils.smoothstep(progress, 0, 1);
+      const activeWind = Math.sin(eased * Math.PI);
+      const windWave = Math.sin(
+        eased * Math.PI * 2 * scrollWind.cycles + scrollWind.phase,
+      );
+
+      g.position.set(
         home[0] +
-          Math.sin(t * 0.6 + debugPhase) *
-            (debug?.driftX ?? 0.5) *
-            responsive.motionScale +
-          side * influence * (debug?.push ?? 2.8 * responsive.laneScale),
-        home[1] +
-          Math.sin(t * 0.9 + debugPhase * 1.3) *
-            (debug?.driftY ?? 0.35) *
-            responsive.motionScale +
-          influence * (debug?.lift ?? 0.5),
-        home[2] +
-          Math.cos(t * 0.5 + debugPhase) *
-            (debug?.driftZ ?? 0.3) *
-            responsive.motionScale +
-          influence * (debug?.forward ?? 0.4),
+          THREE.MathUtils.lerp(
+            scrollWind.startOffsetX,
+            scrollWind.endOffsetX,
+            eased,
+          ),
+        home[1] + windWave * scrollWind.sway * activeWind,
+        home[2],
       );
-      g.position.lerp(target, debug?.lerp ?? 0.06);
-      // Gentle sway — papers face roughly toward the incoming camera (+z).
-      g.rotation.z = THREE.MathUtils.lerp(
-        g.rotation.z,
-        Math.sin(t * 0.7 + debugPhase) *
-          (debug?.swayZ ?? 0.12) *
-          responsive.motionScale,
-        debug?.swayLerp ?? 0.05,
-      );
-      g.rotation.y = THREE.MathUtils.lerp(
-        g.rotation.y,
-        Math.sin(t * 0.4 + debugPhase) *
-          (debug?.swayY ?? 0.15) *
-          responsive.motionScale,
-        debug?.swayLerp ?? 0.05,
-      );
-      g.rotation.x = THREE.MathUtils.lerp(g.rotation.x, 0, debug?.swayLerp ?? 0.05);
+
+      g.rotation.x = windWave * 0.045 * responsive.motionScale * activeWind;
+      g.rotation.y = windWave * scrollWind.yaw * activeWind;
+      g.rotation.z = scrollWind.tilt * eased + windWave * scrollWind.wobble * activeWind;
     }
   });
 
@@ -168,7 +202,7 @@ function ProjectPaper({
       ref={groupRef}
       name={`Project Paper: ${project.name}`}
       position={home}
-      visible={debug?.visible ?? true}
+      visible={false}
       scale={(debug?.scale ?? 1) * (responsive.isPhone ? 1.08 : 1)}
       renderOrder={debug?.renderOrder ?? 0}
     >
@@ -216,10 +250,9 @@ function ProjectPaper({
 }
 
 /**
- * ProjectsSection — a small field of project papers drifting in the wind.
+ * ProjectsSection — project papers ride scroll-driven wind from left to right.
  */
 export default function ProjectsSection({
-  zStart = -114,
   debug,
 }: {
   zStart?: number;
@@ -244,23 +277,30 @@ export default function ProjectsSection({
   }, [active]);
 
   const placed = useMemo(() => {
-    const itemsPerChunk = 2;
-    const chunkDepth = 9;
+    const sectionZ = JOURNEY.skillsAnchorZ - PROJECTS_SPACE_FROM_SKILLS;
 
     return projects.map((project, i) => {
-      const chunk = Math.floor(i / itemsPerChunk);
-      const side = i % 2 === 0 ? -1 : 1;
-      const x = side * seededRange(`${project.name}-x`, 2.3, 4.4);
-      const y = seededRange(`${project.name}-y`, 0.1, 2.6);
-      const z = zStart - chunk * chunkDepth - seededRange(`${project.name}-z`, 1.0, chunkDepth - 0.8);
+      const item = PROJECT_PLACEMENT.find((entry) => entry.name === project.name);
       const phase = seededRange(`${project.name}-phase`, 0, Math.PI * 2);
-      return { project, home: [x, y, z] as [number, number, number], phase, i };
+
+      return {
+        project,
+        home: [
+          item?.x ?? 0,
+          item?.y ?? 0,
+          sectionZ + (item?.zOffset ?? 0),
+        ] as [number, number, number],
+        moveStartBefore: item?.moveStartBefore ?? 28,
+        moveDistance: item?.moveDistance ?? 32,
+        phase,
+        i,
+      };
     });
-  }, [zStart]);
+  }, []);
 
   return (
     <group name="Projects Section">
-      {placed.map(({ project, home, phase, i }) => {
+      {placed.map(({ project, home, phase, moveStartBefore, moveDistance, i }) => {
         const itemDebug = debug?.items?.[i];
         const debuggedHome = debugHome(itemDebug, [
           home[0] * responsive.laneScale,
@@ -277,6 +317,8 @@ export default function ProjectsSection({
             focused={active === i}
             onToggle={() => setActive(active === i ? null : i)}
             debug={itemDebug}
+            moveStartBefore={moveStartBefore}
+            moveDistance={moveDistance}
           />
         );
       })}
