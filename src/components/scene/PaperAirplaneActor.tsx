@@ -43,6 +43,7 @@ import {
   createPaperAirplaneDebugState,
   type PaperAirplaneDebugState,
 } from "./airplane/paperAirplaneDefaults";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 
 /** The plane's resting pose once it has landed on the boardwalk. */
 const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
@@ -227,6 +228,7 @@ function PaperAirplaneModel({
 export default function PaperAirplaneActor() {
   const { airplaneMode } = useJourneyState();
   const { camera } = useThree();
+  const responsive = useResponsiveExperience();
 
   const rootRef = useRef<THREE.Group>(null);
   const planeRef = useRef<THREE.Group>(null);
@@ -278,11 +280,19 @@ export default function PaperAirplaneActor() {
 
   /** The camera-locked flight pose (position + wobble quaternion). */
   const computeLockedPose = useCallback(() => {
+    const journey = getJourneyState();
+    const cameraLockedZ = journey.interactionLocked
+      ? Math.min(
+          AIRPLANE_CAMERA_OFFSET.z,
+          -(responsive.projectFocusDistance + 0.65),
+        )
+      : AIRPLANE_CAMERA_OFFSET.z;
+
     scratch.offset
       .set(
         AIRPLANE_CAMERA_OFFSET.x,
         AIRPLANE_CAMERA_OFFSET.y,
-        AIRPLANE_CAMERA_OFFSET.z,
+        cameraLockedZ,
       )
       .applyQuaternion(camera.quaternion);
     scratch.lockPos.copy(camera.position).add(scratch.offset);
@@ -304,7 +314,7 @@ export default function PaperAirplaneActor() {
     scratch.wobbleEuler.set(pitch, yaw, roll);
     scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
     scratch.lockQuat.copy(camera.quaternion).multiply(scratch.wobbleQuat);
-  }, [camera, scratch]);
+  }, [camera, responsive.projectFocusDistance, scratch]);
 
   /** Follow the active scripted curve; nose along the tangent. */
   const applyCurveFrame = useCallback(
