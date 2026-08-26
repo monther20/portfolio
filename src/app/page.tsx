@@ -12,6 +12,7 @@ import {
 } from "../components/ResponsiveExperience";
 import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
+import JourneySectionNav from "../components/scene/JourneySectionNav";
 import ResponsiveCamera from "../components/scene/ResponsiveCamera";
 import BehindDoorAssetPreloader from "../components/scene/BehindDoorAssetPreloader";
 
@@ -229,7 +230,12 @@ function ResponsiveHallwayScene() {
           onComplete={markInitialLoadingComplete}
         />
       ) : null}
-      {webglSupported === true ? <JourneyHud visible={entered} /> : null}
+      {webglSupported === true ? (
+        <>
+          <JourneyHud visible={entered} />
+          <JourneySectionNav visible={entered} />
+        </>
+      ) : null}
     </main>
   );
 }

@@ -298,6 +298,157 @@ body {
   50% { transform: translateY(6px); }
 }
 
+/* ─── Scroll-synced section navigation ──────────────────────────────── */
+
+.journey-section-nav {
+  --section-progress: 0;
+  position: fixed;
+  top: 50%;
+  right: max(0.8rem, calc(env(safe-area-inset-right) + 0.45rem));
+  z-index: 10001;
+  width: 7.5rem;
+  color: #2b2b2b;
+  font-family: var(--font-caveat), "Caveat", cursive;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(16px, -50%, 0);
+  transition: opacity 0.45s ease, transform 0.55s ease;
+  user-select: none;
+}
+
+.journey-section-nav.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0, -50%, 0);
+}
+
+.journey-section-nav__rail {
+  position: absolute;
+  top: 22px;
+  right: 14px;
+  bottom: 22px;
+  width: 2px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(43, 43, 43, 0.2);
+  transform: rotate(0.35deg);
+}
+
+.journey-section-nav__rail span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #2b2b2b;
+  transform: scaleY(var(--section-progress));
+  transform-origin: 50% 0;
+  transition: transform 80ms linear;
+}
+
+.journey-section-nav__list {
+  position: relative;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-section-nav__button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.journey-section-nav__button:disabled {
+  cursor: default;
+}
+
+.journey-section-nav__label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.48;
+  transform: translateX(3px);
+  transition: opacity 180ms ease, transform 220ms ease, font-size 220ms ease;
+}
+
+.journey-section-nav__icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  box-sizing: border-box;
+  border: 1.5px solid #2b2b2b;
+  border-radius: 47% 53% 45% 55%;
+  color: #2b2b2b;
+  background: #fff;
+  transform: rotate(-3deg) scale(0.84);
+  transition: color 180ms ease, background 180ms ease, transform 220ms ease;
+}
+
+.journey-section-nav__icon svg {
+  width: 17px;
+  height: 17px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.journey-section-nav__button:hover:not(:disabled) .journey-section-nav__label,
+.journey-section-nav__button:focus-visible .journey-section-nav__label,
+.journey-section-nav__button.is-active .journey-section-nav__label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.journey-section-nav__button.is-active .journey-section-nav__label {
+  font-size: 1.22rem;
+  font-weight: 700;
+}
+
+.journey-section-nav__button:hover:not(:disabled) .journey-section-nav__icon,
+.journey-section-nav__button:focus-visible .journey-section-nav__icon,
+.journey-section-nav__button.is-active .journey-section-nav__icon {
+  color: #ffffff;
+  background: #2b2b2b;
+  transform: rotate(3deg) scale(1);
+}
+
+.journey-section-nav__button.is-active .journey-section-nav__icon::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgba(43, 43, 43, 0.55);
+  border-radius: 58% 42% 54% 46%;
+  animation: section-marker-sketch 2.4s ease-in-out infinite;
+}
+
+.journey-section-nav__button:focus-visible {
+  outline: 1.5px dashed rgba(43, 43, 43, 0.72);
+  outline-offset: 2px;
+}
+
+@keyframes section-marker-sketch {
+  0%, 100% { transform: rotate(-8deg) scale(0.92); }
+  50% { transform: rotate(9deg) scale(1.08); }
+}
+
 /* ─── Contact letter ─────────────────────────────────────────────────── */
 
 .contact-letter-form {
@@ -413,6 +564,19 @@ body {
   .journey-hud {
     width: min(94vw, 26rem);
   }
+
+  .journey-section-nav {
+    right: max(0.45rem, env(safe-area-inset-right));
+    width: 6.4rem;
+  }
+
+  .journey-section-nav__label {
+    font-size: 0.92rem;
+  }
+
+  .journey-section-nav__button.is-active .journey-section-nav__label {
+    font-size: 1.08rem;
+  }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
@@ -432,6 +596,26 @@ body {
   .journey-hud__sections,
   .journey-hud__keyboard {
     display: none;
+  }
+
+  .journey-section-nav {
+    right: max(0.35rem, env(safe-area-inset-right));
+    width: 6rem;
+    transform: translate3d(16px, -50%, 0) scale(0.82);
+    transform-origin: right center;
+  }
+
+  .journey-section-nav.is-visible {
+    transform: translate3d(0, -50%, 0) scale(0.82);
+  }
+
+  .journey-section-nav__button {
+    min-height: 40px;
+  }
+
+  .journey-section-nav__rail {
+    top: 20px;
+    bottom: 20px;
   }
 
   .contact-modal {
@@ -464,11 +648,14 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .sketch-preloader__ring::before,
   .sketch-preloader__ring::after,
-  .journey-hud__arrow {
+  .journey-hud__arrow,
+  .journey-section-nav__button.is-active .journey-section-nav__icon::after {
     animation: none !important;
   }
 
   .journey-hud,
+  .journey-section-nav,
+  .journey-section-nav *,
   .contact-letter-form button {
     transition-duration: 0.01ms !important;
   }

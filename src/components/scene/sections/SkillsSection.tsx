@@ -10,6 +10,7 @@ import { skills } from "@/data/portfolio";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 
 const SIZE_TO_HEIGHT: Record<"S" | "M" | "L", number> = { S: 1.3, M: 1.7, L: 2.1 };
+const WIND_EARLY_START_DISTANCE = 8;
 
 type DebugSpriteItem = {
   visible?: boolean;
@@ -80,8 +81,13 @@ function ScrollWindBalloon({
   const motion = useMemo(() => {
     const rightX = (isPhone ? 4.4 : 6.6) * laneScale;
     const leftX = -(isPhone ? 4.7 : 7.0) * laneScale;
-    const startZ = homeZ + seededRange(`${label}-wind-start`, 16, 26);
-    const distance = seededRange(`${label}-wind-distance`, 28, 46);
+    const startZ =
+      homeZ +
+      seededRange(`${label}-wind-start`, 16, 26) +
+      WIND_EARLY_START_DISTANCE;
+    const distance =
+      seededRange(`${label}-wind-distance`, 28, 46) +
+      WIND_EARLY_START_DISTANCE;
 
     return {
       startZ,
