@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
+import PaintSprite from "../PaintSprite";
 import ProjectPaperMesh, { type ProjectPaperMeshHandle } from "./ProjectPaperMesh";
 import { seededRange } from "../PartingItem";
 
@@ -29,7 +30,6 @@ type ProjectPaperDebug = {
   revealFar?: number;
   focusedRevealNear?: number;
   focusedRevealFar?: number;
-  hoverScale?: number;
   focusedDistance?: number;
   focusedLerp?: number;
   focusedQuaternionLerp?: number;
@@ -122,6 +122,7 @@ function ProjectPaper({
   const groupRef = useRef<THREE.Group>(null);
   const paperRollRef = useRef<THREE.Group>(null);
   const paperMeshRef = useRef<ProjectPaperMeshHandle>(null);
+  const liveButtonSurfaceRef = useRef<THREE.Group>(null);
   const focusProgress = useRef(0);
   const { camera } = useThree();
   const responsive = useResponsiveExperience();
@@ -151,7 +152,7 @@ function ProjectPaper({
     };
   }, [debugPhase, home, moveDistance, moveStartBefore, project.name, responsive.isPhone, responsive.laneScale, responsive.motionScale]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const g = groupRef.current;
     const paperRoll = paperRollRef.current;
     if (!g) return;
@@ -287,7 +288,38 @@ function ProjectPaper({
       g.position.set(windX, windY, home[2]);
       g.rotation.set(windRotationX, windRotationY, windRotationZ);
     }
+
+    // Keep the live-project artwork resting on the same curved paper surface.
+    // This mirrors the sheet shader's bend and flutter at the button's Y point.
+    if (liveButtonSurfaceRef.current) {
+      const buttonY = debug?.buttonY ?? 0.88;
+      const bend = paperMeshRef.current?.bend ?? 0;
+      const flutterStrength = responsive.reducedMotion ? 0 : 0.012;
+      const flutterScale = 1 + Math.abs(bend * 2.5);
+      const flutterPhase = state.clock.elapsedTime * 2 + buttonY * 2;
+      const surfaceZ =
+        buttonY * buttonY * bend +
+        Math.sin(flutterPhase) * flutterStrength * flutterScale;
+      const surfaceSlope =
+        2 * buttonY * bend +
+        Math.cos(flutterPhase) * 2 * flutterStrength * flutterScale;
+
+      liveButtonSurfaceRef.current.position.set(
+        debug?.buttonX ?? 0,
+        buttonY,
+        (debug?.buttonZ ?? 0.03) + surfaceZ,
+      );
+      liveButtonSurfaceRef.current.rotation.x = Math.atan(surfaceSlope);
+    }
   });
+
+  const hasLiveLink = Boolean(project.link && project.link !== "#");
+  const openLive = (event: any) => {
+    event.stopPropagation();
+    if (hasLiveLink) {
+      window.open(project.link, "_blank", "noopener,noreferrer");
+    }
+  };
 
   return (
     <group
@@ -317,9 +349,33 @@ function ProjectPaper({
           renderOrder={debug?.renderOrder ?? 0}
           revealNear={focused ? (debug?.focusedRevealNear ?? 30) : (debug?.revealNear ?? 9)}
           revealFar={focused ? (debug?.focusedRevealFar ?? 40) : (debug?.revealFar ?? 22)}
-          hoverScale={debug?.hoverScale ?? 1.05}
           onClick={onToggle}
         />
+
+        {(debug?.buttonVisible ?? true) ? (
+          <group
+            ref={liveButtonSurfaceRef}
+            name={`Open Live Button Surface: ${project.name}`}
+            position={[
+              debug?.buttonX ?? 0,
+              debug?.buttonY ?? 0.88,
+              debug?.buttonZ ?? 0.03,
+            ]}
+          >
+            <PaintSprite
+              name={`Open Live Button: ${project.name}`}
+              sketch={projectUI.openLive}
+              height={debug?.buttonHeight ?? 0.3}
+              renderOrder={debug?.buttonRenderOrder ?? (debug?.renderOrder ?? 0) + 1}
+              billboard={false}
+              autoReveal={false}
+              depthWrite={false}
+              interactive={hasLiveLink}
+              hoverScale={debug?.buttonHoverScale ?? 1.1}
+              onClick={hasLiveLink ? openLive : undefined}
+            />
+          </group>
+        ) : null}
       </group>
     </group>
   );

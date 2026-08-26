@@ -6,7 +6,6 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -87,7 +86,6 @@ type ProjectPaperMeshProps = {
   revealNear: number;
   revealFar: number;
   renderOrder?: number;
-  hoverScale?: number;
   onClick: (event: any) => void;
 };
 
@@ -104,16 +102,13 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
       revealNear,
       revealFar,
       renderOrder = 0,
-      hoverScale = 1.05,
       onClick,
     },
     ref,
   ) {
     const materialRef = useRef<THREE.ShaderMaterial>(null);
     const meshRef = useRef<THREE.Mesh>(null);
-    const scaleRef = useRef<THREE.Group>(null);
     const bendRef = useRef(0);
-    const [hovered, setHovered] = useState(false);
     const { camera, gl, scene } = useThree();
     const responsive = useResponsiveExperience();
     const texSketch = useLoader(THREE.TextureLoader, sketch);
@@ -181,18 +176,11 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
         meshRef.current.getWorldPosition(worldPosition);
         const distance = worldPosition.distanceTo(camera.position);
         const distanceReveal = 1 - THREE.MathUtils.smoothstep(distance, revealNear, revealFar);
-        const targetReveal = hovered ? 1 : distanceReveal;
         material.uniforms.reveal.value = THREE.MathUtils.lerp(
           material.uniforms.reveal.value,
-          targetReveal,
+          distanceReveal,
           0.08,
         );
-      }
-
-      if (scaleRef.current) {
-        const targetScale = hovered ? hoverScale : 1;
-        scaleRef.current.scale.x = THREE.MathUtils.lerp(scaleRef.current.scale.x, targetScale, 0.15);
-        scaleRef.current.scale.y = scaleRef.current.scale.x;
       }
 
       if (scene.fog instanceof THREE.Fog) {
@@ -206,25 +194,21 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
     });
 
     return (
-      <group ref={scaleRef} name={name} position={position}>
+      <group name={name} position={position}>
         <mesh
           ref={meshRef}
           name={`${name} Mesh`}
           renderOrder={renderOrder}
           onClick={(event) => {
             event.stopPropagation();
-            setHovered(false);
             onClick(event);
           }}
           onPointerEnter={(event) => {
             event.stopPropagation();
-            if (responsive.isCoarsePointer) return;
-            setHovered(true);
-            document.body.style.cursor = "pointer";
+            if (!responsive.isCoarsePointer) document.body.style.cursor = "pointer";
           }}
           onPointerLeave={(event) => {
             event.stopPropagation();
-            setHovered(false);
             if (!responsive.isCoarsePointer) document.body.style.cursor = "auto";
           }}
         >
