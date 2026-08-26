@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
-import { Float } from "@react-three/drei";
+import { type ReactNode, useMemo, useRef } from "react";
+import * as THREE from "three";
+import { useFrame, useThree } from "@react-three/fiber";
 import PaintSprite from "../PaintSprite";
-import PartingItem, { seededRange } from "../PartingItem";
+import { seededRange } from "../PartingItem";
 
 import { skills } from "@/data/portfolio";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
@@ -48,19 +49,88 @@ function debugSpritePosition(debug: DebugSpriteItem | undefined): [number, numbe
   return [debug?.spriteX ?? 0, debug?.spriteY ?? 0, debug?.spriteZ ?? 0];
 }
 
-function debugFloatingRange(
-  debug: DebugSpriteItem | undefined,
-  fallback: [number, number],
-): [number, number] {
-  const min = debug?.floatMin ?? fallback[0];
-  const max = debug?.floatMax ?? fallback[1];
-  return [Math.min(min, max), Math.max(min, max)];
+function clamp01(value: number) {
+  return THREE.MathUtils.clamp(value, 0, 1);
+}
+
+type ScrollWindBalloonProps = {
+  children: ReactNode;
+  label: string;
+  homeX: number;
+  homeZ: number;
+  laneScale: number;
+  motionScale: number;
+  isPhone: boolean;
+  visible?: boolean;
+};
+
+function ScrollWindBalloon({
+  children,
+  label,
+  homeX,
+  homeZ,
+  laneScale,
+  motionScale,
+  isPhone,
+  visible = true,
+}: ScrollWindBalloonProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const { camera } = useThree();
+
+  const motion = useMemo(() => {
+    const rightX = (isPhone ? 4.4 : 6.6) * laneScale;
+    const leftX = -(isPhone ? 4.7 : 7.0) * laneScale;
+    const startZ = homeZ + seededRange(`${label}-wind-start`, 16, 26);
+    const distance = seededRange(`${label}-wind-distance`, 28, 46);
+
+    return {
+      startZ,
+      endZ: startZ - distance,
+      startOffsetX: rightX - homeX,
+      endOffsetX: leftX - homeX,
+      sway: seededRange(`${label}-wind-sway`, 0.22, 0.55) * motionScale,
+      phase: seededRange(`${label}-wind-phase`, 0, Math.PI * 2),
+      cycles: seededRange(`${label}-wind-cycles`, 1.15, 2.45),
+      tilt: seededRange(`${label}-wind-tilt`, -0.23, -0.12) * motionScale,
+      wobble: seededRange(`${label}-wind-wobble`, 0.035, 0.085) * motionScale,
+    };
+  }, [homeX, homeZ, isPhone, label, laneScale, motionScale]);
+
+  useFrame(() => {
+    const group = groupRef.current;
+    if (!group) return;
+
+    const rawProgress =
+      (motion.startZ - camera.position.z) / (motion.startZ - motion.endZ);
+    const progress = clamp01(rawProgress);
+
+    group.visible = visible && rawProgress > 0 && rawProgress < 1;
+    if (!group.visible) return;
+
+    const eased = THREE.MathUtils.smoothstep(progress, 0, 1);
+    const windWave = Math.sin(
+      eased * Math.PI * 2 * motion.cycles + motion.phase,
+    );
+    const activeWind = Math.sin(eased * Math.PI);
+
+    group.position.x = THREE.MathUtils.lerp(
+      motion.startOffsetX,
+      motion.endOffsetX,
+      eased,
+    );
+    group.position.y = windWave * motion.sway * activeWind;
+    group.rotation.z = motion.tilt * eased + windWave * motion.wobble * activeWind;
+    group.rotation.y = windWave * 0.05 * motionScale * activeWind;
+  });
+
+  return <group ref={groupRef} visible={false}>{children}</group>;
 }
 
 /**
- * SkillsSection — the skill balloons drift in a loose cluster and paint
- * themselves in as the camera reaches them. Layout is deterministic so it is
- * stable across renders.
+ * SkillsSection — the skill balloons are laid out deterministically, then a
+ * scroll-driven wind pass carries each one from right to left as the camera
+ * approaches. The wind depends on scroll position (not elapsed time), so the
+ * balloons hold still whenever scrolling stops.
  */
 export default function SkillsSection({
   zStart = -54,
@@ -85,46 +155,41 @@ export default function SkillsSection({
         : side * seededRange(`${skill.label}-outer-x`, 2.3, 4.4);
       const y = seededRange(`${skill.label}-y`, -1.05, 2.1);
       const z = zStart - chunk * chunkDepth - seededRange(`${skill.label}-z`, 0.8, chunkDepth - 0.7);
-      const speed = seededRange(`${skill.label}-speed`, 1, 1.75);
-      return { skill, pos: [x, y, z] as [number, number, number], speed, side: side as -1 | 1 };
+      return { skill, pos: [x, y, z] as [number, number, number] };
     });
   }, [zStart]);
 
   return (
     <group name="Skills Section">
-      {placed.map(({ skill, pos, speed, side }, i) => {
+      {placed.map(({ skill, pos }, i) => {
         const itemDebug = debug?.items?.[i];
 
+        const home = debugHome(itemDebug, [
+          pos[0] * responsive.laneScale,
+          pos[1],
+          pos[2],
+        ]);
+
         return (
-          <PartingItem
+          <group
             key={skill.label}
             name={`Skill Balloon: ${skill.label}`}
-            home={debugHome(itemDebug, [
-              pos[0] * responsive.laneScale,
-              pos[1],
-              pos[2],
-            ])}
-            side={side}
-            push={itemDebug?.push ?? 2.7 * responsive.laneScale}
-            lift={itemDebug?.lift ?? 0.5}
-            forward={itemDebug?.forward ?? 0.4}
-            influenceDistance={itemDebug?.influenceDistance ?? 9.5}
-            lerp={itemDebug?.lerp ?? 0.09}
+            position={home}
           >
-            <group
-              name={`Skill Balloon Body: ${skill.label}`}
+            <ScrollWindBalloon
+              label={skill.label}
+              homeX={home[0]}
+              homeZ={home[2]}
+              laneScale={responsive.laneScale}
+              motionScale={responsive.motionScale}
+              isPhone={responsive.isPhone}
               visible={itemDebug?.visible ?? true}
-              scale={itemDebug?.scale ?? (responsive.isPhone ? 1.08 : 1)}
-              renderOrder={itemDebug?.renderOrder ?? 0}
             >
-              <Float
-                speed={(itemDebug?.floatSpeed ?? speed) * responsive.motionScale}
-                rotationIntensity={(itemDebug?.rotationIntensity ?? 0.2) * responsive.motionScale}
-                floatIntensity={(itemDebug?.floatIntensity ?? 0.7) * responsive.motionScale}
-                floatingRange={debugFloatingRange(itemDebug, [
-                  -0.3 * responsive.motionScale,
-                  0.3 * responsive.motionScale,
-                ])}
+              <group
+                name={`Skill Balloon Body: ${skill.label}`}
+                visible
+                scale={itemDebug?.scale ?? (responsive.isPhone ? 1.08 : 1)}
+                renderOrder={itemDebug?.renderOrder ?? 0}
               >
                 <PaintSprite
                   name={`Skill Sprite: ${skill.label}`}
@@ -138,9 +203,9 @@ export default function SkillsSection({
                   interactive
                   hoverScale={itemDebug?.hoverScale ?? 1.08}
                 />
-              </Float>
-            </group>
-          </PartingItem>
+              </group>
+            </ScrollWindBalloon>
+          </group>
         );
       })}
     </group>

@@ -242,7 +242,7 @@ export function createPaperAirplaneDebugState(): PaperAirplaneDebugState {
       },
       sendButton: {
         label: "send ",
-        sendingLabel: "opening mail app…",
+        sendingLabel: "Sending...",
         positionX: 2,
         positionY: -15,
         scaleX: 1,

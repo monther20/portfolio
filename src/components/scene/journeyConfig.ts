@@ -60,10 +60,10 @@ export const JOURNEY = {
   // ── Sky section anchors ────────────────────────────────────────────────
   journeyAnchorZ: extendCorridorZ(-88),
   skillsAnchorZ: extendCorridorZ(-116),
-  projectsAnchorZ: extendCorridorZ(-144),
+  projectsAnchorZ: extendCorridorZ(-152),
 
   // ── Descent + beach ────────────────────────────────────────────────────
-  descentStartZ: extendCorridorZ(-160),
+  descentStartZ: extendCorridorZ(-164),
   /** Airplane detaches from the camera and glides down to the boardwalk. */
   landingTriggerZ: extendCorridorZ(-176),
   beachZ: extendCorridorZ(-184),
