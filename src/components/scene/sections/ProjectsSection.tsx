@@ -370,9 +370,9 @@ function ProjectPaper({
               billboard={false}
               autoReveal={false}
               depthWrite={false}
-              interactive={hasLiveLink}
+              interactive={focused && hasLiveLink}
               hoverScale={debug?.buttonHoverScale ?? 1.1}
-              onClick={hasLiveLink ? openLive : undefined}
+              onClick={focused && hasLiveLink ? openLive : undefined}
             />
           </group>
         ) : null}
