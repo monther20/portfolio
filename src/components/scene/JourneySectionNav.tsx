@@ -62,11 +62,16 @@ function SectionIcon({ id }: { id: JourneySectionId }) {
 /** Scroll-synced section indicator and fast navigation for the 3D journey. */
 export default function JourneySectionNav({ visible }: { visible: boolean }) {
   const [cameraZ, setCameraZ] = useState(JOURNEY_SECTIONS[0].z);
+  const [hasJourneyProgress, setHasJourneyProgress] = useState(false);
   const journey = useJourneyState();
 
   useEffect(() => {
     const update = (event: Event) => {
       setCameraZ((event as CustomEvent<JourneyProgressDetail>).detail.z);
+      // Progress events only exist after the door transition has handed control
+      // to the journey. Keep this as a resilient visibility signal if the
+      // page-level `entered` state is reset (for example by Fast Refresh).
+      setHasJourneyProgress(true);
     };
 
     window.addEventListener(JOURNEY_PROGRESS_EVENT, update);
@@ -75,14 +80,15 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
 
   const activeIndex = sectionIndexAtZ(cameraZ);
   const progress = sectionProgressAtZ(cameraZ);
+  const navVisible = visible || hasJourneyProgress;
   const navigationLocked =
     journey.cameraLocked || journey.contactOpen || journey.interactionLocked;
 
   return (
     <nav
-      className={`journey-section-nav${visible ? " is-visible" : ""}`}
+      className={`journey-section-nav${navVisible ? " is-visible" : ""}`}
       aria-label="Portfolio sections"
-      aria-hidden={!visible}
+      aria-hidden={!navVisible}
       style={{ "--section-progress": progress } as CSSProperties}
     >
       <div className="journey-section-nav__rail" aria-hidden="true">
@@ -99,7 +105,7 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
                 className={`journey-section-nav__button${active ? " is-active" : ""}`}
                 aria-label={`Go to ${section.label} section`}
                 aria-current={active ? "location" : undefined}
-                disabled={!visible || navigationLocked}
+                disabled={!navVisible || navigationLocked}
                 onClick={() => navigateToJourneySection(section)}
               >
                 <span className="journey-section-nav__label">
