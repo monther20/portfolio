@@ -29,7 +29,7 @@ export default function JourneyHud({ visible }: { visible: boolean }) {
     >
       <div className="journey-hud__title">{responsive.journeyHint}</div>
       <div className="journey-hud__sections">
-        journey · skills · projects · contact
+        about · journey · skills · projects · contact
       </div>
       {!responsive.isCoarsePointer ? (
         <div className="journey-hud__keyboard">arrow keys also work</div>

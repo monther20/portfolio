@@ -13,6 +13,12 @@ import {
   windowProgressAt,
 } from "./journeyConfig";
 import { getJourneyState, setJourneyState } from "./journeyState";
+import {
+  JOURNEY_NAVIGATE_EVENT,
+  JOURNEY_PROGRESS_EVENT,
+  type JourneyNavigateDetail,
+  type JourneyProgressDetail,
+} from "./sectionNavigation";
 import { corridor } from "@/data/portfolio";
 import {
   reportJourneyInteraction,
@@ -33,12 +39,25 @@ const MOUSE_POSITION_X = 0.12;
 const MOUSE_POSITION_Y = 0.06;
 const MOUSE_YAW = 0.018;
 const MOUSE_PITCH = 0.012;
+const SECTION_NAV_SPEED = 72;
+const SECTION_NAV_MIN_DURATION = 0.7;
+const SECTION_NAV_MAX_DURATION = 1.8;
+const PROGRESS_REPORT_INTERVAL = 1 / 20;
+
+type SectionNavigationMotion = {
+  startZ: number;
+  targetZ: number;
+  elapsed: number;
+  duration: number;
+};
 
 export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const { camera, gl } = useThree();
   const responsive = useResponsiveExperience();
 
   const flightVelocity = useRef(0);
+  const sectionNavigation = useRef<SectionNavigationMotion | null>(null);
+  const lastProgressReport = useRef(-Infinity);
   const corridorFocuses = useMemo(
     () =>
       corridor.stations.map((station, index) => ({
@@ -50,7 +69,54 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     flightVelocity.current = 0;
+    sectionNavigation.current = null;
   }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const handleSectionNavigation = (event: Event) => {
+      const journey = getJourneyState();
+      if (
+        journey.cameraLocked ||
+        journey.contactOpen ||
+        journey.interactionLocked
+      ) {
+        return;
+      }
+
+      const { z } = (event as CustomEvent<JourneyNavigateDetail>).detail;
+      const targetZ = THREE.MathUtils.clamp(
+        z,
+        JOURNEY.farBound,
+        JOURNEY.corridorStart,
+      );
+      const distance = Math.abs(targetZ - camera.position.z);
+      const duration = responsive.reducedMotion
+        ? 0.01
+        : THREE.MathUtils.clamp(
+            distance / SECTION_NAV_SPEED,
+            SECTION_NAV_MIN_DURATION,
+            SECTION_NAV_MAX_DURATION,
+          );
+
+      flightVelocity.current = 0;
+      sectionNavigation.current = {
+        startZ: camera.position.z,
+        targetZ,
+        elapsed: 0,
+        duration,
+      };
+      reportJourneyInteraction();
+    };
+
+    window.addEventListener(JOURNEY_NAVIGATE_EVENT, handleSectionNavigation);
+    return () =>
+      window.removeEventListener(
+        JOURNEY_NAVIGATE_EVENT,
+        handleSectionNavigation,
+      );
+  }, [camera, enabled, responsive.reducedMotion]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -75,6 +141,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       );
       if (Math.abs(inputDelta) < 0.5) return;
 
+      sectionNavigation.current = null;
       flightVelocity.current = THREE.MathUtils.clamp(
         flightVelocity.current + inputDelta * SCROLL_SPEED,
         -MAX_SCROLL_VELOCITY,
@@ -167,6 +234,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       journey.interactionLocked
     ) {
       flightVelocity.current = 0;
+      sectionNavigation.current = null;
       return;
     }
 
@@ -174,27 +242,64 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
 
     const nearBound = JOURNEY.corridorStart;
     const prevZ = camera.position.z;
-    flightVelocity.current = THREE.MathUtils.clamp(
-      flightVelocity.current,
-      -MAX_SCROLL_VELOCITY,
-      MAX_SCROLL_VELOCITY,
-    );
-    const proposedZ = prevZ - flightVelocity.current * frameScale;
-    const nextZ = THREE.MathUtils.clamp(proposedZ, JOURNEY.farBound, nearBound);
+    const navigation = sectionNavigation.current;
+    let nextZ: number;
+
+    if (navigation) {
+      flightVelocity.current = 0;
+      navigation.elapsed += delta;
+      const progress = THREE.MathUtils.clamp(
+        navigation.elapsed / navigation.duration,
+        0,
+        1,
+      );
+      const easedProgress = THREE.MathUtils.smootherstep(progress, 0, 1);
+      nextZ = THREE.MathUtils.lerp(
+        navigation.startZ,
+        navigation.targetZ,
+        easedProgress,
+      );
+
+      if (progress >= 1) sectionNavigation.current = null;
+    } else {
+      flightVelocity.current = THREE.MathUtils.clamp(
+        flightVelocity.current,
+        -MAX_SCROLL_VELOCITY,
+        MAX_SCROLL_VELOCITY,
+      );
+      const proposedZ = prevZ - flightVelocity.current * frameScale;
+      nextZ = THREE.MathUtils.clamp(
+        proposedZ,
+        JOURNEY.farBound,
+        nearBound,
+      );
+
+      if (nextZ === JOURNEY.farBound || nextZ === nearBound) {
+        flightVelocity.current *= 0.35;
+      }
+
+      flightVelocity.current *= Math.pow(FRICTION, frameScale);
+      if (Math.abs(flightVelocity.current) < MIN_VELOCITY) {
+        flightVelocity.current = 0;
+      }
+    }
 
     if (journey.windowLaunched && nextZ > JOURNEY.corridorReturnResetZ) {
       setJourneyState({ windowLaunched: false, airplaneMode: "resting" });
     }
 
-    if (nextZ === JOURNEY.farBound || nextZ === nearBound) {
-      flightVelocity.current *= 0.35;
-    }
-
     camera.position.z = nextZ;
 
-    flightVelocity.current *= Math.pow(FRICTION, frameScale);
-    if (Math.abs(flightVelocity.current) < MIN_VELOCITY) {
-      flightVelocity.current = 0;
+    if (
+      state.clock.elapsedTime - lastProgressReport.current >=
+      PROGRESS_REPORT_INTERVAL
+    ) {
+      lastProgressReport.current = state.clock.elapsedTime;
+      window.dispatchEvent(
+        new CustomEvent<JourneyProgressDetail>(JOURNEY_PROGRESS_EVENT, {
+          detail: { z: nextZ },
+        }),
+      );
     }
 
     const phase = journeyPhaseAt(nextZ);
