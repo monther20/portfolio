@@ -37,13 +37,29 @@ export type Skill = {
 
 /** Skill badge images from public/textures/skills. */
 export const skills: Skill[] = [
-  { label: "React.js / React Native", size: "L", balloon: SKILL_BADGE("reactduzybalon") },
-  { label: "Next.js", size: "L", balloon: SKILL_BADGE("nextjssrednibalon") },
-  { label: "TypeScript", size: "M", balloon: SKILL_BADGE("csssrednibalon") },
+  {
+    label: "React / React Native",
+    size: "L",
+    balloon: SKILL_BADGE("reactduzybalon"),
+  },
+  {
+    label: "Next.js / TypeScript",
+    size: "L",
+    balloon: SKILL_BADGE("nextjssrednibalon"),
+  },
+  { label: "CSS", size: "M", balloon: SKILL_BADGE("csssrednibalon") },
   { label: "Tailwind CSS", size: "M", balloon: SKILL_BADGE("tailwind") },
   { label: "React Query", size: "M", balloon: SKILL_BADGE("reactquery") },
-  { label: "Node.js", size: "M", balloon: SKILL_BADGE("nodejs") },
-  { label: "Three.js / WebGL", size: "M", balloon: SKILL_BADGE("threejsduzybalon") },
+  {
+    label: "Node.js / API Integrations",
+    size: "M",
+    balloon: SKILL_BADGE("nodejs"),
+  },
+  {
+    label: "Three.js / WebGL",
+    size: "M",
+    balloon: SKILL_BADGE("threejsduzybalon"),
+  },
   {
     label: "React Three Fiber",
     size: "M",
@@ -70,11 +86,11 @@ export const projects: Project[] = [
     panel: PROJECT_PANEL("reachlet"),
     tech: ["React Native", "Mixpanel", "Sentry"],
     description:
-      "Mobile frontend for an advertising display app that presents products through dynamic image and video content.",
+      "React Native advertising display app with auto-scrolling image and video campaigns and QR-linked actions.",
     bullets: [
-      "Built auto-scrolling image and video ads with QR-code integration for external links.",
-      "Integrated Mixpanel analytics and Sentry production error monitoring.",
-      "Implemented automatic hotspot activation and in-app internet/connectivity controls.",
+      "Developed auto-scrolling image and video campaigns with QR-linked actions.",
+      "Integrated Mixpanel product analytics and Sentry production error monitoring.",
+      "Built connectivity-aware controls, including automatic hotspot activation and in-app internet status management.",
     ],
   },
   {
@@ -83,11 +99,11 @@ export const projects: Project[] = [
     panel: PROJECT_PANEL("ezorro"),
     tech: ["React", "AI Chat", "Market Research"],
     description:
-      "AI-powered market research and portfolio analysis platform for self-directed investors.",
+      "AI-powered market research and portfolio analysis platform with responsive React interfaces.",
     bullets: [
-      "Built responsive interfaces for AI chat, portfolio insights, and market research workflows.",
-      "Implemented real-time chat with streaming AI responses.",
-      "Created interactive reports for strategy backtesting, alternative data, and brokerage-connected portfolio analysis.",
+      "Developed responsive React interfaces for AI-powered market research and portfolio analysis.",
+      "Implemented real-time AI chat with streamed responses and clear loading and response states.",
+      "Built interactive reports for strategy backtesting, alternative data research, and brokerage-connected portfolio analysis.",
     ],
   },
 ];
@@ -115,7 +131,7 @@ export const contact = {
  */
 export const corridor = {
   greeting: "Hi, I'm Monther 👋",
-  tagline: "Frontend Developer | React & React Native",
+  tagline: "Software Developer | React, Next.js, React Native & TypeScript",
   /** Small hand-drawn doodles floating around the avatar. */
   doodles: [
     `${CORRIDOR_BASE}/decorations/pencil.webp`,
@@ -126,8 +142,8 @@ export const corridor = {
     {
       title: "Who am I",
       lines: [
-        "Frontend developer based in Amman, Jordan.",
-        "I build responsive web, mobile, and interactive applications with React, Next.js, React Native, TypeScript, and Three.js.",
+        "Software developer  focused on responsive web and mobile products.",
+        "I work with React, Next.js, React Native, and TypeScript.",
       ],
       side: -1 as const, // left wall
       art: `${CORRIDOR_BASE}/profile.png`,
@@ -135,7 +151,7 @@ export const corridor = {
     {
       title: "What I build",
       lines: [
-        "AI-powered market tools, advertising-display mobile apps, and scroll-based 3D portfolio experiences.",
+        "I also focus on web performance, internationalization, and API integrations.",
       ],
       side: 1 as const, // right wall
       art: `${CORRIDOR_BASE}/web-mobile-3d-corridor-sketch.webp`,
@@ -157,19 +173,19 @@ export const journeyMilestones: JourneyMilestone[] = [
   {
     year: "2027",
     title: "B.Sc. Computer Science @ JUST",
-    text: "Expected graduation from Jordan University of Science and Technology.",
+    text: "B.Sc. Computer Science in progress at Jordan University of Science and Technology; expected graduation in 2027.",
     island: `${JOURNEY_MILESTONES_BASE}/justwyspa.webp`,
   },
   {
     year: "2023–2025",
-    title: "Frontend Freelancer @ AlphaWorks",
-    text: "Built the Reachlet React Native mobile frontend for dynamic advertising displays with QR links, analytics, monitoring, and connectivity controls.",
+    title: "Reachlet · Frontend Freelancer",
+    text: "Developed a React Native advertising display app with auto-scrolling campaigns, QR-linked actions, Mixpanel, Sentry, and connectivity-aware controls.",
     island: `${JOURNEY_MILESTONES_BASE}/freelancewyspa.webp`,
   },
   {
     year: "Jul–Nov 2025",
-    title: "Frontend Trainee @ AlphaWorks",
-    text: "Developed eZorro React features for AI chat, portfolio insights, market research workflows, streaming responses, and interactive backtesting reports.",
+    title: "eZorro · Frontend Developer Trainee",
+    text: "Developed responsive React interfaces, streamed AI chat responses, and interactive research and portfolio reports at AlphaWorks.",
     island: `${JOURNEY_MILESTONES_BASE}/alphaworkswyspa.webp`,
   },
 ];
