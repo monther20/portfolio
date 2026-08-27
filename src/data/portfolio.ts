@@ -66,7 +66,7 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: "Reachlet",
-    link: "#",
+    link: "https://reachlet.com/",
     panel: PROJECT_PANEL("reachlet"),
     tech: ["React Native", "Mixpanel", "Sentry"],
     description:
@@ -79,7 +79,7 @@ export const projects: Project[] = [
   },
   {
     name: "eZorro",
-    link: "#",
+    link: "https://ezorro.app/",
     panel: PROJECT_PANEL("ezorro"),
     tech: ["React", "AI Chat", "Market Research"],
     description:

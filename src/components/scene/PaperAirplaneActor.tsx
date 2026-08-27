@@ -54,6 +54,7 @@ const MESSAGE_PAPER_SCALE: [number, number, number] = [0.27, 0.22, 1];
 
 const AIRPLANE_FOLD_STEP_NAMES = ["step 1", "step 2", "step 3"] as const;
 const MORPH_FOLD_DURATION = 0.9;
+const PROJECT_OPEN_PLANE_DROP = { phone: 0.72, default: 0.95 } as const;
 
 type MorphTargetMesh = THREE.Mesh<
   THREE.BufferGeometry,
@@ -250,6 +251,7 @@ export default function PaperAirplaneActor() {
       lookTarget: new THREE.Vector3(),
       curveQuat: new THREE.Quaternion(),
       landedQuat: new THREE.Quaternion().setFromEuler(LANDED_EULER),
+      projectDrop: 0,
       modeAnim: {
         curve: null,
         t: 0,
@@ -291,7 +293,11 @@ export default function PaperAirplaneActor() {
     scratch.offset
       .set(
         AIRPLANE_CAMERA_OFFSET.x,
-        AIRPLANE_CAMERA_OFFSET.y,
+        AIRPLANE_CAMERA_OFFSET.y -
+          scratch.projectDrop *
+            (responsive.isPhone
+              ? PROJECT_OPEN_PLANE_DROP.phone
+              : PROJECT_OPEN_PLANE_DROP.default),
         cameraLockedZ,
       )
       .applyQuaternion(camera.quaternion);
@@ -314,7 +320,7 @@ export default function PaperAirplaneActor() {
     scratch.wobbleEuler.set(pitch, yaw, roll);
     scratch.wobbleQuat.setFromEuler(scratch.wobbleEuler);
     scratch.lockQuat.copy(camera.quaternion).multiply(scratch.wobbleQuat);
-  }, [camera, responsive.projectFocusDistance, scratch]);
+  }, [camera, responsive.isPhone, responsive.projectFocusDistance, scratch]);
 
   /** Follow the active scripted curve; nose along the tangent. */
   const applyCurveFrame = useCallback(
@@ -377,10 +383,18 @@ export default function PaperAirplaneActor() {
     [computeLockedPose, scratch],
   );
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const root = rootRef.current;
     if (!root) return;
     const t = state.clock.elapsedTime;
+
+    // Ease the hero plane below the focused project instead of letting the two
+    // paper elements compete for the same part of the screen. Closing the card
+    // reverses the same damped movement back to its regular flight position.
+    const projectDropTarget = getJourneyState().interactionLocked ? 1 : 0;
+    scratch.projectDrop = responsive.reducedMotion
+      ? projectDropTarget
+      : THREE.MathUtils.damp(scratch.projectDrop, projectDropTarget, 4.5, delta);
 
     if (airplaneMode !== "landed") {
       root.visible = true;

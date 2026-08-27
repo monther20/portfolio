@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import PaintSprite from "../PaintSprite";
+import ProjectPaperMesh, { type ProjectPaperMeshHandle } from "./ProjectPaperMesh";
 import { seededRange } from "../PartingItem";
 
 import { projects, projectUI, type Project } from "@/data/portfolio";
@@ -29,7 +30,6 @@ type ProjectPaperDebug = {
   revealFar?: number;
   focusedRevealNear?: number;
   focusedRevealFar?: number;
-  hoverScale?: number;
   focusedDistance?: number;
   focusedLerp?: number;
   focusedQuaternionLerp?: number;
@@ -90,10 +90,15 @@ function clamp01(value: number) {
   return THREE.MathUtils.clamp(value, 0, 1);
 }
 
+/** Convert the old 60fps lerp amount into a frame-rate-independent factor. */
+function smoothLerpFactor(amount: number, delta: number) {
+  const clampedAmount = THREE.MathUtils.clamp(amount, 0, 0.999);
+  return 1 - Math.pow(1 - clampedAmount, Math.min(delta, 0.1) * 60);
+}
+
 /**
  * A single project "paper". Scroll wind carries it from left to right; when
- * focused it flies to a fixed point in front of the camera, paints in fully,
- * and shows its details + an "open live project" button.
+ * focused it flips to a fixed point in front of the camera and paints in fully.
  */
 function ProjectPaper({
   project,
@@ -115,10 +120,16 @@ function ProjectPaper({
   moveDistance: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
+  const paperRollRef = useRef<THREE.Group>(null);
+  const paperMeshRef = useRef<ProjectPaperMeshHandle>(null);
+  const liveButtonSurfaceRef = useRef<THREE.Group>(null);
+  const focusProgress = useRef(0);
   const { camera } = useThree();
   const responsive = useResponsiveExperience();
   const dir = useMemo(() => new THREE.Vector3(), []);
   const target = useMemo(() => new THREE.Vector3(), []);
+  const returnEuler = useMemo(() => new THREE.Euler(), []);
+  const returnQuaternion = useMemo(() => new THREE.Quaternion(), []);
   const debugPhase = debug?.phase ?? phase;
   const paperHeight = debug?.height ?? PAPER_HEIGHT;
   const scrollWind = useMemo(() => {
@@ -141,58 +152,171 @@ function ProjectPaper({
     };
   }, [debugPhase, home, moveDistance, moveStartBefore, project.name, responsive.isPhone, responsive.laneScale, responsive.motionScale]);
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     const g = groupRef.current;
+    const paperRoll = paperRollRef.current;
     if (!g) return;
 
-    if (focused) {
-      g.visible = debug?.visible ?? true;
-      // Fly to a fixed spot in front of the camera.
-      camera.getWorldDirection(dir);
-      target
-        .copy(camera.position)
-        .addScaledVector(
-          dir,
-          debug?.focusedDistance ?? responsive.projectFocusDistance,
-        );
-      g.position.lerp(target, debug?.focusedLerp ?? 0.12);
-      // Face the camera, upright.
-      g.quaternion.slerp(camera.quaternion, debug?.focusedQuaternionLerp ?? 0.15);
-    } else {
-      const rawProgress =
-        (scrollWind.startZ - camera.position.z) /
-        (scrollWind.startZ - scrollWind.endZ);
-      const progress = clamp01(rawProgress);
+    const rawWindProgress =
+      (scrollWind.startZ - camera.position.z) /
+      (scrollWind.startZ - scrollWind.endZ);
+    const windProgress = clamp01(rawWindProgress);
+    const windEased = THREE.MathUtils.smoothstep(windProgress, 0, 1);
+    const activeWind = Math.sin(windEased * Math.PI);
+    const windWave = Math.sin(
+      windEased * Math.PI * 2 * scrollWind.cycles + scrollWind.phase,
+    );
+    const windX = home[0] + THREE.MathUtils.lerp(
+      scrollWind.startOffsetX,
+      scrollWind.endOffsetX,
+      windEased,
+    );
+    const windY = home[1] + windWave * scrollWind.sway * activeWind;
+    const windRotationX = windWave * 0.045 * responsive.motionScale * activeWind;
+    const windRotationY = windWave * scrollWind.yaw * activeWind;
+    const windRotationZ = scrollWind.tilt * windEased + windWave * scrollWind.wobble * activeWind;
 
-      g.visible = (debug?.visible ?? true) && rawProgress > 0 && rawProgress < 1;
+    if (focused || focusProgress.current > 0) {
+      g.visible = debug?.visible ?? true;
+      const focusedLerp = debug?.focusedLerp ?? 0.12;
+
+      if (focused) {
+        // Fly to a fixed spot in front of the camera.
+        camera.getWorldDirection(dir);
+        target
+          .copy(camera.position)
+          .addScaledVector(
+            dir,
+            debug?.focusedDistance ?? responsive.projectFocusDistance,
+          );
+        // Start the travel gently while the sheet flips, then accelerate only
+        // near the end. This lets the turn read clearly before the paper reaches
+        // its final readable distance from the camera.
+        const approachProgress = THREE.MathUtils.smootherstep(
+          focusProgress.current,
+          0.45,
+          1,
+        );
+        const approachLerp =
+          focusedLerp * THREE.MathUtils.lerp(0.12, 1, approachProgress);
+        g.position.lerp(target, smoothLerpFactor(approachLerp, delta));
+        // Face the camera, upright.
+        g.quaternion.slerp(
+          camera.quaternion,
+          smoothLerpFactor(debug?.focusedQuaternionLerp ?? 0.15, delta),
+        );
+      } else {
+        // Reverse the travel at the same time as the paper unfolds, returning
+        // it to its live scroll-wind position instead of snapping it home.
+        const returnProgress = 1 - focusProgress.current;
+        target.set(windX, windY, home[2]);
+        const returnLerp =
+          focusedLerp * THREE.MathUtils.lerp(
+            0.35,
+            1,
+            THREE.MathUtils.smootherstep(returnProgress, 0, 1),
+          );
+        g.position.lerp(target, smoothLerpFactor(returnLerp, delta));
+        returnEuler.set(windRotationX, windRotationY, windRotationZ);
+        returnQuaternion.setFromEuler(returnEuler);
+        const returnQuaternionLerp =
+          (debug?.focusedQuaternionLerp ?? 0.15) *
+          THREE.MathUtils.lerp(
+            0.4,
+            1,
+            THREE.MathUtils.smootherstep(returnProgress, 0, 1),
+          );
+        g.quaternion.slerp(
+          returnQuaternion,
+          smoothLerpFactor(returnQuaternionLerp, delta),
+        );
+      }
+
+      // Tug down, curl toward the viewer, and complete a full turn. The back
+      // passes through during the flip, but the project front settles open.
+      focusProgress.current = responsive.reducedMotion
+        ? focused ? 1 : 0
+        : THREE.MathUtils.clamp(
+            focusProgress.current + (focused ? 1 : -1) * delta / 0.88,
+            0,
+            1,
+          );
+      if (paperRoll) {
+        const progress = focusProgress.current;
+        // One continuous quintic curve avoids the tiny pauses that separate
+        // the tug/lift/settle phases while keeping the same paper path.
+        const rotationX = responsive.reducedMotion
+          ? Math.PI * 2
+          : THREE.MathUtils.smootherstep(progress, 0, 1) * Math.PI * 2;
+        let offsetY = 0;
+        let offsetZ = 0;
+        let bend = 0;
+
+        if (!responsive.reducedMotion && progress < 0.16) {
+          const phase = THREE.MathUtils.smootherstep(progress / 0.16, 0, 1);
+          offsetY = THREE.MathUtils.lerp(0, -0.18, phase);
+          bend = THREE.MathUtils.lerp(0, 0.8, phase);
+        } else if (!responsive.reducedMotion && progress < 0.62) {
+          const phase = THREE.MathUtils.smootherstep((progress - 0.16) / 0.46, 0, 1);
+          offsetY = THREE.MathUtils.lerp(-0.18, 0.32, phase);
+          offsetZ = THREE.MathUtils.lerp(0, 0.14, phase);
+          bend = THREE.MathUtils.lerp(0.8, -0.3, phase);
+        } else {
+          const phase = THREE.MathUtils.smootherstep((progress - 0.62) / 0.38, 0, 1);
+          offsetY = THREE.MathUtils.lerp(0.32, 0, phase);
+          offsetZ = THREE.MathUtils.lerp(0.14, 0, phase);
+          bend = THREE.MathUtils.lerp(-0.3, 0, phase);
+        }
+
+        paperRoll.rotation.set(rotationX, 0, 0);
+        paperRoll.position.set(0, offsetY, offsetZ);
+        const focusedScale = THREE.MathUtils.lerp(1, 1.05, progress);
+        paperRoll.scale.setScalar(focusedScale);
+        if (paperMeshRef.current) paperMeshRef.current.bend = bend;
+      }
+    } else {
+      focusProgress.current = 0;
+      if (paperRoll) {
+        paperRoll.position.set(0, 0, 0);
+        paperRoll.rotation.set(0, 0, 0);
+        paperRoll.scale.set(1, 1, 1);
+      }
+      if (paperMeshRef.current) paperMeshRef.current.bend = 0;
+      g.visible = (debug?.visible ?? true) && rawWindProgress > 0 && rawWindProgress < 1;
       if (!g.visible) return;
 
-      const eased = THREE.MathUtils.smoothstep(progress, 0, 1);
-      const activeWind = Math.sin(eased * Math.PI);
-      const windWave = Math.sin(
-        eased * Math.PI * 2 * scrollWind.cycles + scrollWind.phase,
-      );
+      g.position.set(windX, windY, home[2]);
+      g.rotation.set(windRotationX, windRotationY, windRotationZ);
+    }
 
-      g.position.set(
-        home[0] +
-          THREE.MathUtils.lerp(
-            scrollWind.startOffsetX,
-            scrollWind.endOffsetX,
-            eased,
-          ),
-        home[1] + windWave * scrollWind.sway * activeWind,
-        home[2],
-      );
+    // Keep the live-project artwork resting on the same curved paper surface.
+    // This mirrors the sheet shader's bend and flutter at the button's Y point.
+    if (liveButtonSurfaceRef.current) {
+      const buttonY = debug?.buttonY ?? 0.88;
+      const bend = paperMeshRef.current?.bend ?? 0;
+      const flutterStrength = responsive.reducedMotion ? 0 : 0.012;
+      const flutterScale = 1 + Math.abs(bend * 2.5);
+      const flutterPhase = state.clock.elapsedTime * 2 + buttonY * 2;
+      const surfaceZ =
+        buttonY * buttonY * bend +
+        Math.sin(flutterPhase) * flutterStrength * flutterScale;
+      const surfaceSlope =
+        2 * buttonY * bend +
+        Math.cos(flutterPhase) * 2 * flutterStrength * flutterScale;
 
-      g.rotation.x = windWave * 0.045 * responsive.motionScale * activeWind;
-      g.rotation.y = windWave * scrollWind.yaw * activeWind;
-      g.rotation.z = scrollWind.tilt * eased + windWave * scrollWind.wobble * activeWind;
+      liveButtonSurfaceRef.current.position.set(
+        debug?.buttonX ?? 0,
+        buttonY,
+        (debug?.buttonZ ?? 0.03) + surfaceZ,
+      );
+      liveButtonSurfaceRef.current.rotation.x = Math.atan(surfaceSlope);
     }
   });
 
-  const openLive = (e: any) => {
-    e.stopPropagation();
-    if (project.link && project.link !== "#") {
+  const hasLiveLink = Boolean(project.link && project.link !== "#");
+  const openLive = (event: any) => {
+    event.stopPropagation();
+    if (hasLiveLink) {
       window.open(project.link, "_blank", "noopener,noreferrer");
     }
   };
@@ -206,45 +330,53 @@ function ProjectPaper({
       scale={(debug?.scale ?? 1) * (responsive.isPhone ? 1.08 : 1)}
       renderOrder={debug?.renderOrder ?? 0}
     >
-      {/* The paper itself */}
-      <PaintSprite
-        name={`Project Panel: ${project.name}`}
-        sketch={project.panel.sketch}
-        painted={project.panel.painted}
-        position={debugSpritePosition(debug)}
-        height={paperHeight}
-        renderOrder={debug?.renderOrder ?? 0}
-        billboard={false}
-        revealNear={focused ? (debug?.focusedRevealNear ?? 30) : (debug?.revealNear ?? 9)}
-        revealFar={focused ? (debug?.focusedRevealFar ?? 40) : (debug?.revealFar ?? 22)}
-        interactive
-        hoverScale={debug?.hoverScale ?? 1.05}
-        onClick={onToggle}
-      />
+      <group
+        ref={paperRollRef}
+        name={`Project Paper Roll: ${project.name}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggle();
+        }}
+      >
+        <ProjectPaperMesh
+          ref={paperMeshRef}
+          name={`Project Panel: ${project.name}`}
+          sketch={project.panel.sketch}
+          painted={project.panel.painted}
+          back={projectUI.paperTexture}
+          position={debugSpritePosition(debug)}
+          height={paperHeight}
+          renderOrder={debug?.renderOrder ?? 0}
+          revealNear={focused ? (debug?.focusedRevealNear ?? 30) : (debug?.revealNear ?? 9)}
+          revealFar={focused ? (debug?.focusedRevealFar ?? 40) : (debug?.revealFar ?? 22)}
+          onClick={onToggle}
+        />
 
-      {/* Details — only while focused */}
-      {focused && (
-        <>
-          {project.link && project.link !== "#" && (debug?.buttonVisible ?? true) ? (
+        {(debug?.buttonVisible ?? true) ? (
+          <group
+            ref={liveButtonSurfaceRef}
+            name={`Open Live Button Surface: ${project.name}`}
+            position={[
+              debug?.buttonX ?? 0,
+              debug?.buttonY ?? 0.88,
+              debug?.buttonZ ?? 0.03,
+            ]}
+          >
             <PaintSprite
               name={`Open Live Button: ${project.name}`}
               sketch={projectUI.openLive}
-              position={[
-                debug?.buttonX ?? 0,
-                debug?.buttonY ?? -paperHeight / 2 - 0.7,
-                debug?.buttonZ ?? 0.05,
-              ]}
-              height={debug?.buttonHeight ?? 0.6}
-              renderOrder={debug?.buttonRenderOrder ?? debug?.renderOrder ?? 0}
+              height={debug?.buttonHeight ?? 0.3}
+              renderOrder={debug?.buttonRenderOrder ?? (debug?.renderOrder ?? 0) + 1}
               billboard={false}
               autoReveal={false}
-              interactive
-              hoverScale={debug?.buttonHoverScale ?? 1.12}
-              onClick={openLive}
+              depthWrite={false}
+              interactive={focused && hasLiveLink}
+              hoverScale={debug?.buttonHoverScale ?? 1.1}
+              onClick={focused && hasLiveLink ? openLive : undefined}
             />
-          ) : null}
-        </>
-      )}
+          </group>
+        ) : null}
+      </group>
     </group>
   );
 }
