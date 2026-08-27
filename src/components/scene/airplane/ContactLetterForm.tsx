@@ -7,6 +7,9 @@ import { useResponsiveExperience } from "../../ResponsiveExperience";
 import type { PaperAirplaneContactFormDebug } from "./paperAirplaneDefaults";
 
 const HTML_SHARPNESS_SCALE = 2;
+const SUBMISSION_SUCCESS_DELAY_MS = 1600;
+
+type SubmissionState = "idle" | "submitting" | "success" | "error";
 
 type CloseButtonDebug = PaperAirplaneContactFormDebug["closeButton"];
 
@@ -54,6 +57,7 @@ export type LetterFields = {
   email: string;
   subject: string;
   message: string;
+  botField: string;
 };
 
 function hexToRgba(hex: string, opacity: number) {
@@ -124,16 +128,20 @@ function sendButtonTransform(
 /** The email form is rendered directly on the GLB's unfolded paper surface. */
 export default function ContactLetterForm({
   onSend,
+  onSuccess,
   onClose,
   debug,
 }: {
   onSend: (fields: LetterFields) => Promise<boolean> | boolean;
+  onSuccess: () => void;
   onClose: () => void;
   debug: PaperAirplaneContactFormDebug;
 }) {
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [submissionState, setSubmissionState] =
+    useState<SubmissionState>("idle");
   const [closeButtonHovered, setCloseButtonHovered] = useState(false);
+  const submissionLocked =
+    submissionState === "submitting" || submissionState === "success";
   const responsive = useResponsiveExperience();
   const minimumFieldFontSize = responsive.isCoarsePointer ? 16 : 0;
   const sendButtonRadius = Math.max(8, debug.sendButton.borderRadius);
@@ -168,24 +176,36 @@ export default function ContactLetterForm({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [closeWithFold]);
 
+  useEffect(() => {
+    if (submissionState !== "success") return;
+
+    const timeoutId = window.setTimeout(
+      onSuccess,
+      SUBMISSION_SUCCESS_DELAY_MS,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [onSuccess, submissionState]);
+
   const handleSend = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (sent) return;
+    if (submissionLocked) return;
 
     const formData = new FormData(event.currentTarget);
-    const fields = {
+    const fields: LetterFields = {
       email: String(formData.get("email") ?? "").trim(),
       subject: String(formData.get("subject") ?? "").trim(),
       message: String(formData.get("message") ?? "").trim(),
+      botField: String(formData.get("bot-field") ?? ""),
     };
 
-    setSent(true);
-    setError("");
+    setSubmissionState("submitting");
 
-    const ok = await onSend(fields);
-    if (!ok) {
-      setSent(false);
-      setError("Could not send. Please try again.");
+    try {
+      const ok = await onSend(fields);
+      setSubmissionState(ok ? "success" : "error");
+    } catch (error) {
+      console.error("Contact form submission handler failed", error);
+      setSubmissionState("error");
     }
   };
 
@@ -206,6 +226,11 @@ export default function ContactLetterForm({
       }}
     >
       <form
+        name="contact"
+        method="POST"
+        action="/__forms.html"
+        data-netlify="true"
+        data-netlify-honeypot="bot-field"
         className="contact-letter-form contact-letter-form--paper"
         aria-label="Send Monther a message"
         onSubmit={handleSend}
@@ -230,6 +255,18 @@ export default function ContactLetterForm({
           willChange: "transform",
         }}
       >
+        <input type="hidden" name="form-name" value="contact" />
+        <p className="contact-letter-form__honeypot" aria-hidden="true">
+          <label>
+            Do not fill this out if you are human:
+            <input
+              name="bot-field"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </label>
+        </p>
+
         <button
           type="button"
           className="contact-letter-form__close"
@@ -262,7 +299,7 @@ export default function ContactLetterForm({
           autoComplete="email"
           maxLength={160}
           required
-          disabled={sent}
+          disabled={submissionLocked}
         />
         <input
           aria-label="Subject"
@@ -271,7 +308,7 @@ export default function ContactLetterForm({
           placeholder={debug.fields.subject.placeholder}
           maxLength={160}
           required
-          disabled={sent}
+          disabled={submissionLocked}
         />
         <textarea
           aria-label="Message"
@@ -282,35 +319,36 @@ export default function ContactLetterForm({
           minLength={8}
           maxLength={1200}
           required
-          disabled={sent}
+          disabled={submissionLocked}
         />
 
-        {error ? (
+        {submissionState !== "idle" ? (
           <div
-            role="alert"
+            id="contact-form-status"
+            className={`contact-letter-form__status contact-letter-form__status--${submissionState}`}
+            role={submissionState === "error" ? "alert" : "status"}
+            aria-live={submissionState === "error" ? "assertive" : "polite"}
             style={{
-              position: "absolute",
               top: 10,
               left: debug.container.paddingLeft,
               right: debug.container.paddingRight,
-              margin: 0,
-              fontFamily:
-                "var(--font-patrick), 'Patrick Hand', var(--font-caveat), cursive",
-              fontSize: 13,
-              lineHeight: 1,
-              color: "#8d1f1f",
-              textAlign: "center",
-              pointerEvents: "none",
             }}
           >
-            {error}
+            {submissionState === "submitting"
+              ? "Sending your message…"
+              : submissionState === "success"
+                ? "Message sent. Thank you!"
+                : "Could not send. Please try again."}
           </div>
         ) : null}
 
         <button
           type="submit"
-          disabled={sent}
-          aria-live="polite"
+          className="contact-letter-form__send"
+          disabled={submissionLocked}
+          aria-describedby={
+            submissionState === "idle" ? undefined : "contact-form-status"
+          }
           style={{
             display: "flex",
             alignItems: "center",
@@ -344,20 +382,20 @@ export default function ContactLetterForm({
             lineHeight: 1,
             textAlign: "center",
             whiteSpace: "nowrap",
-            cursor: sent ? "wait" : "pointer",
+            cursor: submissionLocked ? "wait" : "pointer",
             boxShadow: `0.8px 0.7px 0 ${sendButtonPencilShadow}, -0.7px 0.9px 0 ${hexToRgba(debug.sendButton.borderColor, 0.12)}`,
-            opacity: sent
+            opacity: submissionLocked
               ? debug.sendButton.sentOpacity
               : debug.sendButton.opacity,
             transition: "transform 160ms ease, opacity 160ms ease",
             transformOrigin: "center center",
             transform: sendButtonTransform(
               debug.sendButton,
-              sent ? debug.sendButton.sentScale : 1,
+              submissionLocked ? debug.sendButton.sentScale : 1,
             ),
           }}
           onMouseEnter={(event) => {
-            if (!sent) {
+            if (!submissionLocked) {
               event.currentTarget.style.transform = sendButtonTransform(
                 debug.sendButton,
                 debug.sendButton.hoverScale,
@@ -366,14 +404,20 @@ export default function ContactLetterForm({
             }
           }}
           onMouseLeave={(event) => {
-            if (!sent) {
+            if (!submissionLocked) {
               event.currentTarget.style.transform = sendButtonTransform(
                 debug.sendButton,
               );
             }
           }}
         >
-          {sent ? debug.sendButton.sendingLabel : debug.sendButton.label}
+          {submissionState === "submitting"
+            ? debug.sendButton.sendingLabel
+            : submissionState === "success"
+              ? "Sent!"
+              : submissionState === "error"
+                ? "Try again"
+                : debug.sendButton.label}
         </button>
       </form>
     </Html>

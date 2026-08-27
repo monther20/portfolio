@@ -14,21 +14,32 @@ npm run dev
 
 Open http://localhost:3000.
 
-## Deploy to Render
+A plain Next.js development server does not emulate Netlify Forms. Use the
+Netlify CLI (`netlify dev`) when you need to test the complete submission flow
+locally, or verify it on a deploy preview.
 
-The repository includes a production `Dockerfile` and a Render Blueprint in
-`render.yaml`. The image uses the locked Bun dependencies to build a minimal
-Next.js standalone server, then runs it with Node.js on Render's expected port.
+## Deploy to Netlify
 
-1. Push the repository to GitHub.
-2. In Render, select **New → Blueprint**.
-3. Connect this repository and approve the `monther-portfolio` service.
-4. After the first deploy passes its `/` health check, open the generated
-   `onrender.com` URL or attach a custom domain in the service settings.
+Netlify is the intentional production target because the contact letter uses
+Netlify Forms. `netlify.toml` pins the Bun build and Next.js publish directory;
+Netlify installs its current Next.js adapter automatically.
 
-Subsequent pushes to the connected branch deploy automatically. No Render
-build or start commands need to be entered manually because the Blueprint uses
-the included Docker image.
+1. Push the repository to GitHub and import it in Netlify with **Add new
+   project → Import an existing project**.
+2. Confirm the detected settings are `bun run build` and `.next`, then deploy.
+3. In the Netlify project UI, open **Forms**, enable form detection if needed,
+   and redeploy so Netlify detects the hidden `contact` form in
+   `public/__forms.html`.
+4. Submit a test message from a production deploy or deploy preview. Confirm it
+   appears under **Forms → contact → Verified submissions**.
+5. Add a form-submission email or webhook notification in Netlify's project
+   notification settings so new messages are monitored outside the dashboard.
+
+The visible 3D form sends URL-encoded fields to `/__forms.html`. It now shows
+accessible submitting, accepted, and failure states; the paper-airplane send
+animation starts only after Netlify returns a successful response. A successful
+UI state confirms Netlify accepted the request, while the Forms dashboard is
+the source of truth for stored delivery.
 
 ## Main customization points
 

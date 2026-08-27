@@ -497,7 +497,7 @@ export default function PaperAirplaneActor() {
     try {
       const body = new URLSearchParams({
         "form-name": "contact",
-        "bot-field": "",
+        "bot-field": fields.botField,
         email: fields.email,
         subject: fields.subject,
         message: fields.message,
@@ -514,13 +514,16 @@ export default function PaperAirplaneActor() {
         return false;
       }
 
-      sendRequested.current = true;
-      setJourneyState({ airplaneMode: "folding" });
       return true;
     } catch (error) {
       console.error("Failed to submit contact form", error);
       return false;
     }
+  }, []);
+
+  const handleSendSuccess = useCallback(() => {
+    sendRequested.current = true;
+    setJourneyState({ airplaneMode: "folding" });
   }, []);
 
   const handleClose = useCallback(() => {
@@ -567,6 +570,7 @@ export default function PaperAirplaneActor() {
           {letterOpen && (
             <ContactLetterForm
               onSend={handleSend}
+              onSuccess={handleSendSuccess}
               onClose={handleClose}
               debug={airplaneDebug.contactForm}
             />

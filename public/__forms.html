@@ -5,9 +5,23 @@
     <title>Netlify Forms</title>
   </head>
   <body>
-    <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <!-- Netlify parses this static form at deploy time. The visible form is
+         rendered inside the Three.js experience and submits to this path. -->
+    <form
+      name="contact"
+      method="POST"
+      action="/__forms.html"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+      hidden
+    >
       <input type="hidden" name="form-name" value="contact" />
-      <input name="bot-field" />
+      <p hidden>
+        <label>
+          Do not fill this out if you are human:
+          <input name="bot-field" />
+        </label>
+      </p>
       <input type="email" name="email" />
       <input name="subject" />
       <textarea name="message"></textarea>
