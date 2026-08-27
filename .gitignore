@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+/PORTFOLIO_AUDIT_AND_ROADMAP.md
 
 # debug
 npm-debug.log*
