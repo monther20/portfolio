@@ -14,6 +14,7 @@ import {
 } from "@/data/portfolio";
 import {
   AVATAR_FRAME_URLS,
+  CABINET_MODEL_URL,
   CLOUD_TEXTURE_URLS,
   CONTACT_BUTTON_TEXTURES,
   CONTACT_TEXTURES,
@@ -66,9 +67,8 @@ export const BEHIND_DOOR_ASSET_STAGES: BehindDoorAssetStage[] = [
       `${CORRIDOR_TEXTURE_BASE}/kwiatekwdoniczce.webp`,
       `${CORRIDOR_TEXTURE_BASE}/kratkawentylacyjna.webp`,
       corridor.stations[1].art,
-      `${CORRIDOR_TEXTURE_BASE}/szafkaprzod.webp`,
-      `${CORRIDOR_TEXTURE_BASE}/szafkaprzod_sides.png`,
     ]),
+    models: [CABINET_MODEL_URL],
   },
   {
     id: "window-and-airplane",
