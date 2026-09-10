@@ -14,7 +14,7 @@ import {
 } from "./roomDebug/types";
 import { useResponsiveExperience } from "../ResponsiveExperience";
 
-// Same wipe shader as the lanterns — blends from texBase to texOn top-to-bottom
+// Wipe shader that blends from texBase to texOn top-to-bottom.
 const DoorWipeMaterial = shaderMaterial(
   {
     texBase: null,

@@ -1,6 +1,8 @@
 export const CABINET_MODEL_URL = "/cabinet-3.glb";
 export const PAPER_AIRPLANE_MODEL_URL = "/animated paper-plane.glb";
 export const ROOM_FURNITURE_MODEL_URL = "/chair & table.glb";
+export const ROOM_LANTERN_MODEL_URL =
+  "/vintage-pencil-lantern/vintage-pencil-lantern.meshopt.glb";
 
 const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";

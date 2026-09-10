@@ -1,0 +1,25 @@
+{
+  "info": {
+    "calls": 8,
+    "triangles": 4170,
+    "textures": 1,
+    "geometries": 8
+  },
+  "measurements": {
+    "off": {
+      "calls": 7,
+      "triangles": 3954,
+      "glassEmission": 0,
+      "coreVisible": false,
+      "coreOpacity": 0
+    },
+    "on": {
+      "calls": 8,
+      "triangles": 4170,
+      "glassEmission": 1.35,
+      "coreVisible": true,
+      "coreOpacity": 1
+    }
+  },
+  "errors": []
+}

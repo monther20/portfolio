@@ -1,187 +1,155 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { useGLTF } from "@react-three/drei";
+import { type ThreeEvent, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { useFrame, extend, useThree } from "@react-three/fiber";
-import { shaderMaterial } from "@react-three/drei";
-import gsap from "gsap";
 
-const LanternMaterial = shaderMaterial(
-  {
-    texBase: null,
-    texOn: null,
-    progress: 0,
-    tintColor: new THREE.Color("#ffffff"),
-    // Manual fog uniforms — synced each frame from the scene fog
-    fogColor: new THREE.Color(1, 1, 1),
-    fogNear: 5,
-    fogFar: 55,
-  },
-  // Vertex Shader — passes fog depth to fragment
-  `
-    varying vec2 vUv;
-    varying float vFogDepth;
-    void main() {
-      vUv = uv;
-      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-      gl_Position = projectionMatrix * mvPos;
-      vFogDepth = -mvPos.z;
-    }
-  `,
-  // Fragment Shader — applies manual linear fog after colour computation
-  `
-    varying vec2 vUv;
-    varying float vFogDepth;
-    uniform sampler2D texBase;
-    uniform sampler2D texOn;
-    uniform float progress;
-    uniform vec3 tintColor;
-    uniform vec3 fogColor;
-    uniform float fogNear;
-    uniform float fogFar;
+import { ROOM_LANTERN_MODEL_URL } from "./assetPaths";
 
-    void main() {
-      vec4 base = texture2D(texBase, vUv);
-      vec4 on   = texture2D(texOn,   vUv);
+type LanternControls = {
+  setLight: (on: boolean, intensity?: number) => void;
+  dispose: () => void;
+};
 
-      // Map progress from [0, 1] to [-0.2, 1.2] to ensure the soft edge fully clears
-      float p = progress * 1.4 - 0.2;
+function createLanternControls(
+  root: THREE.Object3D,
+  spillLight: boolean,
+): LanternControls {
+  const glass = root.getObjectByName("Glass_Panels");
+  const interior = root.getObjectByName("Interior_Emissive_Light");
 
-      // Top-to-bottom wipe: reveal line Y moves from 1.0 down to 0.0
-      float Y = 1.0 - p;
-
-      // Smoothstep creates a soft gradient at the wipe edge
-      float mixVal = smoothstep(Y - 0.15, Y + 0.15, vUv.y);
-
-      vec4 finalColor = mix(base, on, mixVal);
-
-      // Alpha-test threshold
-      if (finalColor.a < 0.01) discard;
-
-      gl_FragColor = finalColor * vec4(tintColor, 1.0);
-
-      // Apply linear fog — blends output toward fogColor with distance
-      float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
-      gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
-    }
-  `
-);
-
-extend({ LanternMaterial });
-
-declare module "@react-three/fiber" {
-  interface ThreeElements {
-    lanternMaterial: any;
+  if (!(glass instanceof THREE.Mesh) || !(interior instanceof THREE.Mesh)) {
+    throw new Error("The lantern model is missing its controllable meshes.");
   }
+  if (
+    !(glass.material instanceof THREE.MeshStandardMaterial) ||
+    !(interior.material instanceof THREE.MeshStandardMaterial)
+  ) {
+    throw new Error("The lantern model has unexpected light materials.");
+  }
+
+  glass.material = glass.material.clone();
+  interior.material = interior.material.clone();
+  glass.material.depthWrite = false;
+  glass.material.side = THREE.FrontSide;
+  glass.material.roughness = 1;
+  glass.renderOrder = 2;
+  interior.renderOrder = 1;
+  interior.material.toneMapped = false;
+
+  const pointLight = spillLight
+    ? new THREE.PointLight(0xffc080, 0, 5.5, 2)
+    : null;
+  if (pointLight) {
+    pointLight.position.set(0, 0.3, 0.35);
+    pointLight.castShadow = false;
+    root.add(pointLight);
+  }
+
+  return {
+    setLight(on, intensity = 1) {
+      const power = on ? Math.max(0, intensity) : 0;
+      interior.visible = power > 0;
+      interior.material.opacity = power > 0 ? 1 : 0;
+      glass.material.color.set(on ? 0xffe4b9 : 0xbcbcbc);
+      glass.material.emissive.set(0xffae50);
+      glass.material.emissiveIntensity = power * 1.35;
+      interior.material.emissive.set(0xffd59c);
+      interior.material.emissiveIntensity = power * 3;
+      interior.material.color.set(on ? 0xffe5c4 : 0x505050);
+      if (pointLight) pointLight.intensity = power * 0.1;
+    },
+    dispose() {
+      glass.material.dispose();
+      interior.material.dispose();
+      pointLight?.removeFromParent();
+    },
+  };
 }
 
+/** Clickable, independently controlled instance of the pencil lantern model. */
 export default function Lantern({
   position,
   rotation = [0, 0, 0],
   scale = [1, 1, 1],
   visible = true,
   renderOrder = 0,
-  texBase,
-  texOn,
-  isNight,
-  isHovered = false,
+  on = false,
+  intensity = 1,
+  spillLight = false,
   onClick,
-  onPointerOver,
-  onPointerOut,
 }: {
   position: [number, number, number];
   rotation?: [number, number, number];
   scale?: [number, number, number];
   visible?: boolean;
   renderOrder?: number;
-  texBase: THREE.Texture;
-  texOn: THREE.Texture;
-  isNight: boolean;
-  isHovered?: boolean;
+  on?: boolean;
+  intensity?: number;
+  spillLight?: boolean;
   onClick?: () => void;
-  onPointerOver?: (e: any) => void;
-  onPointerOut?: (e: any) => void;
 }) {
-  const materialRef = useRef<any>(null);
-  const { scene } = useThree();
-  const interactive = Boolean(onClick || onPointerOver || onPointerOut);
+  const gltf = useGLTF(ROOM_LANTERN_MODEL_URL);
+  const instance = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  const invalidate = useThree((state) => state.invalidate);
 
-  // Sync the manual fog uniforms with the scene's live fog each frame
-  useFrame(() => {
-    if (materialRef.current && scene.fog instanceof THREE.Fog) {
-      materialRef.current.fogColor = scene.fog.color;
-      materialRef.current.fogNear  = scene.fog.near;
-      materialRef.current.fogFar   = scene.fog.far;
-    }
-  });
-
-  // Animate the progress uniform when hover or night state changes
   useEffect(() => {
-    // If it's night, or if we are hovering, the light image should be fully revealed
-    const targetProgress = isNight || isHovered ? 1 : 0;
+    instance.traverse((object) => {
+      if (object instanceof THREE.Mesh) object.renderOrder = renderOrder;
+    });
+  }, [instance, renderOrder]);
 
-    // Tint the lantern darker when it's night
-    const targetTint = new THREE.Color(isNight ? "#EEEEEE" : "#ffffff");
+  useEffect(() => {
+    const controls = createLanternControls(instance, spillLight);
+    instance.userData.lanternControls = controls;
+    invalidate();
 
-    if (materialRef.current) {
-      gsap.to(materialRef.current, {
-        progress: targetProgress,
-        duration: 0.35,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-      gsap.to(materialRef.current.tintColor, {
-        r: targetTint.r,
-        g: targetTint.g,
-        b: targetTint.b,
-        duration: 1.5,
-        ease: "power2.inOut",
-      });
-    }
-  }, [isNight, isHovered]);
+    return () => {
+      controls.dispose();
+      delete instance.userData.lanternControls;
+    };
+  }, [instance, invalidate, spillLight]);
+
+  useEffect(() => {
+    const controls = instance.userData.lanternControls as
+      | LanternControls
+      | undefined;
+    controls?.setLight(on, intensity);
+    invalidate();
+  }, [instance, intensity, invalidate, on]);
+
+  const handleClick = (event: ThreeEvent<MouseEvent>) => {
+    event.stopPropagation();
+    if (event.delta > 4) return;
+    onClick?.();
+  };
 
   return (
-    <mesh
+    <primitive
+      object={instance}
+      dispose={null}
       position={position}
       rotation={rotation}
       scale={scale}
       visible={visible}
-      renderOrder={renderOrder}
-      onClick={
-        interactive
-          ? (e) => {
-              e.stopPropagation();
-              onClick?.();
-            }
-          : undefined
-      }
+      onClick={onClick ? handleClick : undefined}
       onPointerOver={
-        interactive
-          ? (e) => {
-              e.stopPropagation();
+        onClick
+          ? (event: ThreeEvent<PointerEvent>) => {
+              event.stopPropagation();
               document.body.style.cursor = "pointer";
-              onPointerOver?.(e);
             }
           : undefined
       }
       onPointerOut={
-        interactive
-          ? (e) => {
-              e.stopPropagation();
+        onClick
+          ? (event: ThreeEvent<PointerEvent>) => {
+              event.stopPropagation();
               document.body.style.cursor = "auto";
-              onPointerOut?.(e);
             }
           : undefined
       }
-    >
-      <planeGeometry args={[1.38, 3.39]} />
-      <lanternMaterial
-        ref={materialRef}
-        texBase={texBase}
-        texOn={texOn}
-        transparent
-        depthWrite={false}
-      />
-    </mesh>
+    />
   );
 }

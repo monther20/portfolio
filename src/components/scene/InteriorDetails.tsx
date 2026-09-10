@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import gsap from "gsap";
@@ -25,9 +25,16 @@ export default function InteriorDetails({
 }) {
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const pathMatRef = useRef<THREE.MeshStandardMaterial>(null);
+  const [leftLanternOn, setLeftLanternOn] = useState(isNight);
+  const [rightLanternOn, setRightLanternOn] = useState(isNight);
   const { lights, materials, meshes } = debug;
   const floorColor = isNight ? materials.floor.nightColor ?? materials.floor.color : materials.floor.color;
   const pathColor = isNight ? materials.stonePath.nightColor ?? materials.stonePath.color : materials.stonePath.color;
+
+  useEffect(() => {
+    setLeftLanternOn(isNight);
+    setRightLanternOn(isNight);
+  }, [isNight]);
 
   useEffect(() => {
     const floorTargetColor = new THREE.Color(floorColor);
@@ -68,8 +75,6 @@ export default function InteriorDetails({
     return t;
   }, [baseFloorTexture]);
 
-  const lightTex = useLoader(THREE.TextureLoader, "/textures/room/light.webp");
-  const lightOnTex = useLoader(THREE.TextureLoader, "/textures/room/light_on.webp");
   const rock1Tex = useLoader(THREE.TextureLoader, "/textures/room/rock-1.webp");
   const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/room/rock_and_herp.webp");
   const herpTex = useLoader(THREE.TextureLoader, "/textures/room/herp.webp");
@@ -136,16 +141,17 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.leftLantern.scale)}
           visible={meshes.leftLantern.visible}
           renderOrder={meshes.leftLantern.renderOrder}
-          texBase={lightTex}
-          texOn={lightOnTex}
-          isNight={isNight}
+          on={leftLanternOn}
+          intensity={1}
+          spillLight
+          onClick={() => setLeftLanternOn((current) => !current)}
         />
 
         {/* Left lantern – SpotLight fans out to the LEFT */}
         <SpotlightCone
           position={vector3Tuple(lights.leftLanternSpot.position)}
           targetPosition={vector3Tuple(lights.leftLanternSpot.target)}
-          isNight={isNight}
+          isNight={leftLanternOn}
           visible={lights.leftLanternSpot.visible}
           intensity={lights.leftLanternSpot.intensity}
           angle={lights.leftLanternSpot.angle}
@@ -161,7 +167,7 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.leftFloorGlow.scale)}
           visible={meshes.leftFloorGlow.visible}
           renderOrder={meshes.leftFloorGlow.renderOrder}
-          isNight={isNight}
+          isNight={leftLanternOn}
           radius={meshes.leftFloorGlow.radius}
           color={meshes.leftFloorGlow.color}
           maxOpacity={meshes.leftFloorGlow.maxOpacity}
@@ -174,16 +180,17 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.rightLantern.scale)}
           visible={meshes.rightLantern.visible}
           renderOrder={meshes.rightLantern.renderOrder}
-          texBase={lightTex}
-          texOn={lightOnTex}
-          isNight={isNight}
+          on={rightLanternOn}
+          intensity={1}
+          spillLight
+          onClick={() => setRightLanternOn((current) => !current)}
         />
 
         {/* Right lantern – SpotLight fans out to the RIGHT */}
         <SpotlightCone
           position={vector3Tuple(lights.rightLanternSpot.position)}
           targetPosition={vector3Tuple(lights.rightLanternSpot.target)}
-          isNight={isNight}
+          isNight={rightLanternOn}
           visible={lights.rightLanternSpot.visible}
           intensity={lights.rightLanternSpot.intensity}
           angle={lights.rightLanternSpot.angle}
@@ -199,7 +206,7 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.rightFloorGlow.scale)}
           visible={meshes.rightFloorGlow.visible}
           renderOrder={meshes.rightFloorGlow.renderOrder}
-          isNight={isNight}
+          isNight={rightLanternOn}
           radius={meshes.rightFloorGlow.radius}
           color={meshes.rightFloorGlow.color}
           maxOpacity={meshes.rightFloorGlow.maxOpacity}
