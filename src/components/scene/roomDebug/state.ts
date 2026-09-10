@@ -1,13 +1,9 @@
-import type { ShadowConfig } from "../shadowConfig";
 import {
-  CHAIR_ASPECT,
   HERP_ASPECT,
   ROCK1_ASPECT,
   ROCKH_ASPECT,
-  TABLE_ASPECT,
 } from "../room/floorDecalLayout";
 import {
-  cloneShadowConfig,
   createTransform,
   createVector3,
   type FloorDecalGroupDebug,
@@ -41,9 +37,7 @@ const createFloorDecalItem = (
 });
 
 /** All default coordinates/colors of the room scene. */
-export function createRoomDebugState(
-  shadowConfig: ShadowConfig,
-): RoomDebugState {
+export function createRoomDebugState(): RoomDebugState {
   return {
     scene: {
       dayBackgroundColor: "#ffffff",
@@ -338,34 +332,6 @@ export function createRoomDebugState(
             ),
           ],
         },
-        table: {
-          group: createFloorDecalGroup(),
-          items: [
-            createFloorDecalItem(
-              "table-01",
-              "Table",
-              "table",
-              TABLE_ASPECT,
-              [-4.2, -6.0, -8.5],
-              3.2,
-              30,
-            ),
-          ],
-        },
-        chair: {
-          group: createFloorDecalGroup(),
-          items: [
-            createFloorDecalItem(
-              "chair-01",
-              "Chair",
-              "chair",
-              CHAIR_ASPECT,
-              [-6.8, -6.4, -8.5],
-              4.5,
-              30,
-            ),
-          ],
-        },
       },
     },
     materials: {
@@ -405,6 +371,5 @@ export function createRoomDebugState(
         wireframe: false,
       },
     },
-    shadows: cloneShadowConfig(shadowConfig),
   };
 }

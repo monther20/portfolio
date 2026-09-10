@@ -6,13 +6,9 @@ import { useLoader } from "@react-three/fiber";
 import gsap from "gsap";
 import SpotlightCone, { FloorGlow } from "./SpotlightCone";
 import Lantern from "./Lantern";
-import type { ShadowConfig } from "./shadowConfig";
-import { FloorDecal, WallShadow } from "./room/decals";
-import {
-  buildFloorDecals,
-  CHAIR_ASPECT,
-  TABLE_ASPECT,
-} from "./room/floorDecalLayout";
+import { FloorDecal } from "./room/decals";
+import { buildFloorDecals } from "./room/floorDecalLayout";
+import RoomFurniture from "./room/RoomFurniture";
 import {
   rotationTuple,
   scaleTuple,
@@ -22,11 +18,9 @@ import {
 
 export default function InteriorDetails({
   isNight,
-  shadowConfig,
   debug,
 }: {
   isNight: boolean;
-  shadowConfig: ShadowConfig;
   debug: RoomDebugState;
 }) {
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
@@ -80,18 +74,12 @@ export default function InteriorDetails({
   const rockHerpTex = useLoader(THREE.TextureLoader, "/textures/room/rock_and_herp.webp");
   const herpTex = useLoader(THREE.TextureLoader, "/textures/room/herp.webp");
   const stonePathTex = useLoader(THREE.TextureLoader, "/textures/room/stone-path.webp");
-  const tableTex = useLoader(THREE.TextureLoader, "/textures/shared/table.webp");
-  const chairTex = useLoader(THREE.TextureLoader, "/textures/room/chair.webp");
-  const tableShadowTex = useLoader(THREE.TextureLoader, "/textures/room/table-shadow.webp");
-  const chairShadowTex = useLoader(THREE.TextureLoader, "/textures/room/chair-shadow.webp");
 
   const decals = buildFloorDecals(
     {
       rock1: rock1Tex,
       rockHerp: rockHerpTex,
       herp: herpTex,
-      table: tableTex,
-      chair: chairTex,
     },
     debug.interiorDetails.floorDecals,
   );
@@ -222,23 +210,7 @@ export default function InteriorDetails({
         <FloorDecal key={d.id} texture={d.tex} position={d.pos} scale={d.s} aspect={d.a} isNight={isNight} renderOrder={d.ro ?? 0} />
       ))}
 
-      {/* Table/chair shadows projected onto the back wall during night mode. */}
-      <WallShadow
-        texture={tableShadowTex}
-        position={[shadowConfig.table.x, shadowConfig.table.y, shadowConfig.table.z]}
-        scale={shadowConfig.table.scale}
-        aspect={TABLE_ASPECT}
-        isNight={isNight}
-        maxOpacity={shadowConfig.table.maxOpacity}
-      />
-      <WallShadow
-        texture={chairShadowTex}
-        position={[shadowConfig.chair.x, shadowConfig.chair.y, shadowConfig.chair.z]}
-        scale={shadowConfig.chair.scale}
-        aspect={CHAIR_ASPECT}
-        isNight={isNight}
-        maxOpacity={shadowConfig.chair.maxOpacity}
-      />
+      <RoomFurniture />
 
       {/* Interior Ambient Light - Dim when night */}
       {lights.interiorAmbient.visible && (

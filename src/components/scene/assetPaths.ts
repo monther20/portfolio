@@ -1,5 +1,6 @@
 export const CABINET_MODEL_URL = "/cabinet-3.glb";
 export const PAPER_AIRPLANE_MODEL_URL = "/animated paper-plane.glb";
+export const ROOM_FURNITURE_MODEL_URL = "/chair & table.glb";
 
 const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";
@@ -8,7 +9,8 @@ const CLOUD_TEXTURE_BASE = "/textures/journey/clouds";
 const AVATAR_FRAME_COUNT = 33;
 export const AVATAR_FRAME_URLS = Array.from(
   { length: AVATAR_FRAME_COUNT },
-  (_, index) => `${CORRIDOR_TEXTURE_BASE}/avatar_anim_warp/${String(index + 1).padStart(3, "0")}.webp`,
+  (_, index) =>
+    `${CORRIDOR_TEXTURE_BASE}/avatar_anim_warp/${String(index + 1).padStart(3, "0")}.webp`,
 );
 
 const CLOUD_TEXTURE_FILES = [
@@ -22,7 +24,9 @@ const CLOUD_TEXTURE_FILES = [
   "f6e358bc-d27c-41dd-95f4-6787a835c41e",
 ] as const;
 
-export const CLOUD_TEXTURE_URLS = CLOUD_TEXTURE_FILES.map((file) => `${CLOUD_TEXTURE_BASE}/${file}.webp`);
+export const CLOUD_TEXTURE_URLS = CLOUD_TEXTURE_FILES.map(
+  (file) => `${CLOUD_TEXTURE_BASE}/${file}.webp`,
+);
 
 export type ContactButtonKey = "message" | "github" | "linkedin";
 

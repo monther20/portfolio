@@ -1,5 +1,3 @@
-import type { ShadowConfig } from "../shadowConfig";
-
 export type Vector3Debug = {
   x: number;
   y: number;
@@ -48,7 +46,7 @@ type FloorGlowDebug = TransformDebug & {
   maxOpacity: number;
 };
 
-export type FloorDecalTextureKey = "rock1" | "rockHerp" | "herp" | "table" | "chair";
+export type FloorDecalTextureKey = "rock1" | "rockHerp" | "herp";
 
 export type FloorDecalGroupDebug = {
   visible: boolean;
@@ -76,8 +74,6 @@ export type FloorDecalsDebug = {
   all: FloorDecalGroupDebug;
   stones: FloorDecalCategoryDebug;
   herps: FloorDecalCategoryDebug;
-  table: FloorDecalCategoryDebug;
-  chair: FloorDecalCategoryDebug;
 };
 
 type InteriorDetailsDebug = {
@@ -125,7 +121,6 @@ export type RoomDebugState = {
     doorFrame: MaterialDebug;
     doorPanel: MaterialDebug;
   };
-  shadows: ShadowConfig;
 };
 
 export function createVector3(x = 0, y = 0, z = 0): Vector3Debug {
@@ -144,13 +139,6 @@ export function createTransform(
     rotation: createVector3(...rotation),
     scale: createVector3(...scale),
     renderOrder,
-  };
-}
-
-export function cloneShadowConfig(config: ShadowConfig): ShadowConfig {
-  return {
-    table: { ...config.table },
-    chair: { ...config.chair },
   };
 }
 

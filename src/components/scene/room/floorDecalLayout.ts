@@ -12,8 +12,6 @@ import type {
 export const ROCK1_ASPECT = 401 / 157; // ~2.55
 export const ROCKH_ASPECT = 412 / 160; // ~2.575
 export const HERP_ASPECT = 490 / 262; // ~1.87
-export const TABLE_ASPECT = 1536 / 1024; // 1.5
-export const CHAIR_ASPECT = 1254 / 1254; // 1.0
 
 export type FloorDecalSpec = {
   id: string;
@@ -54,8 +52,6 @@ const FLOOR_DECAL_RENDER_SEQUENCE = [
   "herp-06",
   "herp-07",
   "herp-08",
-  "table-01",
-  "chair-01",
 ];
 
 const floorDecalRenderOrder = new Map(
@@ -96,7 +92,7 @@ const buildCategoryDecals = (
     return [{ ...placement, tex: textures[textureKey] }];
   });
 
-/** The hand-placed scatter of rocks/plants plus the table & chair decals. */
+/** The hand-placed scatter of rocks and plants. */
 export function buildFloorDecals(
   textures: DecalTextures,
   debug: FloorDecalsDebug,
@@ -104,8 +100,6 @@ export function buildFloorDecals(
   return [
     ...buildCategoryDecals(debug.stones, debug.all, textures),
     ...buildCategoryDecals(debug.herps, debug.all, textures),
-    ...buildCategoryDecals(debug.table, debug.all, textures),
-    ...buildCategoryDecals(debug.chair, debug.all, textures),
   ].sort(
     (a, b) =>
       (floorDecalRenderOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) -

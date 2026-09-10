@@ -30,7 +30,7 @@ export default function CorridorCabinet() {
   const { camera } = useThree();
   const gltf = useGLTF(CABINET_MODEL_URL);
   const modelScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
-  const { actions, mixer } = useAnimations(gltf.animations, modelScene);
+  const { actions } = useAnimations(gltf.animations, modelScene);
 
   useFogFade(cabinetRef);
 
@@ -126,9 +126,6 @@ export default function CorridorCabinet() {
   }, [close, open]);
 
   useFrame((_, delta) => {
-    const action = actions[DRAWER_CLIP];
-    if (action?.isRunning()) mixer.update(delta);
-
     const lerp = 1 - Math.pow(0.0001, delta);
     if (open) {
       camera.position.lerp(focusPosition.current, lerp);

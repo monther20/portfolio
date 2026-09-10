@@ -9,7 +9,6 @@ import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
 import { CORRIDOR } from "./journeyConfig";
-import { DEFAULT_SHADOW_CONFIG } from "./shadowConfig";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 import { useResponsiveExperience } from "../ResponsiveExperience";
@@ -31,10 +30,9 @@ export default function RoomScene({
   const debugRef = useRef<RoomDebugState>(null!);
   const { camera, scene } = useThree();
   const responsive = useResponsiveExperience();
-  const shadowConfig = DEFAULT_SHADOW_CONFIG;
 
   if (!debugRef.current) {
-    debugRef.current = createRoomDebugState(shadowConfig);
+    debugRef.current = createRoomDebugState();
   }
 
   const debug = debugRef.current;
@@ -132,11 +130,7 @@ export default function RoomScene({
           />
         )}
 
-      <InteriorDetails
-        isNight={isNight}
-        shadowConfig={shadowConfig}
-        debug={debug}
-      />
+      <InteriorDetails isNight={isNight} debug={debug} />
       <ExteriorRoof debug={debug} />
       <AnimatedDoor
         isOpen={isOpen}
