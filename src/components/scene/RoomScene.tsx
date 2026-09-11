@@ -9,6 +9,7 @@ import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";
 import { CORRIDOR } from "./journeyConfig";
+import { ROOM_ENVIRONMENT_URL } from "./assetPaths";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 import { useResponsiveExperience } from "../ResponsiveExperience";
@@ -123,7 +124,7 @@ export default function RoomScene({
       {debug.environment.studioHdri.visible &&
         responsive.qualityTier !== "low" && (
           <Environment
-            files="/monochrome_studio_02_1k.hdr"
+            files={ROOM_ENVIRONMENT_URL}
             environmentIntensity={
               debug.environment.studioHdri.environmentIntensity
             }

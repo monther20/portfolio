@@ -1,8 +1,9 @@
-export const CABINET_MODEL_URL = "/cabinet-3.glb";
-export const PAPER_AIRPLANE_MODEL_URL = "/animated paper-plane.glb";
-export const ROOM_FURNITURE_MODEL_URL = "/chair-table/chair-table.meshopt.glb";
-export const ROOM_LANTERN_MODEL_URL =
-  "/vintage-pencil-lantern/vintage-pencil-lantern.meshopt.glb";
+export const CABINET_MODEL_URL = "/models/cabinet-3.glb";
+export const PAPER_AIRPLANE_MODEL_URL = "/models/animated-paper-plane.glb";
+export const ROOM_FURNITURE_MODEL_URL = "/models/chair-table.meshopt.glb";
+export const ROOM_LANTERN_MODEL_URL = "/models/vintage-pencil-lantern.meshopt.glb";
+export const ROOM_DOOR_MODEL_URL = "/models/fantasy-door.glb";
+export const ROOM_ENVIRONMENT_URL = "/environments/monochrome_studio_02_1k.hdr";
 
 const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";

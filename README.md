@@ -56,8 +56,16 @@ src/app/                       Next.js app route files and global CSS
 src/components/scene/           3D room, door, camera, sprites, HUD, and interactions
 src/components/scene/sections/  About, Skills, Projects, and Contact sections
 src/data/portfolio.ts           Editable portfolio data
-public/textures/                Hand-drawn and painted scene assets
+public/models/                  GLB models (shared flat directory)
+public/environments/            HDR environment maps
+public/fonts/                   Scene fonts and their licenses
+public/textures/                Hand-drawn and painted assets grouped by scene
+public/__forms.html             Netlify Forms detection and submission endpoint
 ```
+
+Model and environment URLs are centralized in `src/components/scene/assetPaths.ts`.
+`public/models/chair-table.glb` is the original furniture export; the site loads
+`chair-table.meshopt.glb` instead. Keep asset filenames URL-friendly (no spaces).
 
 ## Notes
 

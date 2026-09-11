@@ -11,8 +11,8 @@ import {
   type RoomDebugState,
 } from "../roomDebug/types";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
+import { ROOM_DOOR_MODEL_URL } from "../assetPaths";
 
-const DOOR_URL = "/door/fantasy-door.glb";
 const LEAF_WIDTH = 1.04;
 const LEAF_HEIGHT = 2.05;
 // Fit the existing opening. Equal X/Z scale keeps the hinge swing circular.
@@ -76,7 +76,7 @@ export default function AnimatedDoor({
   onClick?: () => void;
   debug: RoomDebugState;
 }) {
-  const { scene } = useGLTF(DOOR_URL);
+  const { scene } = useGLTF(ROOM_DOOR_MODEL_URL);
   const frameTexture = useTexture("/textures/room/door_frame.webp");
   const frameMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
   const readyReportedRef = useRef(false);
