@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
-import gsap from "gsap";
 
 // Real Three.js SpotLight that illuminates surrounding geometry
 export default function SpotlightCone({
@@ -44,17 +43,6 @@ export default function SpotlightCone({
     };
   }, [targetPosition[0], targetPosition[1], targetPosition[2]]);
 
-  // Animate intensity on day/night toggle
-  useEffect(() => {
-    if (lightRef.current) {
-      gsap.to(lightRef.current, {
-        intensity: isNight && visible ? intensity : 0,
-        duration: 1.5,
-        ease: "power2.inOut",
-      });
-    }
-  }, [isNight, intensity, visible]);
-
   return (
     <spotLight
       ref={lightRef}
@@ -62,7 +50,7 @@ export default function SpotlightCone({
       visible={visible}
       angle={angle}
       penumbra={penumbra}
-      intensity={0}
+      intensity={isNight && visible ? intensity : 0}
       color={color}
       distance={distance}
       decay={decay}
@@ -93,26 +81,13 @@ export function FloorGlow({
   color?: string;
   maxOpacity?: number;
 }) {
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-
-  useEffect(() => {
-    if (materialRef.current) {
-      gsap.to(materialRef.current, {
-        opacity: isNight && visible ? maxOpacity : 0,
-        duration: 1.5,
-        ease: "power2.inOut",
-      });
-    }
-  }, [isNight, maxOpacity, visible]);
-
   return (
     <mesh position={position} rotation={rotation} scale={scale} visible={visible} renderOrder={renderOrder}>
       <circleGeometry args={[radius, 32]} />
       <meshBasicMaterial
-        ref={materialRef}
         color={color}
         transparent
-        opacity={0}
+        opacity={isNight && visible ? maxOpacity : 0}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
       />

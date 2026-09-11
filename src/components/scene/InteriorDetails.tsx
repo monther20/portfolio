@@ -25,15 +25,14 @@ export default function InteriorDetails({
 }) {
   const floorMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const pathMatRef = useRef<THREE.MeshStandardMaterial>(null);
-  const [leftLanternOn, setLeftLanternOn] = useState(isNight);
-  const [rightLanternOn, setRightLanternOn] = useState(isNight);
+  const [lanternsOn, setLanternsOn] = useState(isNight);
+  const toggleLanterns = () => setLanternsOn((current) => !current);
   const { lights, materials, meshes } = debug;
   const floorColor = isNight ? materials.floor.nightColor ?? materials.floor.color : materials.floor.color;
   const pathColor = isNight ? materials.stonePath.nightColor ?? materials.stonePath.color : materials.stonePath.color;
 
   useEffect(() => {
-    setLeftLanternOn(isNight);
-    setRightLanternOn(isNight);
+    setLanternsOn(isNight);
   }, [isNight]);
 
   useEffect(() => {
@@ -141,17 +140,17 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.leftLantern.scale)}
           visible={meshes.leftLantern.visible}
           renderOrder={meshes.leftLantern.renderOrder}
-          on={leftLanternOn}
+          on={lanternsOn}
           intensity={1}
           spillLight
-          onClick={() => setLeftLanternOn((current) => !current)}
+          onClick={toggleLanterns}
         />
 
         {/* Left lantern – SpotLight fans out to the LEFT */}
         <SpotlightCone
           position={vector3Tuple(lights.leftLanternSpot.position)}
           targetPosition={vector3Tuple(lights.leftLanternSpot.target)}
-          isNight={leftLanternOn}
+          isNight={lanternsOn}
           visible={lights.leftLanternSpot.visible}
           intensity={lights.leftLanternSpot.intensity}
           angle={lights.leftLanternSpot.angle}
@@ -167,7 +166,7 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.leftFloorGlow.scale)}
           visible={meshes.leftFloorGlow.visible}
           renderOrder={meshes.leftFloorGlow.renderOrder}
-          isNight={leftLanternOn}
+          isNight={lanternsOn}
           radius={meshes.leftFloorGlow.radius}
           color={meshes.leftFloorGlow.color}
           maxOpacity={meshes.leftFloorGlow.maxOpacity}
@@ -180,17 +179,17 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.rightLantern.scale)}
           visible={meshes.rightLantern.visible}
           renderOrder={meshes.rightLantern.renderOrder}
-          on={rightLanternOn}
+          on={lanternsOn}
           intensity={1}
           spillLight
-          onClick={() => setRightLanternOn((current) => !current)}
+          onClick={toggleLanterns}
         />
 
         {/* Right lantern – SpotLight fans out to the RIGHT */}
         <SpotlightCone
           position={vector3Tuple(lights.rightLanternSpot.position)}
           targetPosition={vector3Tuple(lights.rightLanternSpot.target)}
-          isNight={rightLanternOn}
+          isNight={lanternsOn}
           visible={lights.rightLanternSpot.visible}
           intensity={lights.rightLanternSpot.intensity}
           angle={lights.rightLanternSpot.angle}
@@ -206,7 +205,7 @@ export default function InteriorDetails({
           scale={scaleTuple(meshes.rightFloorGlow.scale)}
           visible={meshes.rightFloorGlow.visible}
           renderOrder={meshes.rightFloorGlow.renderOrder}
-          isNight={rightLanternOn}
+          isNight={lanternsOn}
           radius={meshes.rightFloorGlow.radius}
           color={meshes.rightFloorGlow.color}
           maxOpacity={meshes.rightFloorGlow.maxOpacity}
