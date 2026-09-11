@@ -4,7 +4,7 @@ import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
 import { Environment } from "@react-three/drei";
-import AnimatedDoor from "./AnimatedDoor";
+import AnimatedDoor from "./room/AnimatedDoor";
 import ExteriorRoof from "./ExteriorRoof";
 import InteriorDetails from "./InteriorDetails";
 import JourneyScene from "./JourneyScene";

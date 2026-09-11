@@ -98,7 +98,7 @@ export function createRoomDebugState(): RoomDebugState {
         [0.84, 0.67, 1],
       ),
       doorRoot: createTransform([0, -0.18, -15.9], [0, 0, 0], [0.6, 0.6, 0.6]),
-      doorFrame: createTransform([0, 0, 0.2]),
+      doorFrame: createTransform([0, 0, 0.2], [0, 0, 0], [1.01, 1.05, 1]),
       doorPanelPivot: createTransform([-2.555, -0.22, 0]),
       doorPanelSurface: createTransform([0, -0.1, 0]),
       leftLantern: createTransform(

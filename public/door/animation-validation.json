@@ -1,0 +1,20 @@
+[
+  {
+    "clip": "Door_Open",
+    "keys": 25,
+    "start_degrees": 0.0,
+    "end_degrees": 90.0,
+    "duration_seconds": 1.2,
+    "only_y_rotation": true,
+    "unit_quaternions": true
+  },
+  {
+    "clip": "Door_Close",
+    "keys": 25,
+    "start_degrees": 90.0,
+    "end_degrees": 0.0,
+    "duration_seconds": 1.2,
+    "only_y_rotation": true,
+    "unit_quaternions": true
+  }
+]
