@@ -15,6 +15,7 @@ import BeachContactSection from "./sections/BeachContactSection";
 import { JOURNEY } from "./journeyConfig";
 import { CLOUD_TEXTURE_URLS } from "./assetPaths";
 import { useResponsiveExperience } from "../ResponsiveExperience";
+import NightSky from "./dayNight/NightSky";
 
 const CLOUD_START_Z = JOURNEY.windowExitZ - 2;
 const CLOUD_CHUNKS = 8;
@@ -143,6 +144,7 @@ export default function JourneyScene({ scrollEnabled }: { scrollEnabled: boolean
 
       {loadDistantScenes ? (
         <>
+          <NightSky />
           <Suspense fallback={null}>
             <FlightClouds />
           </Suspense>

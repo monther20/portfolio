@@ -1,3 +1,4 @@
+import { DAY_CONFIG } from "../dayNight/config";
 import {
   HERP_ASPECT,
   ROCK1_ASPECT,
@@ -40,47 +41,22 @@ const createFloorDecalItem = (
 export function createRoomDebugState(): RoomDebugState {
   return {
     scene: {
-      dayBackgroundColor: "#ffffff",
-      nightBackgroundColor: "#555566",
-      dayFogColor: "#ffffff",
-      nightFogColor: "#555566",
+      dayBackgroundColor: DAY_CONFIG.background,
+      dayFogColor: DAY_CONFIG.fog,
       fogNear: 5,
       fogFar: 45,
     },
     environment: {
       studioHdri: {
         visible: true,
-        environmentIntensity: 0.2,
+        environmentIntensity: DAY_CONFIG.environmentIntensity,
       },
     },
     lights: {
       interiorAmbient: {
         visible: true,
-        color: "#ffffff",
-        dayIntensity: 2.5,
-        nightIntensity: 1,
-      },
-      leftLanternSpot: {
-        visible: true,
-        position: createVector3(-2.84, 2.59, -15.2),
-        target: createVector3(-3.08, -4.76, -14.1),
-        intensity: 20,
-        angle: 1.2,
-        penumbra: 0.13,
-        distance: 12.5,
-        decay: 0.6,
-        color: "#ffe4a8",
-      },
-      rightLanternSpot: {
-        visible: true,
-        position: createVector3(2.58, 2.53, -15.1),
-        target: createVector3(4.56, -18.08, -14.1),
-        intensity: 24,
-        angle: 1.2,
-        penumbra: 0.13,
-        distance: 12.5,
-        decay: 0.6,
-        color: "#ffe4a8",
+        color: DAY_CONFIG.ambient.color,
+        dayIntensity: DAY_CONFIG.ambient.intensity,
       },
     },
     meshes: {
@@ -111,18 +87,6 @@ export function createRoomDebugState(): RoomDebugState {
         [0, 0, 0],
         [2.5, 2.5, 2.5],
       ),
-      leftFloorGlow: {
-        ...createTransform([-3.2, -4.79, -27.1], [-Math.PI / 2, 0, 0]),
-        radius: 5.8,
-        color: "#ffe4a0",
-        maxOpacity: 0.35,
-      },
-      rightFloorGlow: {
-        ...createTransform([4.7, -4.8, -22.6], [-Math.PI / 2, 0, 0]),
-        radius: 2.5,
-        color: "#ffe4a0",
-        maxOpacity: 0.55,
-      },
     },
     interiorDetails: {
       floorDecals: {
@@ -337,7 +301,6 @@ export function createRoomDebugState(): RoomDebugState {
     materials: {
       floor: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 1,
         metalness: 0,
         bumpScale: 0.02,
@@ -345,7 +308,6 @@ export function createRoomDebugState(): RoomDebugState {
       },
       stonePath: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 0.9,
         metalness: 0,
         wireframe: false,
@@ -358,14 +320,12 @@ export function createRoomDebugState(): RoomDebugState {
       },
       doorFrame: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 1,
         metalness: 0,
         wireframe: false,
       },
       doorPanel: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 1,
         metalness: 0,
         wireframe: false,

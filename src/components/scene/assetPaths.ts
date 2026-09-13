@@ -4,6 +4,8 @@ export const ROOM_FURNITURE_MODEL_URL = "/models/chair-table.meshopt.glb";
 export const ROOM_LANTERN_MODEL_URL = "/models/vintage-pencil-lantern.meshopt.glb";
 export const ROOM_DOOR_MODEL_URL = "/models/fantasy-door.glb";
 export const ROOM_ENVIRONMENT_URL = "/environments/monochrome_studio_02_1k.hdr";
+export const CORRIDOR_SCONCE_MODEL_URL = "/models/pencil-corridor-sconce.glb";
+export const CORRIDOR_PENDANT_MODEL_URL = "/models/pencil-corridor-pendant.glb";
 
 const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";

@@ -15,6 +15,7 @@ import JourneyHud from "../components/scene/JourneyHud";
 import JourneySectionNav from "../components/scene/JourneySectionNav";
 import ResponsiveCamera from "../components/scene/ResponsiveCamera";
 import BehindDoorAssetPreloader from "../components/scene/BehindDoorAssetPreloader";
+import { DAY_CONFIG } from "../components/scene/dayNight/config";
 
 function SceneReadySignal({ onReady }: { onReady: () => void }) {
   const renderedFrames = useRef(0);
@@ -190,7 +191,7 @@ function ResponsiveHallwayScene() {
       {webglSupported === true ? (
         <Canvas
           className="experience-canvas"
-          aria-label="Interactive 3D portfolio. Open the door, then scroll, swipe, or use the arrow keys to explore."
+          aria-label="Interactive 3D portfolio. Click either lantern or press N to toggle day and night. Open the door, then scroll, swipe, or use the arrow keys to explore."
           tabIndex={0}
           dpr={responsive.maxDpr}
           performance={{ min: 0.5, debounce: 200 }}
@@ -203,6 +204,7 @@ function ResponsiveHallwayScene() {
           onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
           gl={{
             toneMapping: THREE.NoToneMapping,
+            toneMappingExposure: DAY_CONFIG.exposure,
             powerPreference: "high-performance",
             antialias: true,
           }}

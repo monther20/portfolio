@@ -44,6 +44,8 @@ import {
   type PaperAirplaneDebugState,
 } from "./airplane/paperAirplaneDefaults";
 import { useResponsiveExperience } from "../ResponsiveExperience";
+import { useDayNight } from "./dayNight/DayNightProvider";
+import { NIGHT_ART } from "./dayNight/config";
 
 /** The plane's resting pose once it has landed on the boardwalk. */
 const LANDED_EULER = new THREE.Euler(0, 0.165407346410207, 0.04);
@@ -113,7 +115,41 @@ function PaperAirplaneModel({
   foldAnimationRef: MutableRefObject<AirplaneFoldAnimationControls | null>;
 }) {
   const gltf = useGLTF(PAPER_AIRPLANE_MODEL_URL);
-  const modelScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  const { transition } = useDayNight();
+  const paper = useMemo(() => {
+    const instance = gltf.scene.clone(true);
+    const materials = new Map<THREE.Material, THREE.Material>();
+    instance.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const clone = (source: THREE.Material) => {
+        if (!materials.has(source)) materials.set(source, source.clone());
+        return materials.get(source)!;
+      };
+      object.material = Array.isArray(object.material) ? object.material.map(clone) : clone(object.material);
+    });
+    const states = [...materials.values()].flatMap((material) => material instanceof THREE.MeshStandardMaterial
+      ? [{ material, emissive: material.emissive.clone(), intensity: material.emissiveIntensity, map: material.emissiveMap }] : []);
+    return { instance, materials, states, nightColor: new THREE.Color(NIGHT_ART.paperEmission), glow: NIGHT_ART.foldedPaperEmission as number };
+  }, [gltf.scene]);
+  const modelScene = paper.instance;
+
+  useEffect(() => () => paper.materials.forEach((material) => material.dispose()), [paper]);
+  useFrame((_, delta) => {
+    const amount = transition.uniforms.nightAmount.value;
+    const target = getJourneyState().contactOpen ? NIGHT_ART.letterPaperEmission : NIGHT_ART.foldedPaperEmission;
+    paper.glow = THREE.MathUtils.damp(paper.glow, target, 5, delta);
+    for (const state of paper.states) {
+      state.material.emissive.copy(state.emissive).lerp(paper.nightColor, amount);
+      state.material.emissiveIntensity = THREE.MathUtils.lerp(state.intensity, paper.glow, amount);
+      // Use the pencil atlas as the emission mask: an illuminated letter keeps
+      // its dark strokes instead of turning into a washed-out luminous rectangle.
+      const map = amount > 0 ? state.material.map ?? state.map : state.map;
+      if (state.material.emissiveMap !== map) {
+        state.material.emissiveMap = map;
+        state.material.needsUpdate = true;
+      }
+    }
+  });
   const morphTargetMeshes = useMemo(() => {
     const meshes: MorphTargetMesh[] = [];
 

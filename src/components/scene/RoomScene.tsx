@@ -1,5 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
@@ -13,6 +12,8 @@ import { ROOM_ENVIRONMENT_URL } from "./assetPaths";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 import { useResponsiveExperience } from "../ResponsiveExperience";
+import { DayNightProvider } from "./dayNight/DayNightProvider";
+import DayNightLighting from "./dayNight/DayNightLighting";
 
 const AVATAR_APPROACH_DISTANCE = 7;
 
@@ -29,7 +30,7 @@ export default function RoomScene({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [doorReady, setDoorReady] = useState(false);
   const debugRef = useRef<RoomDebugState>(null!);
-  const { camera, scene } = useThree();
+  const { camera } = useThree();
   const responsive = useResponsiveExperience();
 
   if (!debugRef.current) {
@@ -37,39 +38,8 @@ export default function RoomScene({
   }
 
   const debug = debugRef.current;
-  const isNight = false;
   const sceneBackgroundColor = debug.scene.dayBackgroundColor;
   const sceneFogColor = debug.scene.dayFogColor;
-
-  useEffect(() => {
-    const targetBackgroundColor = new THREE.Color(sceneBackgroundColor);
-    const targetFogColor = new THREE.Color(sceneFogColor);
-
-    if (scene.background instanceof THREE.Color) {
-      gsap.to(scene.background, {
-        r: targetBackgroundColor.r,
-        g: targetBackgroundColor.g,
-        b: targetBackgroundColor.b,
-        duration: 1.5,
-      });
-    }
-    if (scene.fog instanceof THREE.Fog) {
-      scene.fog.near = debug.scene.fogNear;
-      scene.fog.far = debug.scene.fogFar;
-      gsap.to(scene.fog.color, {
-        r: targetFogColor.r,
-        g: targetFogColor.g,
-        b: targetFogColor.b,
-        duration: 1.5,
-      });
-    }
-  }, [
-    debug.scene.fogFar,
-    debug.scene.fogNear,
-    scene,
-    sceneBackgroundColor,
-    sceneFogColor,
-  ]);
 
   const markDoorReady = useCallback(() => setDoorReady(true), []);
 
@@ -114,7 +84,7 @@ export default function RoomScene({
   };
 
   return (
-    <>
+    <DayNightProvider enabled={!isTransitioning}>
       <color attach="background" args={[sceneBackgroundColor]} />
       <fog
         attach="fog"
@@ -131,11 +101,11 @@ export default function RoomScene({
           />
         )}
 
-      <InteriorDetails isNight={isNight} debug={debug} />
+      <DayNightLighting debug={debug} />
+      <InteriorDetails debug={debug} />
       <ExteriorRoof debug={debug} />
       <AnimatedDoor
         isOpen={isOpen}
-        isNight={isNight}
         loadProgress={corridorLoadProgress}
         assetsReady={corridorAssetsReady}
         onReady={markDoorReady}
@@ -154,6 +124,6 @@ export default function RoomScene({
           </Suspense>
         </group>
       ) : null}
-    </>
+    </DayNightProvider>
   );
 }

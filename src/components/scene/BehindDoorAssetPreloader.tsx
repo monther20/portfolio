@@ -19,6 +19,8 @@ import {
   CONTACT_BUTTON_TEXTURES,
   CONTACT_TEXTURES,
   CORRIDOR_TEXTURES,
+  CORRIDOR_SCONCE_MODEL_URL,
+  CORRIDOR_PENDANT_MODEL_URL,
   PAPER_AIRPLANE_MODEL_URL,
 } from "./assetPaths";
 
@@ -44,6 +46,7 @@ export const BEHIND_DOOR_ASSET_STAGES: BehindDoorAssetStage[] = [
   {
     id: "corridor-entrance",
     fonts: true,
+    models: [CORRIDOR_SCONCE_MODEL_URL, CORRIDOR_PENDANT_MODEL_URL],
     textures: unique([
       CORRIDOR_TEXTURES.floor,
       CORRIDOR_TEXTURES.wall,

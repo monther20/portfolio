@@ -16,34 +16,14 @@ type LightDebug = {
   visible: boolean;
   color: string;
   dayIntensity: number;
-  nightIntensity: number;
-};
-
-type SpotLightDebug = {
-  visible: boolean;
-  position: Vector3Debug;
-  target: Vector3Debug;
-  color: string;
-  intensity: number;
-  angle: number;
-  penumbra: number;
-  distance: number;
-  decay: number;
 };
 
 type MaterialDebug = {
   color: string;
-  nightColor?: string;
   roughness: number;
   metalness: number;
   bumpScale?: number;
   wireframe: boolean;
-};
-
-type FloorGlowDebug = TransformDebug & {
-  radius: number;
-  color: string;
-  maxOpacity: number;
 };
 
 export type FloorDecalTextureKey = "rock1" | "rockHerp" | "herp";
@@ -83,9 +63,7 @@ type InteriorDetailsDebug = {
 export type RoomDebugState = {
   scene: {
     dayBackgroundColor: string;
-    nightBackgroundColor: string;
     dayFogColor: string;
-    nightFogColor: string;
     fogNear: number;
     fogFar: number;
   };
@@ -97,8 +75,6 @@ export type RoomDebugState = {
   };
   lights: {
     interiorAmbient: LightDebug;
-    leftLanternSpot: SpotLightDebug;
-    rightLanternSpot: SpotLightDebug;
   };
   meshes: {
     floor: TransformDebug;
@@ -110,8 +86,6 @@ export type RoomDebugState = {
     doorPanelSurface: TransformDebug;
     leftLantern: TransformDebug;
     rightLantern: TransformDebug;
-    leftFloorGlow: FloorGlowDebug;
-    rightFloorGlow: FloorGlowDebug;
   };
   interiorDetails: InteriorDetailsDebug;
   materials: {

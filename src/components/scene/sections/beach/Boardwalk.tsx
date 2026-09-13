@@ -9,6 +9,7 @@ import { CONTACT_TEXTURES } from "../../assetPaths";
 import { seededRange } from "../../PartingItem";
 import { BEACH } from "../../journeyConfig";
 import { useFogFade } from "../../useFogFade";
+import { useNightMaterials } from "../../dayNight/useNightMaterials";
 
 const BOARDWALK_POSITION: [number, number, number] = [0, -0.39, -1.72];
 /** Extend the pier far enough to reach the contact buttons. */
@@ -39,6 +40,7 @@ function FogFadedMesh({
 }: FogFadedMeshProps) {
   const ref = useRef<THREE.Mesh>(null);
   useFogFade(ref);
+  useNightMaterials(ref, "timber");
 
   return (
     <mesh
