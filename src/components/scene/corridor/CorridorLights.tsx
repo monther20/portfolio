@@ -10,14 +10,12 @@ import {
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { CORRIDOR } from "../journeyConfig";
 import {
   CORRIDOR_PENDANT_MODEL_URL,
   CORRIDOR_SCONCE_MODEL_URL,
 } from "../assetPaths";
 import {
   CORRIDOR_LAMPS,
-  CORRIDOR_LAMP_DEPTHS,
   NIGHT_CONFIG,
 } from "../dayNight/config";
 import {
@@ -26,38 +24,19 @@ import {
 } from "../dayNight/DayNightProvider";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 
-// Alongside the wall displays and clear of the walking/camera line. Each
-// light slot's fixtures are >46 units apart: their camera fades never overlap.
-const CORRIDOR_LAMP_LAYOUT = CORRIDOR_LAMP_DEPTHS.map((depth, index) => {
-  const pendant = index === 1 || index === 7;
-  const side = index % 2 === 0 ? -1 : 1;
-  return {
-    pendant,
-    position: [
-      pendant ? 0 : side * (CORRIDOR.halfWidth - CORRIDOR_LAMPS.wallInset),
-      pendant
-        ? CORRIDOR.ceilY - CORRIDOR_LAMPS.ceilingInset
-        : CORRIDOR_LAMPS.sconceHeight,
-      CORRIDOR.startZ - depth,
-    ] as [number, number, number],
-    rotation: [0, pendant ? 0 : (-side * Math.PI) / 2, 0] as [
-      number,
-      number,
-      number,
-    ],
-  };
-});
-
-type Fixture = (typeof CORRIDOR_LAMP_LAYOUT)[number];
+import { createCorridorLightSettings, type CorridorFixtureSettings, type CorridorLightSettings } from "./corridorLightSettings";
+import { createCorridorFixturePalette } from "./corridorFixturePalette";
 
 function CorridorFixture({
   fixture,
   index,
   sourcePositions,
+  lanterns,
 }: {
-  fixture: Fixture;
+  fixture: CorridorFixtureSettings;
   index: number;
   sourcePositions: THREE.Vector3[];
+  lanterns: CorridorLightSettings["lanterns"];
 }) {
   const gltf = useGLTF(
     fixture.pendant ? CORRIDOR_PENDANT_MODEL_URL : CORRIDOR_SCONCE_MODEL_URL,
@@ -106,6 +85,7 @@ function CorridorFixture({
       source,
       glassMaterial: glass.material,
       sourceMaterial: source.material,
+      applyPalette: createCorridorFixturePalette(materials.values()),
       materials,
     };
   }, [gltf.scene]);
@@ -115,6 +95,12 @@ function CorridorFixture({
     // The named emitter in the generated GLB is authoritative, including the
     // pendant's drop and the sconce's bracket offset/rotation toward the room.
     model.source.getWorldPosition(sourcePositions[index]);
+    sourcePositions[index].x += fixture.lightOffset[0];
+    sourcePositions[index].y += fixture.lightOffset[1];
+    sourcePositions[index].z += fixture.lightOffset[2];
+  }, [fixture, index, model, sourcePositions]);
+
+  useLayoutEffect(() => {
     transition.bloomSelection.push(model.glass, model.source);
     transition.registryVersion += 1;
     return () => {
@@ -124,19 +110,22 @@ function CorridorFixture({
         if (at >= 0) transition.bloomSelection.splice(at, 1);
       }
     };
-  }, [index, model, sourcePositions, transition]);
+  }, [model, transition]);
 
   useDayNightTransition(
     useCallback(
       (amount) => {
+        model.applyPalette(amount);
+        model.glassMaterial.emissive.set(lanterns.glassColor);
+        model.sourceMaterial.emissive.set(lanterns.sourceColor);
         model.glassMaterial.emissiveIntensity =
-          CORRIDOR_LAMPS.glassEmission * amount;
+          lanterns.glassEmission * amount;
         model.sourceMaterial.emissiveIntensity =
-          CORRIDOR_LAMPS.sourceEmission * amount;
+          lanterns.sourceEmission * amount;
         model.sourceMaterial.opacity = amount;
         model.source.visible = amount > 0;
       },
-      [model],
+      [lanterns, model],
     ),
   );
 
@@ -160,6 +149,8 @@ function CorridorFixture({
       name={`Corridor ${fixture.pendant ? "Pendant" : "Sconce"} ${index + 1}`}
       position={fixture.position}
       rotation={fixture.rotation}
+      scale={fixture.scale}
+      visible={fixture.visible}
       onClick={
         enabled
           ? (event: ThreeEvent<MouseEvent>) => {
@@ -183,9 +174,11 @@ function CorridorFixture({
 
 export default function CorridorLights() {
   const { transition } = useDayNight();
+  const settings = useMemo(createCorridorLightSettings, []);
+  const fixtureCount = settings.fixtures.length;
   const sources = useMemo(
-    () => CORRIDOR_LAMP_LAYOUT.map(() => new THREE.Vector3()),
-    [],
+    () => Array.from({ length: fixtureCount }, () => new THREE.Vector3()),
+    [fixtureCount],
   );
   const lights = useMemo(
     () =>
@@ -221,19 +214,21 @@ export default function CorridorLights() {
     lights.forEach((light, slot) => {
       let strength = 0;
       for (let index = slot; index < sources.length; index += lights.length) {
-        const fade =
+        const fixture = settings.fixtures[index];
+        if (!fixture.visible) continue;
+        const fade = fixture.intensityMultiplier * (
           1 -
           THREE.MathUtils.smoothstep(
             Math.abs(camera.position.z - sources[index].z),
-            CORRIDOR_LAMPS.fadeNear,
-            CORRIDOR_LAMPS.fadeFar,
-          );
+            settings.lighting.fadeNear,
+            settings.lighting.fadeFar,
+          ));
         if (fade > strength) {
           strength = fade;
           light.position.copy(sources[index]);
         }
       }
-      light.intensity = CORRIDOR_LAMPS.intensity * amount * strength;
+      light.intensity = settings.lighting.intensity * amount * strength;
       transition.uniforms.lanternPositions.value[slot + 2].copy(light.position);
       transition.uniforms.lanternIntensities.value[slot + 2] = light.intensity;
     });
@@ -241,12 +236,13 @@ export default function CorridorLights() {
 
   return (
     <group name="Illustrated Corridor Lights">
-      {CORRIDOR_LAMP_LAYOUT.map((fixture, index) => (
+      {settings.fixtures.map((fixture, index) => (
         <CorridorFixture
           key={index}
           index={index}
           fixture={fixture}
           sourcePositions={sources}
+          lanterns={settings.lanterns}
         />
       ))}
       {lights.map((light) => (

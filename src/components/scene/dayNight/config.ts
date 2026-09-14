@@ -91,8 +91,8 @@ export const CORRIDOR_LAMPS = {
   wallInset: 0.025,
   ceilingInset: 0.035,
   intensity: 4.8,
-  glassEmission: 1.7,
-  sourceEmission: 2.8,
+  glassEmission: 2.9,
+  sourceEmission: 6.05,
   fadeNear: 19,
   fadeFar: 23,
 } as const;

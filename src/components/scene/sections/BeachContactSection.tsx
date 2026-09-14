@@ -10,6 +10,7 @@ import PartingItem from "../PartingItem";
 import { BEACH } from "../journeyConfig";
 import Boardwalk from "./beach/Boardwalk";
 import ContactCrates from "./beach/ContactCrates";
+import PaperBoats from "./beach/PaperBoats";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { useNightMaterials } from "../dayNight/useNightMaterials";
 
@@ -58,6 +59,7 @@ export default function BeachContactSection() {
     <group name="Beach Contact Section">
       <Sea />
       <Boardwalk />
+      <PaperBoats />
       <ContactCrates />
 
       {/* Shore scenery */}

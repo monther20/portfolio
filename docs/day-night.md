@@ -55,6 +55,20 @@ No Blender, external textures or runtime model generation is required. The scrip
 
 The original camera paths, scene placements and interactions remain intact. A discovered direct-contact/reduced-motion navigation edge case was fixed in `landingProgressAt`: starting a landing at the end bound no longer produces a `0/0` curve parameter.
 
+## Beach paper boats
+
+`sections/beach/PaperBoats.tsx` adds three decorative, open folded-paper hulls beside the fixed-width pier. Custom shared geometry uses **52 triangles and 68 authored graphite line segments per boat**, with two paper draws and one line draw. A shared two-triangle plane adds one inexpensive water-glow draw per boat. The existing project paper texture supplies the grain; no model, real-time light, reflection pass or bloom registration is added.
+
+`paperBoatMaterials.ts` interpolates saved matte/off-white and softly emissive ivory endpoints through `useDayNightTransition`, including mounting directly at night and interrupted toggles. The luminous inner faces and restrained additive water wash read without bloom on low-tier devices. The wash stays at the waterline, depth-tests against the scene, and explicitly multiplies alpha by both night amount and fog opacity; it is an illustrated light spill, not a reflection. Each boat owns its fog-faded materials; the section owns three shared geometries and one cloned texture, leaving the loader's cached original untouched. Effect cleanup owns disposal; R3F automatic disposal is disabled for these resources. Folds, pencil lines and water washes explicitly disable raycasting, including recursive contact-form occlusion checks.
+
+`paperBoatConfig.ts` anchors the waterline to `BEACH.seaY`. A slow, independently phased current moves each boat in a small closed path, with gentle heading changes and wave-linked bob/tilt. The water glow follows horizontal drift and heading but stays flat at the sea surface. All motion is multiplied by `motionScale`, with positional movement also following boat size so small hulls stay in the water. Reduced motion resets all offsets to zero. Placement clearance includes the swept drift/turning footprint; projection tests sample 50 seconds of motion. Narrow screens use smaller foreground boats positioned from the real pier edges and a separate farther-left pocket: merely pushing full-size boats deeper was found to overlap the existing signs/shore art. No camera, contact action or airplane path changes.
+
+Focused CPU coverage is in `tests/paper-boats.test.ts` (geometry budgets/validity, pier clearance, responsive projection pockets, waterline/motion, reversible appearance, fog isolation, raycasts and disposal). GPU-backed Chromium checks covered desktop and low-tier phone framing/day/night and form typing/closing. Desktop checks also covered night-before-mount, fog, live reduced-motion changes, reversed transitions, repeated day/night cycles, direct and wheel-approached Contact, and mocked rejection/acceptance through the send-off and return. No unexpected browser/shader errors; same-mode GPU counts were stable over three toggles. The intentional mocked HTTP 500 produced the expected submission error. These checks are not physical-handset benchmarks, proof of lifetime GPU leak freedom, or verification of real Netlify delivery.
+
+### Boat and lighting settings
+
+Boat placements, motion and per-boat emission/water-glow settings live in `paperBoatConfig.ts`. Corridor fixture settings remain in `corridor/corridorLightSettings.ts`. Both sections use stable settings without a runtime debug panel or a `lil-gui` dependency. The water wash stays at sea level independently of hull height, and reduced-motion preferences remain respected.
+
 ## Performance and validation
 
 No shadow maps. The hero uses two point lights; the corridor adds four reusable slots rather than one light per fixture. Stars use 640 points normally and 280 on low-tier devices. Phones omit postprocessing completely. Bloom uses half-resolution mip blur, no MSAA/normal/SSAO passes, and releases its render targets on returning to day.
@@ -66,7 +80,7 @@ The original hero's day and restored-day views were also previously verified pix
 Validation commands:
 
 ```sh
-bun test tests/day-night.test.ts tests/night-journey.test.ts
-bunx tsc --noEmit --incremental false
+./node_modules/.bin/tsc --noEmit --incremental false --pretty false
 bun run build
+bun test tests
 ```
