@@ -15,6 +15,12 @@ import JourneyHud from "../components/scene/JourneyHud";
 import JourneySectionNav from "../components/scene/JourneySectionNav";
 import ResponsiveCamera from "../components/scene/ResponsiveCamera";
 import BehindDoorAssetPreloader from "../components/scene/BehindDoorAssetPreloader";
+import { DAY_CONFIG } from "../components/scene/dayNight/config";
+import {
+  DayNightProvider,
+  useDayNight,
+} from "../components/scene/dayNight/DayNightProvider";
+import DayNightSwitch from "../components/scene/dayNight/DayNightSwitch";
 
 function SceneReadySignal({ onReady }: { onReady: () => void }) {
   const renderedFrames = useRef(0);
@@ -153,7 +159,11 @@ function WebGLFallback() {
   );
 }
 
-function ResponsiveHallwayScene() {
+function ResponsiveHallwayScene({
+  onEntryTransitionChange,
+}: {
+  onEntryTransitionChange: (transitioning: boolean) => void;
+}) {
   const [entered, setEntered] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
@@ -174,6 +184,7 @@ function ResponsiveHallwayScene() {
     [],
   );
   const responsive = useResponsiveExperience();
+  const { timeOfDay, toggle } = useDayNight();
 
   useEffect(() => {
     setWebglSupported(browserSupportsWebGL2());
@@ -184,14 +195,31 @@ function ResponsiveHallwayScene() {
       className="experience-root"
       data-layout={responsive.layout}
       data-quality={responsive.qualityTier}
+      data-time-of-day={timeOfDay}
     >
       {webglSupported === false ? <WebGLFallback /> : null}
 
       {webglSupported === true ? (
         <Canvas
           className="experience-canvas"
-          aria-label="Interactive 3D portfolio. Open the door, then scroll, swipe, or use the arrow keys to explore."
+          aria-label="Interactive 3D portfolio. Click a lantern or press N to toggle day and night. Open the door, then scroll, swipe, or use the arrow keys to explore. A light switch is also available after entering."
           tabIndex={0}
+          onKeyDown={(event) => {
+            // Ignore keys from embedded forms and other scene controls.
+            if (
+              (event.target !== event.currentTarget &&
+                !(event.target instanceof HTMLCanvasElement)) ||
+              event.repeat ||
+              event.altKey ||
+              event.ctrlKey ||
+              event.metaKey
+            )
+              return;
+            if (event.key.toLowerCase() === "n") {
+              event.preventDefault();
+              toggle();
+            }
+          }}
           dpr={responsive.maxDpr}
           performance={{ min: 0.5, debounce: 200 }}
           camera={{
@@ -203,6 +231,7 @@ function ResponsiveHallwayScene() {
           onCreated={({ camera }) => camera.lookAt(0, 0.719, -15.9)}
           gl={{
             toneMapping: THREE.NoToneMapping,
+            toneMappingExposure: DAY_CONFIG.exposure,
             powerPreference: "high-performance",
             antialias: true,
           }}
@@ -217,7 +246,11 @@ function ResponsiveHallwayScene() {
             <RoomScene
               corridorLoadProgress={corridorLoadProgress}
               corridorAssetsReady={corridorAssetsReady}
-              onTransitionComplete={() => setEntered(true)}
+              onTransitionStart={() => onEntryTransitionChange(true)}
+              onTransitionComplete={() => {
+                setEntered(true);
+                onEntryTransitionChange(false);
+              }}
             />
             <SceneReadySignal onReady={markSceneReady} />
           </Suspense>
@@ -232,6 +265,7 @@ function ResponsiveHallwayScene() {
       ) : null}
       {webglSupported === true ? (
         <>
+          <DayNightSwitch visible={entered} />
           <JourneyHud visible={entered} />
           <JourneySectionNav visible={entered} />
         </>
@@ -241,9 +275,13 @@ function ResponsiveHallwayScene() {
 }
 
 export default function MoodyHallwayScene() {
+  const [isEntering, setIsEntering] = useState(false);
+
   return (
     <ResponsiveExperienceProvider>
-      <ResponsiveHallwayScene />
+      <DayNightProvider enabled={!isEntering}>
+        <ResponsiveHallwayScene onEntryTransitionChange={setIsEntering} />
+      </DayNightProvider>
     </ResponsiveExperienceProvider>
   );
 }

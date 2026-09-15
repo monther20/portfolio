@@ -449,6 +449,32 @@ body {
   50% { transform: rotate(9deg) scale(1.08); }
 }
 
+/* Keep existing navigation readable on the illustrated night sky. No canvas overlay. */
+.experience-root[data-time-of-day="night"] :is(.journey-section-nav, .journey-hud) {
+  color: #ded2bc;
+}
+.experience-root[data-time-of-day="night"] :is(.journey-hud__sections, .journey-hud__keyboard) {
+  color: #b8c4d5;
+}
+.experience-root[data-time-of-day="night"] .journey-section-nav__icon {
+  color: #ded2bc;
+  border-color: #a2acbb;
+  background: #303c53;
+}
+.experience-root[data-time-of-day="night"] :is(.journey-section-nav__button.is-active, .journey-section-nav__button:hover, .journey-section-nav__button:focus-visible) .journey-section-nav__icon {
+  color: #273247;
+  background: #e2c798;
+}
+.experience-root[data-time-of-day="night"] .journey-section-nav__rail {
+  background: #606e87;
+}
+.experience-root[data-time-of-day="night"] .journey-section-nav__rail span {
+  background: #d9c8a7;
+}
+.experience-root[data-time-of-day="night"] .journey-section-nav__button.is-active .journey-section-nav__icon::after {
+  border-color: #d9c8a7;
+}
+
 /* ─── Contact letter ─────────────────────────────────────────────────── */
 
 .contact-letter-form {

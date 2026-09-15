@@ -21,6 +21,7 @@ import {
 } from "./hingedWallSettings";
 import { useTiledTexture } from "./useTiledTexture";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
+import { useNightMaterials, useNightText } from "../dayNight/useNightMaterials";
 
 const C = "/textures/corridor";
 
@@ -39,6 +40,7 @@ function MiniWallSurface({
   title: string;
 }) {
   const meshRef = React.useRef<THREE.Mesh>(null);
+  useNightMaterials(meshRef, "corridor");
 
   useFrame(() => {
     const mesh = meshRef.current;
@@ -170,8 +172,11 @@ function WallText({
   weight?: number;
   rotation?: number;
 }) {
+  const text = React.useRef<THREE.Mesh>(null);
+  useNightText(text, color);
   return (
     <Text
+      ref={text}
       position={position}
       rotation={[0, 0, rotation]}
       fontSize={fontSize}

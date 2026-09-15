@@ -11,6 +11,7 @@ import { CORRIDOR } from "../journeyConfig";
 import { useFogFade } from "../useFogFade";
 import { corridor } from "@/data/portfolio";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
+import { useNightText } from "../dayNight/useNightMaterials";
 
 const HANDWRITTEN_FONT = "/fonts/Caveat-Variable.ttf";
 const NAME_Y = -1.25;
@@ -74,8 +75,11 @@ function GreeterTextHalf({
   renderOrder,
   letterSpacing = 0,
 }: GreeterTextHalfProps) {
+  const text = useRef<THREE.Mesh>(null);
+  useNightText(text, color);
   return (
     <Text
+      ref={text}
       name={name}
       font={HANDWRITTEN_FONT}
       fontSize={fontSize}

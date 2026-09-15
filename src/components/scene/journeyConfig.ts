@@ -188,6 +188,10 @@ export function landingProgressAt(
   z: number,
   startZ = JOURNEY.landingTriggerZ,
 ): number {
+  // A section jump (especially reduced motion) can begin landing at the end
+  // itself. Avoid a 0/0 curve parameter and finish on the contact boardwalk.
+  if (z <= JOURNEY.farBound) return 1;
+  if (startZ <= JOURNEY.farBound) return 0;
   return smoothstep(
     0,
     1,

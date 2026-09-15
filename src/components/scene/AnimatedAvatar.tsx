@@ -8,6 +8,7 @@ import { Billboard } from "@react-three/drei";
 import { AVATAR_FRAME_URLS } from "./assetPaths";
 import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
 import { useResponsiveExperience } from "../ResponsiveExperience";
+import { useNightMaterialColor } from "./dayNight/useNightMaterials";
 
 function pingPongFrameIndex(step: number, count: number) {
   if (count <= 1) return 0;
@@ -29,6 +30,7 @@ export default function AnimatedAvatar({
   fps?: number;
 }) {
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+  useNightMaterialColor(materialRef, "illustration");
   const billboardRef = useRef<THREE.Group>(null);
   const lastFrame = useRef(-1);
   const tmp = useMemo(() => new THREE.Vector3(), []);

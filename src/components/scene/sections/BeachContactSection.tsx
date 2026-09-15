@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useLoader } from "@react-three/fiber";
 import { Float } from "@react-three/drei";
@@ -10,12 +10,16 @@ import PartingItem from "../PartingItem";
 import { BEACH } from "../journeyConfig";
 import Boardwalk from "./beach/Boardwalk";
 import ContactCrates from "./beach/ContactCrates";
+import PaperBoats from "./beach/PaperBoats";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
+import { useNightMaterials } from "../dayNight/useNightMaterials";
 
 const C = "/textures/contact";
 
 /** The sea surface — a slowly drifting hand-drawn wave pattern. */
 function Sea() {
+  const mesh = useRef<THREE.Mesh>(null);
+  useNightMaterials(mesh, "sea");
   const waveTex = useLoader(THREE.TextureLoader, `${C}/faletopdown.webp`);
   const responsive = useResponsiveExperience();
 
@@ -37,7 +41,7 @@ function Sea() {
   });
 
   return (
-    <mesh name="Beach Sea" position={[0, BEACH.seaY, BEACH.seaZ]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh ref={mesh} name="Beach Sea" position={[0, BEACH.seaY, BEACH.seaZ]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[80, 70]} />
       <meshBasicMaterial map={tiled} color="#ffffff" transparent opacity={0.72} />
     </mesh>
@@ -55,6 +59,7 @@ export default function BeachContactSection() {
     <group name="Beach Contact Section">
       <Sea />
       <Boardwalk />
+      <PaperBoats />
       <ContactCrates />
 
       {/* Shore scenery */}

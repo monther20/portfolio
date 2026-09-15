@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useGLTF, useTexture } from "@react-three/drei";
@@ -12,6 +12,8 @@ import {
 } from "../roomDebug/types";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { ROOM_DOOR_MODEL_URL } from "../assetPaths";
+import { useDayNight, useDayNightTransition } from "../dayNight/DayNightProvider";
+import { addUnlitNightLighting } from "../dayNight/unlitNightMaterial";
 
 const LEAF_WIDTH = 1.04;
 const LEAF_HEIGHT = 2.05;
@@ -61,7 +63,6 @@ function createDoorMaterial(
 
 export default function AnimatedDoor({
   isOpen,
-  isNight,
   loadProgress,
   assetsReady,
   onReady,
@@ -69,7 +70,6 @@ export default function AnimatedDoor({
   debug,
 }: {
   isOpen: boolean;
-  isNight: boolean;
   loadProgress: number;
   assetsReady: boolean;
   onReady: () => void;
@@ -78,18 +78,14 @@ export default function AnimatedDoor({
 }) {
   const { scene } = useGLTF(ROOM_DOOR_MODEL_URL);
   const frameTexture = useTexture("/textures/room/door_frame.webp");
-  const frameMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
   const readyReportedRef = useRef(false);
   const [hovered, setHovered] = useState(false);
   const responsive = useResponsiveExperience();
   const interactive = Boolean(onClick);
   const { materials, meshes } = debug;
-  const frameColor = isNight
-    ? (materials.doorFrame.nightColor ?? materials.doorFrame.color)
-    : materials.doorFrame.color;
-  const panelColor = isNight
-    ? (materials.doorPanel.nightColor ?? materials.doorPanel.color)
-    : materials.doorPanel.color;
+  const { transition } = useDayNight();
+  const frameColor = materials.doorFrame.color;
+  const panelColor = materials.doorPanel.color;
 
   const model = useMemo(() => {
     // Never animate or recolor the globally cached useGLTF scene/material.
@@ -105,6 +101,7 @@ export default function AnimatedDoor({
           throw new Error("Fantasy door requires its unlit pencil material.");
         }
         const material = createDoorMaterial(source, progress);
+        addUnlitNightLighting(material, transition.uniforms, "door");
         ownedMaterials.push(material);
         return material;
       };
@@ -113,7 +110,19 @@ export default function AnimatedDoor({
         : cloneMaterial(object.material);
     });
     return { instance, hinge, progress, materials: ownedMaterials };
-  }, [scene]);
+  }, [scene, transition]);
+
+  useDayNightTransition(useCallback((amount) => {
+    // Retain unlit day rendering; opt into linear exposure on the direct mobile
+    // night path. The loading wipe and existing hover animation stay independent.
+    model.materials.forEach((material) => {
+      const toneMapped = amount > 0;
+      if (material.toneMapped !== toneMapped) {
+        material.toneMapped = toneMapped;
+        material.needsUpdate = true;
+      }
+    });
+  }, [model]));
 
   useEffect(() => {
     frameTexture.colorSpace = THREE.SRGBColorSpace;
@@ -185,21 +194,6 @@ export default function AnimatedDoor({
   }, [hovered, interactive, model, panelColor, responsive.reducedMotion]);
 
   useEffect(() => {
-    if (!frameMaterialRef.current) return;
-    const tint = new THREE.Color(frameColor);
-    const tween = gsap.to(frameMaterialRef.current.color, {
-      r: tint.r,
-      g: tint.g,
-      b: tint.b,
-      duration: responsive.reducedMotion ? 0.01 : 1.5,
-      ease: "power2.inOut",
-    });
-    return () => {
-      tween.kill();
-    };
-  }, [frameColor, responsive.reducedMotion]);
-
-  useEffect(() => {
     model.instance.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.renderOrder = meshes.doorPanelSurface.renderOrder;
@@ -236,7 +230,6 @@ export default function AnimatedDoor({
       >
         <planeGeometry args={[7, 10.05]} />
         <meshStandardMaterial
-          ref={frameMaterialRef}
           map={frameTexture}
           transparent
           side={THREE.DoubleSide}

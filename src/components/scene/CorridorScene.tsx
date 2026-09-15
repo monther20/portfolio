@@ -4,6 +4,7 @@ import CorridorShell from "./corridor/CorridorShell";
 import CorridorWindow from "./corridor/CorridorWindow";
 import CorridorGreeter from "./corridor/CorridorGreeter";
 import CorridorStations from "./corridor/CorridorStations";
+import CorridorLights from "./corridor/CorridorLights";
 
 /**
  * CorridorScene — the walkable hallway behind the front door: the avatar
@@ -14,6 +15,7 @@ export default function CorridorScene() {
   return (
     <group name="Corridor Scene">
       <CorridorShell />
+      <CorridorLights />
       <CorridorGreeter />
       <CorridorStations />
       <CorridorWindow />
