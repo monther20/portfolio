@@ -46,8 +46,23 @@ the source of truth for stored delivery.
 - `src/data/portfolio.ts` — edit portfolio content: about text, skills, projects, contact links, and texture paths.
 - `src/app/layout.tsx` — edit site metadata such as title, description, author, and creator.
 - `src/components/scene/JourneyScene.tsx` — adjust section positions along the 3D scroll path.
-- `src/app/page.tsx` — controls the Canvas, loader, room scene, HUD, and background asset preloader.
+- `src/app/page.tsx` — controls the Canvas, entrance-only loader, room scene, and HUD.
+- `src/components/scene/journeyLoading.ts` — ordered background scenes and safe camera limits while they prepare.
 - `src/app/globals.css`, `src/app/loading.tsx` — customize the sketch-style loading screen.
+
+## Loading flow
+
+The initial sketch loader waits only for the exterior and first corridor (including
+its avatar and first story panel) to mount. It exits with a short transition, with
+no minimum display time. The fully colored door and keyboard-accessible entry
+button are immediately usable; door color no longer represents loading progress.
+
+Later scenes mount in travel order behind separate `JourneyAssetStage` boundaries.
+Their real components load the assets, avoiding a duplicate preload manifest.
+Fast scrolling stops before unready content; section jumps wait in place and resume
+when the route is ready. Visitors can cancel a queued jump by scrolling or choosing
+another section. A small status notice appears only when loading is actually in
+their way; a failed background scene leaves the ready sections usable.
 
 ## Project structure
 

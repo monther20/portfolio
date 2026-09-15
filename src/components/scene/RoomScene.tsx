@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
@@ -17,19 +17,17 @@ import DayNightLighting from "./dayNight/DayNightLighting";
 const AVATAR_APPROACH_DISTANCE = 7;
 
 export default function RoomScene({
-  corridorLoadProgress,
-  corridorAssetsReady,
-  onTransitionStart,
+  entryEnabled,
+  isOpen,
+  onEnter,
   onTransitionComplete,
 }: {
-  corridorLoadProgress: number;
-  corridorAssetsReady: boolean;
-  onTransitionStart: () => void;
+  entryEnabled: boolean;
+  isOpen: boolean;
+  onEnter: () => void;
   onTransitionComplete: () => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [doorReady, setDoorReady] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(true);
   const debugRef = useRef<RoomDebugState>(null!);
   const { camera } = useThree();
   const responsive = useResponsiveExperience();
@@ -42,15 +40,8 @@ export default function RoomScene({
   const sceneBackgroundColor = debug.scene.dayBackgroundColor;
   const sceneFogColor = debug.scene.dayFogColor;
 
-  const markDoorReady = useCallback(() => setDoorReady(true), []);
-
-  const handleDoorClick = () => {
-    if (!corridorAssetsReady || !doorReady || isOpen || isTransitioning) return;
-    setIsOpen(true);
-    setIsTransitioning(true);
-    onTransitionStart();
-
-    document.body.style.overflow = "hidden";
+  useEffect(() => {
+    if (!isOpen) return;
 
     const transitionDuration = responsive.reducedMotion ? 0.01 : 2.5;
     const transitionDelay = responsive.reducedMotion ? 0 : 0.5;
@@ -83,7 +74,10 @@ export default function RoomScene({
       },
       "<",
     );
-  };
+    return () => {
+      tl.kill();
+    };
+  }, [camera, isOpen, onTransitionComplete, responsive.reducedMotion]);
 
   return (
     <>
@@ -108,24 +102,14 @@ export default function RoomScene({
       <ExteriorRoof debug={debug} />
       <AnimatedDoor
         isOpen={isOpen}
-        loadProgress={corridorLoadProgress}
-        assetsReady={corridorAssetsReady}
-        onReady={markDoorReady}
-        onClick={
-          doorReady && !isOpen && !isTransitioning
-            ? handleDoorClick
-            : undefined
-        }
+        onClick={entryEnabled && !isOpen ? onEnter : undefined}
         debug={debug}
       />
 
-      {isOpen ? (
-        <group>
-          <Suspense fallback={null}>
-            <JourneyScene scrollEnabled={!isTransitioning} />
-          </Suspense>
-        </group>
-      ) : null}
+      <JourneyScene
+        scrollEnabled={isOpen && !isTransitioning}
+        backgroundEnabled={entryEnabled}
+      />
     </>
   );
 }

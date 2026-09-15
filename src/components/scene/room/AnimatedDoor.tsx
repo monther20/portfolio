@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useGLTF, useTexture } from "@react-three/drei";
@@ -25,60 +25,17 @@ const MODEL_SCALE: [number, number, number] = [
 ];
 const MODEL_POSITION: [number, number, number] = [-0.05, -4.4, -0.35];
 
-/** Preserve the GLB's unlit pencil atlas, adding a height-based loading wipe.
- * Atlas UVs are unrelated to door height, so the reveal uses model-space Y.
- * MeshBasicMaterial retains Three's native color-space and fog handling.
- */
-function createDoorMaterial(
-  source: THREE.MeshBasicMaterial,
-  progress: THREE.IUniform<number>,
-) {
-  const material = source.clone();
-  material.toneMapped = false;
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.doorProgress = progress;
-    shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying float vDoorHeight;")
-      .replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>\nvDoorHeight = position.y / ${LEAF_HEIGHT.toFixed(2)};`,
-      );
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "#include <common>",
-        "#include <common>\nuniform float doorProgress;\nvarying float vDoorHeight;",
-      )
-      .replace(
-        "#include <map_fragment>",
-        `#include <map_fragment>
-        float luminance = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        float wipeLine = 1.2 - doorProgress * 1.4;
-        float painted = smoothstep(wipeLine - 0.15, wipeLine + 0.15, vDoorHeight);
-        diffuseColor.rgb = mix(vec3(luminance), diffuseColor.rgb, painted);`,
-      );
-  };
-  material.customProgramCacheKey = () => "fantasy-door-height-wipe-v1";
-  return material;
-}
-
 export default function AnimatedDoor({
   isOpen,
-  loadProgress,
-  assetsReady,
-  onReady,
   onClick,
   debug,
 }: {
   isOpen: boolean;
-  loadProgress: number;
-  assetsReady: boolean;
-  onReady: () => void;
   onClick?: () => void;
   debug: RoomDebugState;
 }) {
   const { scene } = useGLTF(ROOM_DOOR_MODEL_URL);
   const frameTexture = useTexture("/textures/room/door_frame.webp");
-  const readyReportedRef = useRef(false);
   const [hovered, setHovered] = useState(false);
   const responsive = useResponsiveExperience();
   const interactive = Boolean(onClick);
@@ -92,7 +49,6 @@ export default function AnimatedDoor({
     const instance = scene.clone(true);
     const hinge = instance.getObjectByName("DoorHinge");
     if (!hinge) throw new Error("Fantasy door model is missing its DoorHinge node.");
-    const progress = { value: 0 };
     const ownedMaterials: THREE.MeshBasicMaterial[] = [];
     instance.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
@@ -100,7 +56,9 @@ export default function AnimatedDoor({
         if (!(source instanceof THREE.MeshBasicMaterial)) {
           throw new Error("Fantasy door requires its unlit pencil material.");
         }
-        const material = createDoorMaterial(source, progress);
+        // The door is artwork, not a second loading indicator.
+        const material = source.clone();
+        material.toneMapped = false;
         addUnlitNightLighting(material, transition.uniforms, "door");
         ownedMaterials.push(material);
         return material;
@@ -109,12 +67,12 @@ export default function AnimatedDoor({
         ? object.material.map(cloneMaterial)
         : cloneMaterial(object.material);
     });
-    return { instance, hinge, progress, materials: ownedMaterials };
+    return { instance, hinge, materials: ownedMaterials };
   }, [scene, transition]);
 
   useDayNightTransition(useCallback((amount) => {
     // Retain unlit day rendering; opt into linear exposure on the direct mobile
-    // night path. The loading wipe and existing hover animation stay independent.
+    // night path. The existing hover animation stays independent.
     model.materials.forEach((material) => {
       const toneMapped = amount > 0;
       if (material.toneMapped !== toneMapped) {
@@ -128,26 +86,6 @@ export default function AnimatedDoor({
     frameTexture.colorSpace = THREE.SRGBColorSpace;
     frameTexture.needsUpdate = true;
   }, [frameTexture]);
-
-  useEffect(() => {
-    const target = THREE.MathUtils.clamp(loadProgress, 0, 1);
-    const tween = gsap.to(model.progress, {
-      value: target,
-      duration: responsive.reducedMotion
-        ? 0.01
-        : Math.max(0.24, Math.abs(target - model.progress.value) * 1.8),
-      ease: "power1.out",
-      overwrite: "auto",
-      onComplete: () => {
-        if (target < 1 || !assetsReady || readyReportedRef.current) return;
-        readyReportedRef.current = true;
-        onReady();
-      },
-    });
-    return () => {
-      tween.kill();
-    };
-  }, [assetsReady, loadProgress, model, onReady, responsive.reducedMotion]);
 
   useEffect(() => {
     // The asset's own hinge is authoritative; don't also play its GLTF clips.

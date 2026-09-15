@@ -6,7 +6,7 @@ import {
 } from "./config";
 
 /** Extend, never replace, an unlit pencil material. Install AFTER other shader
- * patches (the door has a loading wipe). The day branch is an exact identity.
+ * patches so custom artwork effects survive. The day branch is an exact identity.
  */
 export function addUnlitNightLighting(
   material: THREE.MeshBasicMaterial,

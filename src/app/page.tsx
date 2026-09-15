@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
 import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -14,30 +14,17 @@ import RoomScene from "../components/scene/RoomScene";
 import JourneyHud from "../components/scene/JourneyHud";
 import JourneySectionNav from "../components/scene/JourneySectionNav";
 import ResponsiveCamera from "../components/scene/ResponsiveCamera";
-import BehindDoorAssetPreloader from "../components/scene/BehindDoorAssetPreloader";
+import SceneReadySignal from "../components/scene/SceneReadySignal";
+import {
+  JourneyLoadingProvider,
+  JourneyLoadingNotice,
+} from "../components/scene/JourneyLoadingProvider";
 import { DAY_CONFIG } from "../components/scene/dayNight/config";
 import {
   DayNightProvider,
   useDayNight,
 } from "../components/scene/dayNight/DayNightProvider";
 import DayNightSwitch from "../components/scene/dayNight/DayNightSwitch";
-
-function SceneReadySignal({ onReady }: { onReady: () => void }) {
-  const renderedFrames = useRef(0);
-  const reported = useRef(false);
-
-  useFrame(() => {
-    if (reported.current) return;
-
-    renderedFrames.current += 1;
-    if (renderedFrames.current >= 2) {
-      reported.current = true;
-      onReady();
-    }
-  });
-
-  return null;
-}
 
 function LoadingOverlay({
   sceneReady,
@@ -46,93 +33,36 @@ function LoadingOverlay({
   sceneReady: boolean;
   onComplete: () => void;
 }) {
-  const active = useProgress((state) => state.active);
   const progress = useProgress((state) => state.progress);
-  const startTime = useRef(Date.now());
-  const triggered = useRef(false);
-  const completionReported = useRef(false);
-
   const [lineProgress, setLineProgress] = useState(0);
-  const [isSketching, setIsSketching] = useState(false);
-  const [isGone, setIsGone] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
-  const [documentReady, setDocumentReady] = useState(false);
-
-  const sketch = useCallback(() => {
-    if (triggered.current) return;
-    triggered.current = true;
-
-    const elapsed = Date.now() - startTime.current;
-    const minMs = 1800;
-    const remaining = Math.max(0, minMs - elapsed);
-
-    window.setTimeout(() => {
-      setLineProgress(100);
-      window.setTimeout(() => {
-        setIsSketching(true);
-        window.setTimeout(() => setIsGone(true), 1900);
-      }, 250);
-    }, remaining);
-  }, []);
 
   useEffect(() => {
-    if (!active) return;
-
     const loaderProgress = Number.isFinite(progress) ? progress : 0;
-    setLineProgress((current) => {
-      const next = Math.max(current, Math.min(loaderProgress * 0.9, 94));
-      return Object.is(current, next) ? current : next;
-    });
-  }, [active, progress]);
+    setLineProgress((current) =>
+      Math.max(current, Math.min(loaderProgress * 0.94, 94)),
+    );
+  }, [progress]);
 
   useEffect(() => {
     let cancelled = false;
-
     void document.fonts.ready.then(() => {
       if (!cancelled) setFontsReady(true);
     });
-
-    const markDocumentReady = () => setDocumentReady(true);
-    if (document.readyState === "complete") {
-      markDocumentReady();
-    } else {
-      window.addEventListener("load", markDocumentReady, { once: true });
-    }
-
     return () => {
       cancelled = true;
-      window.removeEventListener("load", markDocumentReady);
     };
   }, []);
 
-  useEffect(() => {
-    if (active || !sceneReady || !fontsReady || !documentReady) return;
-
-    const timeout = window.setTimeout(sketch, 150);
-    return () => window.clearTimeout(timeout);
-  }, [active, documentReady, fontsReady, sceneReady, sketch]);
-
-  useEffect(() => {
-    if (isSketching || isGone) return;
-
-    const interval = window.setInterval(() => {
-      setLineProgress((current) => Math.min(94, current + 1.8));
-    }, 70);
-
-    return () => window.clearInterval(interval);
-  }, [isGone, isSketching]);
-
-  useEffect(() => {
-    if (!isGone || completionReported.current) return;
-
-    completionReported.current = true;
-    onComplete();
-  }, [isGone, onComplete]);
-
-  if (isGone) return null;
-
+  // Readiness belongs to the entrance's mounted scene, not the global loading
+  // manager (which will also see background work). No minimum wait or fake tick.
+  const ready = sceneReady && fontsReady;
   return (
-    <SketchPreloader lineProgress={lineProgress} isSketching={isSketching} />
+    <SketchPreloader
+      lineProgress={ready ? 100 : lineProgress}
+      isSketching={ready}
+      onExitComplete={onComplete}
+    />
   );
 }
 
@@ -167,22 +97,21 @@ function ResponsiveHallwayScene({
   const [entered, setEntered] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
-  const [corridorLoadProgress, setCorridorLoadProgress] = useState(0);
-  const [corridorAssetsReady, setCorridorAssetsReady] = useState(false);
+  const [doorOpen, setDoorOpen] = useState(false);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
   const markInitialLoadingComplete = useCallback(
     () => setInitialLoadingComplete(true),
     [],
   );
-  const updateCorridorLoadProgress = useCallback((progress: number) => {
-    const next = THREE.MathUtils.clamp(progress, 0, 1);
-    setCorridorLoadProgress((current) => Math.max(current, next));
-  }, []);
-  const markCorridorAssetsReady = useCallback(
-    () => setCorridorAssetsReady(true),
-    [],
-  );
+  const enter = useCallback(() => {
+    setDoorOpen(true);
+    onEntryTransitionChange(true);
+  }, [onEntryTransitionChange]);
+  const finishEntry = useCallback(() => {
+    setEntered(true);
+    onEntryTransitionChange(false);
+  }, [onEntryTransitionChange]);
   const responsive = useResponsiveExperience();
   const { timeOfDay, toggle } = useDayNight();
 
@@ -237,20 +166,12 @@ function ResponsiveHallwayScene({
           }}
         >
           <ResponsiveCamera />
-          <BehindDoorAssetPreloader
-            enabled={initialLoadingComplete}
-            onProgress={updateCorridorLoadProgress}
-            onReady={markCorridorAssetsReady}
-          />
           <Suspense fallback={null}>
             <RoomScene
-              corridorLoadProgress={corridorLoadProgress}
-              corridorAssetsReady={corridorAssetsReady}
-              onTransitionStart={() => onEntryTransitionChange(true)}
-              onTransitionComplete={() => {
-                setEntered(true);
-                onEntryTransitionChange(false);
-              }}
+              entryEnabled={initialLoadingComplete}
+              isOpen={doorOpen}
+              onEnter={enter}
+              onTransitionComplete={finishEntry}
             />
             <SceneReadySignal onReady={markSceneReady} />
           </Suspense>
@@ -265,6 +186,13 @@ function ResponsiveHallwayScene({
       ) : null}
       {webglSupported === true ? (
         <>
+          {initialLoadingComplete && !doorOpen ? (
+            <button type="button" className="door-entry-prompt" onClick={enter}>
+              {responsive.isCoarsePointer ? "Tap to enter" : "Click to enter"}
+              <span aria-hidden="true"> ↗</span>
+            </button>
+          ) : null}
+          <JourneyLoadingNotice visible={entered} />
           <DayNightSwitch visible={entered} />
           <JourneyHud visible={entered} />
           <JourneySectionNav visible={entered} />
@@ -280,7 +208,9 @@ export default function MoodyHallwayScene() {
   return (
     <ResponsiveExperienceProvider>
       <DayNightProvider enabled={!isEntering}>
-        <ResponsiveHallwayScene onEntryTransitionChange={setIsEntering} />
+        <JourneyLoadingProvider>
+          <ResponsiveHallwayScene onEntryTransitionChange={setIsEntering} />
+        </JourneyLoadingProvider>
       </DayNightProvider>
     </ResponsiveExperienceProvider>
   );

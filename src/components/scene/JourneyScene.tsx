@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Float } from "@react-three/drei";
 
 import PaintSprite from "./PaintSprite";
@@ -16,6 +16,9 @@ import { JOURNEY } from "./journeyConfig";
 import { CLOUD_TEXTURE_URLS } from "./assetPaths";
 import { useResponsiveExperience } from "../ResponsiveExperience";
 import NightSky from "./dayNight/NightSky";
+import CorridorStations from "./corridor/CorridorStations";
+import CorridorWindow from "./corridor/CorridorWindow";
+import JourneyAssetStage from "./JourneyAssetStage";
 
 const CLOUD_START_Z = JOURNEY.windowExitZ - 2;
 const CLOUD_CHUNKS = 8;
@@ -121,45 +124,42 @@ function FlightClouds() {
   );
 }
 
-export default function JourneyScene({ scrollEnabled }: { scrollEnabled: boolean }) {
-  const [loadDistantScenes, setLoadDistantScenes] = useState(false);
-
-  useEffect(() => {
-    if (!scrollEnabled || loadDistantScenes) return;
-
-    const timeout = window.setTimeout(() => setLoadDistantScenes(true), 350);
-    return () => window.clearTimeout(timeout);
-  }, [loadDistantScenes, scrollEnabled]);
-
+export default function JourneyScene({ scrollEnabled, backgroundEnabled }: {
+  scrollEnabled: boolean;
+  backgroundEnabled: boolean;
+}) {
   return (
     <group name="Journey Scene">
       <ScrollCameraManager enabled={scrollEnabled} />
 
-      <Suspense fallback={null}>
-        <CorridorScene />
-      </Suspense>
-      <Suspense fallback={null}>
-        <PaperAirplaneActor />
-      </Suspense>
+      {/* Share the entrance's Suspense boundary: opening never mounts an empty hallway. */}
+      <CorridorScene />
 
-      {loadDistantScenes ? (
+      {backgroundEnabled ? (
         <>
-          <NightSky />
-          <Suspense fallback={null}>
+          <JourneyAssetStage id="corridor-far">
+            <CorridorStations part="far" />
+          </JourneyAssetStage>
+          <JourneyAssetStage id="window">
+            <CorridorWindow />
+            <PaperAirplaneActor />
+          </JourneyAssetStage>
+          <JourneyAssetStage id="flight">
+            <NightSky />
             <FlightClouds />
-          </Suspense>
-          <Suspense fallback={null}>
+          </JourneyAssetStage>
+          <JourneyAssetStage id="journey">
             <JourneySection zStart={JOURNEY.journeyAnchorZ} />
-          </Suspense>
-          <Suspense fallback={null}>
+          </JourneyAssetStage>
+          <JourneyAssetStage id="skills">
             <SkillsSection zStart={JOURNEY.skillsAnchorZ} />
-          </Suspense>
-          <Suspense fallback={null}>
+          </JourneyAssetStage>
+          <JourneyAssetStage id="projects">
             <ProjectsSection zStart={JOURNEY.projectsAnchorZ} />
-          </Suspense>
-          <Suspense fallback={null}>
+          </JourneyAssetStage>
+          <JourneyAssetStage id="contact">
             <BeachContactSection />
-          </Suspense>
+          </JourneyAssetStage>
         </>
       ) : null}
     </group>

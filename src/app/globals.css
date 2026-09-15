@@ -125,17 +125,17 @@ body {
 
 .sketch-preloader.is-sketching .sketch-preloader__half--left,
 .sketch-preloader--auto .sketch-preloader__half--left {
-  animation: sketch-left 1.6s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+  animation: sketch-left 0.55s cubic-bezier(0.8, 0, 0.2, 1) forwards;
 }
 
 .sketch-preloader.is-sketching .sketch-preloader__half--right,
 .sketch-preloader--auto .sketch-preloader__half--right {
-  animation: sketch-right 1.6s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+  animation: sketch-right 0.55s cubic-bezier(0.8, 0, 0.2, 1) forwards;
 }
 
 .sketch-preloader.is-sketching,
 .sketch-preloader--auto {
-  animation: sketch-preloader-fade 0.6s ease 1s forwards;
+  animation: sketch-preloader-fade 0.25s ease 0.3s forwards;
 }
 
 .sketch-preloader--auto {
@@ -184,6 +184,51 @@ body {
 
 @keyframes sketch-preloader-fade {
   to { opacity: 0; visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sketch-preloader.is-sketching,
+  .sketch-preloader.is-sketching .sketch-preloader__half {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+  }
+}
+
+.door-entry-prompt,
+.journey-loading-notice {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: max(2rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  max-width: calc(100% - 3rem);
+  padding: 0.5rem 1.25rem;
+  border: 1px solid #39352e;
+  border-radius: 48% 52% 46% 54% / 10% 14% 12% 16%;
+  background: #fffdf4;
+  color: #29251f;
+  font-family: var(--font-caveat), cursive;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.door-entry-prompt { cursor: pointer; }
+.door-entry-prompt:hover { background: #f3eddc; }
+.door-entry-prompt:focus-visible,
+.journey-loading-notice button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 5px;
+}
+
+.journey-loading-notice {
+  width: max-content;
+  font-size: 1.2rem;
+}
+.journey-loading-notice button {
+  display: block;
+  margin: 0.25rem auto 0;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* ─── Responsive 3D experience shell ─────────────────────────────────── */
