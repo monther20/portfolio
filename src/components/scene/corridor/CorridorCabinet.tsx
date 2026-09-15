@@ -9,6 +9,8 @@ import { CABINET_MODEL_URL } from "../assetPaths";
 import { setJourneyState } from "../journeyState";
 import { useFogFade } from "../useFogFade";
 
+// Temporarily disabled until the drawer animation and camera framing are fixed.
+const CABINET_INTERACTION_ENABLED = false;
 const DRAWER_CLIP = "Drawer_1_boxAction";
 
 const CABINET = {
@@ -87,7 +89,12 @@ export default function CorridorCabinet() {
   }, [actions, lockInteraction]);
 
   const openDrawer = useCallback(() => {
-    if (open || returning.current || !cabinetRef.current) return;
+    if (
+      !CABINET_INTERACTION_ENABLED ||
+      open ||
+      returning.current ||
+      !cabinetRef.current
+    ) return;
     cameraStartPosition.current.copy(camera.position);
     cameraStartQuaternion.current.copy(camera.quaternion);
     const cabinet = cabinetRef.current;
@@ -157,10 +164,14 @@ export default function CorridorCabinet() {
       <group
         scale={CABINET.scale}
         position={[0, CABINET.modelY, 0]}
-        onClick={(event) => {
-          event.stopPropagation();
-          openDrawer();
-        }}
+        onClick={
+          CABINET_INTERACTION_ENABLED
+            ? (event) => {
+                event.stopPropagation();
+                openDrawer();
+              }
+            : undefined
+        }
       >
         <primitive object={modelScene} />
       </group>
