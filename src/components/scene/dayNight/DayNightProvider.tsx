@@ -10,7 +10,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 import type * as THREE from "three";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
@@ -48,7 +47,6 @@ export function DayNightProvider({
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("day");
   const transition = useMemo(createTransition, []);
   const { reducedMotion } = useResponsiveExperience();
-  const gl = useThree((state) => state.gl);
   const toggle = useCallback(() => {
     if (enabled)
       setTimeOfDay((current) => (current === "day" ? "night" : "day"));
@@ -77,39 +75,6 @@ export function DayNightProvider({
       tween.kill();
     };
   }, [reducedMotion, timeOfDay, transition]);
-
-  useEffect(() => {
-    // Only the existing navigation/hints use this attribute, never a canvas filter.
-    const root = gl.domElement.closest<HTMLElement>(".experience-root");
-    if (!root) return;
-    root.dataset.timeOfDay = timeOfDay;
-    return () => {
-      delete root.dataset.timeOfDay;
-    };
-  }, [gl, timeOfDay]);
-
-  useEffect(() => {
-    // Keyboard equivalent without adding a competing on-screen theme switch.
-    const canvas = gl.domElement;
-    // R3F puts Canvas's tabIndex/aria-label on its wrapping div, not the canvas.
-    const keyboardTarget = canvas.closest<HTMLElement>("[tabindex]") ?? canvas;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (
-        (event.target !== canvas && event.target !== keyboardTarget) ||
-        event.repeat ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey
-      )
-        return;
-      if (event.key.toLowerCase() === "n") {
-        event.preventDefault();
-        toggle();
-      }
-    };
-    keyboardTarget.addEventListener("keydown", onKeyDown);
-    return () => keyboardTarget.removeEventListener("keydown", onKeyDown);
-  }, [gl, toggle]);
 
   const value = useMemo(
     () => ({ timeOfDay, toggle, enabled, transition }),

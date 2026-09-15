@@ -12,7 +12,6 @@ import { ROOM_ENVIRONMENT_URL } from "./assetPaths";
 import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 import { useResponsiveExperience } from "../ResponsiveExperience";
-import { DayNightProvider } from "./dayNight/DayNightProvider";
 import DayNightLighting from "./dayNight/DayNightLighting";
 
 const AVATAR_APPROACH_DISTANCE = 7;
@@ -20,10 +19,12 @@ const AVATAR_APPROACH_DISTANCE = 7;
 export default function RoomScene({
   corridorLoadProgress,
   corridorAssetsReady,
+  onTransitionStart,
   onTransitionComplete,
 }: {
   corridorLoadProgress: number;
   corridorAssetsReady: boolean;
+  onTransitionStart: () => void;
   onTransitionComplete: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,6 +48,7 @@ export default function RoomScene({
     if (!corridorAssetsReady || !doorReady || isOpen || isTransitioning) return;
     setIsOpen(true);
     setIsTransitioning(true);
+    onTransitionStart();
 
     document.body.style.overflow = "hidden";
 
@@ -84,7 +86,7 @@ export default function RoomScene({
   };
 
   return (
-    <DayNightProvider enabled={!isTransitioning}>
+    <>
       <color attach="background" args={[sceneBackgroundColor]} />
       <fog
         attach="fog"
@@ -124,6 +126,6 @@ export default function RoomScene({
           </Suspense>
         </group>
       ) : null}
-    </DayNightProvider>
+    </>
   );
 }
