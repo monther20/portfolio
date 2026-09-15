@@ -6,6 +6,7 @@ import { useLoader, useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";
 
 import { getFogFadeRange } from "./fogVisibility";
+import { configureArtworkTexture } from "./artworkTexture";
 import { useResponsiveExperience } from "../ResponsiveExperience";
 import { useDayNight } from "./dayNight/DayNightProvider";
 import { NIGHT_CONFIG } from "./dayNight/config";
@@ -159,22 +160,11 @@ export default function PaintSprite({
   const texPaint = useLoader(THREE.TextureLoader, painted ?? sketch);
 
   useEffect(() => {
-    const qualityAnisotropy = responsive.qualityTier === "low"
-      ? 2
-      : responsive.qualityTier === "medium"
-        ? 4
-        : 8;
-    const anisotropy = Math.min(
-      qualityAnisotropy,
-      gl.capabilities.getMaxAnisotropy(),
-    );
-
+    const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
     [texSketch, texPaint].forEach((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = anisotropy;
-      texture.needsUpdate = true;
+      configureArtworkTexture(texture, maxAnisotropy);
     });
-  }, [gl, responsive.qualityTier, texSketch, texPaint]);
+  }, [gl, texSketch, texPaint]);
 
   // Derive plane size from the (painted) image's natural aspect ratio.
   const [w, h] = useMemo(() => {

@@ -2,6 +2,12 @@
   /* Written by the same GSAP clock that lights the scene. */
   --night-amount: 0;
   --night-mix: calc(var(--night-amount) * 100%);
+  --track-width: 66px;
+  --track-height: 34px;
+  --thumb-size: 25px;
+  --thumb-inset: 3px;
+  --thumb-travel: 31px;
+  --icon-size: 19px;
   --ink: color-mix(in srgb, #343330, #ded2bc var(--night-mix));
   --paper: color-mix(in srgb, #fffdf7, #ead9b6 var(--night-mix));
   --track: color-mix(in srgb, #eae7df, #303c53 var(--night-mix));
@@ -72,9 +78,9 @@
 .track {
   position: relative;
   display: block;
-  width: 66px;
-  height: 34px;
-  flex: 0 0 66px;
+  width: var(--track-width);
+  height: var(--track-height);
+  flex: 0 0 var(--track-width);
   box-sizing: border-box;
   border: 1.5px solid currentColor;
   border-radius: 48% 52% 49% 51% / 49% 46% 54% 51%;
@@ -96,24 +102,24 @@
 
 .thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
+  top: var(--thumb-inset);
+  left: var(--thumb-inset);
   display: grid;
   place-items: center;
-  width: 25px;
-  height: 25px;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
   box-sizing: border-box;
   border: 1.3px solid #343330;
   border-radius: 46% 54% 51% 49%;
   color: #343330;
   background: var(--paper);
-  transform: translateX(calc(var(--night-amount) * 31px)) rotate(3deg);
+  transform: translateX(calc(var(--night-amount) * var(--thumb-travel))) rotate(3deg);
 }
 
 .thumb svg {
   grid-area: 1 / 1;
-  width: 19px;
-  height: 19px;
+  width: var(--icon-size);
+  height: var(--icon-size);
   stroke: currentColor;
   stroke-width: 1.45;
   stroke-linecap: round;
@@ -149,14 +155,29 @@
   transform: rotate(0deg) scale(0.95);
 }
 
-@media (max-width: 600px) {
+/* Compact artwork, not a scaled-down touch target. The sun/moon conveys the
+ * state; the switch keeps its accessible name when the decorative word hides. */
+@media (max-width: 600px), (orientation: landscape) and (max-height: 500px) {
   .control {
+    --track-width: 56px;
+    --track-height: 30px;
+    --thumb-size: 23px;
+    --thumb-inset: 2px;
+    --thumb-travel: 26px;
+    --icon-size: 17px;
     top: max(0.7rem, calc(env(safe-area-inset-top) + 0.4rem));
     right: max(0.6rem, calc(env(safe-area-inset-right) + 0.4rem));
   }
 
+  .button {
+    gap: 0;
+    padding: 6px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
   .label {
-    font-size: 1.25rem;
+    display: none;
   }
 }
 

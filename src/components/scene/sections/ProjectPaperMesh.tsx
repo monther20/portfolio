@@ -11,6 +11,7 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { getFogFadeRange } from "../fogVisibility";
+import { configureArtworkTexture } from "../artworkTexture";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { useDayNight } from "../dayNight/DayNightProvider";
 import { NIGHT_CONFIG } from "../dayNight/config";
@@ -133,16 +134,11 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
     }), []);
 
     useEffect(() => {
-      const anisotropy = Math.min(
-        responsive.qualityTier === "low" ? 2 : responsive.qualityTier === "medium" ? 4 : 8,
-        gl.capabilities.getMaxAnisotropy(),
-      );
+      const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
       [texSketch, texPaint, texBack].forEach((texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = anisotropy;
-        texture.needsUpdate = true;
+        configureArtworkTexture(texture, maxAnisotropy);
       });
-    }, [gl, responsive.qualityTier, texBack, texPaint, texSketch]);
+    }, [gl, texBack, texPaint, texSketch]);
 
     useEffect(
       () => () => {

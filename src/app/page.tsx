@@ -131,7 +131,7 @@ function ResponsiveHallwayScene({
       {webglSupported === true ? (
         <Canvas
           className="experience-canvas"
-          aria-label="Interactive 3D portfolio. Click a lantern or press N to toggle day and night. Open the door, then scroll, swipe, or use the arrow keys to explore. A light switch is also available after entering."
+          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore. A light switch is also available after entering."
           tabIndex={0}
           onKeyDown={(event) => {
             // Ignore keys from embedded forms and other scene controls.
@@ -144,7 +144,14 @@ function ResponsiveHallwayScene({
               event.metaKey
             )
               return;
-            if (event.key.toLowerCase() === "n") {
+            if (
+              initialLoadingComplete &&
+              !doorOpen &&
+              (event.key === "Enter" || event.key === " ")
+            ) {
+              event.preventDefault();
+              enter();
+            } else if (event.key.toLowerCase() === "n") {
               event.preventDefault();
               toggle();
             }
@@ -186,12 +193,6 @@ function ResponsiveHallwayScene({
       ) : null}
       {webglSupported === true ? (
         <>
-          {initialLoadingComplete && !doorOpen ? (
-            <button type="button" className="door-entry-prompt" onClick={enter}>
-              {responsive.isCoarsePointer ? "Tap to enter" : "Click to enter"}
-              <span aria-hidden="true"> ↗</span>
-            </button>
-          ) : null}
           <JourneyLoadingNotice visible={entered} />
           <DayNightSwitch visible={entered} />
           <JourneyHud visible={entered} />

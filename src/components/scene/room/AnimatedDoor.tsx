@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useGLTF, useTexture } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import {
   rotationTuple,
   scaleTuple,
@@ -12,6 +13,7 @@ import {
 } from "../roomDebug/types";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { ROOM_DOOR_MODEL_URL } from "../assetPaths";
+import { configureArtworkTexture } from "../artworkTexture";
 import { useDayNight, useDayNightTransition } from "../dayNight/DayNightProvider";
 import { addUnlitNightLighting } from "../dayNight/unlitNightMaterial";
 
@@ -36,6 +38,7 @@ export default function AnimatedDoor({
 }) {
   const { scene } = useGLTF(ROOM_DOOR_MODEL_URL);
   const frameTexture = useTexture("/textures/room/door_frame.webp");
+  const gl = useThree((state) => state.gl);
   const [hovered, setHovered] = useState(false);
   const responsive = useResponsiveExperience();
   const interactive = Boolean(onClick);
@@ -83,9 +86,13 @@ export default function AnimatedDoor({
   }, [model]));
 
   useEffect(() => {
-    frameTexture.colorSpace = THREE.SRGBColorSpace;
-    frameTexture.needsUpdate = true;
-  }, [frameTexture]);
+    const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
+    configureArtworkTexture(frameTexture, maxAnisotropy);
+    // The embedded pencil atlas needs the same filtering as the outer frame.
+    model.materials.forEach((material) => {
+      if (material.map) configureArtworkTexture(material.map, maxAnisotropy);
+    });
+  }, [frameTexture, gl, model]);
 
   useEffect(() => {
     // The asset's own hinge is authoritative; don't also play its GLTF clips.
