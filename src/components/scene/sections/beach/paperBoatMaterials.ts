@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { PAPER_BOAT_LIGHTING, type PaperBoatLighting } from "./paperBoatConfig";
 
-const DAY_OUTER = new THREE.Color("#eeeae1");
-const DAY_INNER = new THREE.Color("#f7f2e7");
+// White sketch paper by day; texture and vertex shading still define the folds.
+const DAY_OUTER = new THREE.Color("#ffffff");
+const DAY_INNER = new THREE.Color("#ffffff");
 const NIGHT_OUTER = new THREE.Color("#aab2bd");
 const NIGHT_INNER = new THREE.Color("#e9ddc5");
 const DAY_PENCIL = new THREE.Color("#514d47");

@@ -61,18 +61,21 @@ type GreeterTextHalfProps = {
   anchorX: "left" | "right";
   fontSize: number;
   color: string;
-  renderOrder: number;
   letterSpacing?: number;
 };
 
-/** One independently moving half of a greeter label. */
+/**
+ * One independently moving half of a greeter label. Keep the default render
+ * order so transparent artwork sorts back-to-front by distance: a forced early
+ * pass lets farther wall text and floor sprites paint over these non-depth-writing
+ * glyphs. The name/avatar/role z offsets provide their local layering.
+ */
 function GreeterTextHalf({
   name,
   children,
   anchorX,
   fontSize,
   color,
-  renderOrder,
   letterSpacing = 0,
 }: GreeterTextHalfProps) {
   const text = useRef<THREE.Mesh>(null);
@@ -91,7 +94,6 @@ function GreeterTextHalf({
       letterSpacing={letterSpacing}
       sdfGlyphSize={128}
       frustumCulled={false}
-      renderOrder={renderOrder}
     >
       {children}
       <meshBasicMaterial
@@ -185,7 +187,6 @@ export default function CorridorGreeter() {
           anchorX="right"
           fontSize={1.55}
           color="#2b2b2b"
-          renderOrder={-1}
           letterSpacing={0.015}
         >
           MON
@@ -201,7 +202,6 @@ export default function CorridorGreeter() {
           anchorX="left"
           fontSize={1.55}
           color="#2b2b2b"
-          renderOrder={-1}
           letterSpacing={0.015}
         >
           THER
@@ -232,7 +232,6 @@ export default function CorridorGreeter() {
           anchorX="right"
           fontSize={0.48}
           color="#57524a"
-          renderOrder={2}
         >
           web &amp; mobile
         </GreeterTextHalf>
@@ -252,7 +251,6 @@ export default function CorridorGreeter() {
           anchorX="left"
           fontSize={0.48}
           color="#57524a"
-          renderOrder={2}
         >
           developer
         </GreeterTextHalf>

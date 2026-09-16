@@ -9,8 +9,8 @@
   --thumb-travel: 31px;
   --icon-size: 19px;
   --ink: color-mix(in srgb, #343330, #ded2bc var(--night-mix));
-  --paper: color-mix(in srgb, #fffdf7, #ead9b6 var(--night-mix));
-  --track: color-mix(in srgb, #eae7df, #303c53 var(--night-mix));
+  --paper: color-mix(in srgb, #ffffff, #ead9b6 var(--night-mix));
+  --track: color-mix(in srgb, #ffffff, #303c53 var(--night-mix));
   position: fixed;
   top: max(1.15rem, calc(env(safe-area-inset-top) + 0.6rem));
   right: max(1.1rem, calc(env(safe-area-inset-right) + 0.6rem));

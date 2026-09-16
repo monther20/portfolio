@@ -212,7 +212,7 @@ for (const profile of profiles) {
   });
 }
 
-test("portrait boats occupy separate screen pockets outside the contact signs and shore silhouettes", () => {
+test("portrait boats occupy separate screen pockets outside the contact signs", () => {
   const geometry = createPaperBoatGeometry();
   try {
     for (const profile of profiles.filter((p) => p.name.includes("phone"))) {
@@ -319,6 +319,8 @@ test("matte day and softly emissive night restore exactly through interrupted/re
     fresh = createPaperBoatMaterials(texture);
   try {
     const day = appearance(materials);
+    assert.equal(materials.outer.color.getHexString(), "ffffff");
+    assert.equal(materials.inner.color.getHexString(), "ffffff");
     for (const amount of [1, 0.25, 0.9, 0, 1, 0.6, 0.12, 1, 0]) {
       materials.applyNight(amount);
       fresh.applyNight(amount);
@@ -327,6 +329,8 @@ test("matte day and softly emissive night restore exactly through interrupted/re
     assert.deepEqual(appearance(materials), day);
     assert.equal(materials.inner.emissiveIntensity, 0);
     fresh.applyNight(1); // Same initialization path as a late-mounted subscriber.
+    assert.equal(fresh.outer.color.getHexString(), "aab2bd");
+    assert.equal(fresh.inner.color.getHexString(), "e9ddc5");
     assert.ok(fresh.inner.emissiveIntensity > fresh.outer.emissiveIntensity);
     assert.ok(
       fresh.inner.emissiveIntensity <= 2,

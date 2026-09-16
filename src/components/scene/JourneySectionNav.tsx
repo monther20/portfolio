@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -17,6 +19,7 @@ import {
   type JourneySectionId,
 } from "./sectionNavigation";
 import { useJourneyState } from "./journeyState";
+import { useDayNightTransition } from "./dayNight/DayNightProvider";
 
 function SectionIcon({ id }: { id: JourneySectionId }) {
   const paths: Record<JourneySectionId, ReactNode> = {
@@ -64,6 +67,14 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
   const [cameraZ, setCameraZ] = useState(JOURNEY_SECTIONS[0].z);
   const [hasJourneyProgress, setHasJourneyProgress] = useState(false);
   const journey = useJourneyState();
+  const nav = useRef<HTMLElement>(null);
+
+  // Follow the scene's shared clock, including reversals and reduced motion.
+  useDayNightTransition(
+    useCallback((amount) => {
+      nav.current?.style.setProperty("--night-amount", String(amount));
+    }, []),
+  );
 
   useEffect(() => {
     const update = (event: Event) => {
@@ -86,6 +97,7 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
 
   return (
     <nav
+      ref={nav}
       className={`journey-section-nav${navVisible ? " is-visible" : ""}`}
       aria-label="Portfolio sections"
       aria-hidden={!navVisible}

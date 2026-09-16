@@ -43,8 +43,6 @@ export const CONTACT_BUTTON_TEXTURES: Record<ContactButtonKey, string> = {
 
 export const CONTACT_TEXTURES = {
   waves: `${CONTACT_TEXTURE_BASE}/faletopdown.webp`,
-  lighthouse: `${CONTACT_TEXTURE_BASE}/latarnia.webp`,
-  ship: `${CONTACT_TEXTURE_BASE}/statek.webp`,
   /** Reuse the hand-drawn floor grain as monochrome pier timber. */
   boardwalkWood: `${CORRIDOR_TEXTURE_BASE}/floor_wood.webp`,
 } as const;
