@@ -9,6 +9,8 @@ import Boardwalk from "./beach/Boardwalk";
 import ContactCrates from "./beach/ContactCrates";
 import PaperBoats from "./beach/PaperBoats";
 import PierDecorations from "./beach/PierDecorations";
+import CoastalLandscape from "./beach/CoastalLandscape";
+import { SEA_SIZE } from "./beach/coastalLandscapeModel";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { useNightMaterials } from "../dayNight/useNightMaterials";
 
@@ -40,7 +42,7 @@ function Sea() {
 
   return (
     <mesh ref={mesh} name="Beach Sea" position={[0, BEACH.seaY, BEACH.seaZ]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[80, 70]} />
+      <planeGeometry args={[SEA_SIZE.width, SEA_SIZE.depth]} />
       <meshBasicMaterial map={tiled} color="#ffffff" transparent opacity={0.72} />
     </mesh>
   );
@@ -54,6 +56,7 @@ export default function BeachContactSection() {
   return (
     <group name="Beach Contact Section">
       <Sea />
+      <CoastalLandscape />
       <Boardwalk />
       <PierDecorations />
       <PaperBoats />

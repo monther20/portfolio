@@ -98,12 +98,12 @@ export const CORRIDOR_LAMPS = {
 } as const;
 export const NIGHT_LIGHT_COUNT = 2 + CORRIDOR_LAMPS.lightPoolSize;
 export const NIGHT_STARS = {
-  count: 640,
-  lowCount: 280,
+  count: 960,
+  lowCount: 520,
   radius: 130,
   opacity: 0.85,
-  minSize: 1.6,
-  maxSize: 5.2,
+  minSize: 1.35,
+  maxSize: 6.5,
   color: "#d5ddec",
   warmColor: "#e2d4b8",
 } as const;
