@@ -6,7 +6,10 @@ import { useLoader, useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";
 
 import { getFogFadeRange } from "./fogVisibility";
+import { configureArtworkTexture } from "./artworkTexture";
 import { useResponsiveExperience } from "../ResponsiveExperience";
+import { useDayNight } from "./dayNight/DayNightProvider";
+import { NIGHT_CONFIG } from "./dayNight/config";
 
 /**
  * SketchPaintMaterial — blends a grayscale "pencil" look into the full-colour
@@ -20,6 +23,8 @@ const SketchPaintMaterial = shaderMaterial(
     texPaint: null,
     reveal: 0,
     tintColor: new THREE.Color("#ffffff"),
+    nightAmount: 0,
+    nightTint: new THREE.Color(NIGHT_CONFIG.unlitTint.illustration),
     fogColor: new THREE.Color(1, 1, 1),
     fogNear: 5,
     fogFar: 55,
@@ -43,6 +48,8 @@ const SketchPaintMaterial = shaderMaterial(
     uniform sampler2D texPaint;
     uniform float reveal;
     uniform vec3 tintColor;
+    uniform float nightAmount;
+    uniform vec3 nightTint;
     uniform vec3 fogColor;
     uniform float fogNear;
     uniform float fogFar;
@@ -70,12 +77,17 @@ const SketchPaintMaterial = shaderMaterial(
       float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
       if (fogAlpha <= 0.01) discard;
 
-      gl_FragColor = vec4(rgb, fogAlpha) * vec4(tintColor, 1.0);
-      #include <colorspace_fragment>
-
-      // Manual linear fog, synced each frame from the scene fog.
+      gl_FragColor = vec4(rgb * mix(vec3(1.0), nightTint, nightAmount), fogAlpha) * vec4(tintColor, 1.0);
       float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
-      gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+      if (nightAmount > 0.0) {
+        // Night fog/exposure are linear; retain the original day output exactly.
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      } else {
+        #include <colorspace_fragment>
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+      }
     }
   `
 );
@@ -141,28 +153,18 @@ export default function PaintSprite({
   const [hovered, setHovered] = useState(false);
   const { scene, camera, gl } = useThree();
   const responsive = useResponsiveExperience();
+  const { transition } = useDayNight();
 
   // useLoader must run unconditionally — load `painted` (or reuse sketch when absent).
   const texSketch = useLoader(THREE.TextureLoader, sketch);
   const texPaint = useLoader(THREE.TextureLoader, painted ?? sketch);
 
   useEffect(() => {
-    const qualityAnisotropy = responsive.qualityTier === "low"
-      ? 2
-      : responsive.qualityTier === "medium"
-        ? 4
-        : 8;
-    const anisotropy = Math.min(
-      qualityAnisotropy,
-      gl.capabilities.getMaxAnisotropy(),
-    );
-
+    const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
     [texSketch, texPaint].forEach((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = anisotropy;
-      texture.needsUpdate = true;
+      configureArtworkTexture(texture, maxAnisotropy);
     });
-  }, [gl, responsive.qualityTier, texSketch, texPaint]);
+  }, [gl, texSketch, texPaint]);
 
   // Derive plane size from the (painted) image's natural aspect ratio.
   const [w, h] = useMemo(() => {
@@ -178,6 +180,7 @@ export default function PaintSprite({
   useFrame(() => {
     const mat = matRef.current;
     if (!mat) return;
+    mat.nightAmount = transition.uniforms.nightAmount.value;
 
     // Proximity-driven reveal (+ hover boost to fully painted).
     let target = hovered ? 1 : 0;

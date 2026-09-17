@@ -21,6 +21,7 @@ import {
 } from "./hingedWallSettings";
 import { useTiledTexture } from "./useTiledTexture";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
+import { useNightMaterials, useNightText } from "../dayNight/useNightMaterials";
 
 const C = "/textures/corridor";
 
@@ -39,6 +40,7 @@ function MiniWallSurface({
   title: string;
 }) {
   const meshRef = React.useRef<THREE.Mesh>(null);
+  useNightMaterials(meshRef, "corridor");
 
   useFrame(() => {
     const mesh = meshRef.current;
@@ -170,8 +172,11 @@ function WallText({
   weight?: number;
   rotation?: number;
 }) {
+  const text = React.useRef<THREE.Mesh>(null);
+  useNightText(text, color);
   return (
     <Text
+      ref={text}
       position={position}
       rotation={[0, 0, rotation]}
       fontSize={fontSize}
@@ -245,60 +250,68 @@ function InfoStation({
  * CorridorStations — the info stops along the corridor walls and the remaining
  * floor and wall props.
  */
-export default function CorridorStations() {
+export default function CorridorStations({ part }: { part: "near" | "far" }) {
   return (
-    <group name="Corridor Stations">
-      {corridor.stations.map((station, i) => (
-        <InfoStation
-          key={station.title}
-          station={station}
-          z={corridorStationZ(i)}
-          index={i}
-        />
-      ))}
+    <group name={`Corridor Stations: ${part}`}>
+      {corridor.stations.map((station, i) =>
+        (i === 0) === (part === "near") ? (
+          <InfoStation
+            key={station.title}
+            station={station}
+            z={corridorStationZ(i)}
+            index={i}
+          />
+        ) : null,
+      )}
 
-      {/* Props standing on the floor */}
-      <PaintSprite
-        name="Corridor Potted Tree"
-        sketch={`${C}/drzewkowdoniczce.webp`}
-        position={[2.6, CORRIDOR.floorY + 0.95, corridorLayoutZ(-38)]}
-        height={1.9}
-        revealNear={8}
-        revealFar={16}
-      />
-      <PaintSprite
-        name="Corridor Potted Flower"
-        sketch={`${C}/kwiatekwdoniczce.webp`}
-        position={[-2.7, CORRIDOR.floorY + 0.55, corridorLayoutZ(-57)]}
-        height={1.1}
-        revealNear={8}
-        revealFar={16}
-      />
-      <CorridorCabinet />
-
-      {/* Vent flat on the right wall */}
-      <group
-        name="Corridor Vent"
-        position={[CORRIDOR.halfWidth - 0.06, 1.6, corridorLayoutZ(-50)]}
-        rotation={[0, -Math.PI / 2, 0]}
-      >
+      {/* The first tree and story panel are part of the initial entrance. */}
+      {part === "near" ? (
         <PaintSprite
-          name="Corridor Vent Sprite"
-          sketch={`${C}/kratkawentylacyjna.webp`}
-          billboard={false}
-          height={0.5}
+          name="Corridor Potted Tree"
+          sketch={`${C}/drzewkowdoniczce.webp`}
+          position={[2.6, CORRIDOR.floorY + 0.95, corridorLayoutZ(-38)]}
+          height={1.9}
+          revealNear={8}
+          revealFar={16}
         />
-      </group>
+      ) : null}
+      {part === "far" ? (
+        <>
+          <PaintSprite
+            name="Corridor Potted Flower"
+            sketch={`${C}/kwiatekwdoniczce.webp`}
+            position={[-2.7, CORRIDOR.floorY + 0.55, corridorLayoutZ(-57)]}
+            height={1.1}
+            revealNear={8}
+            revealFar={16}
+          />
+          <CorridorCabinet />
 
-      {/* The table beside the window (the airplane rests above it) */}
-      <PaintSprite
-        name="Corridor Window Table"
-        sketch="/textures/shared/table.webp"
-        position={[CORRIDOR.table.x, CORRIDOR.table.y, CORRIDOR.table.z]}
-        height={2.3}
-        revealNear={9}
-        revealFar={18}
-      />
+          {/* Vent flat on the right wall */}
+          <group
+            name="Corridor Vent"
+            position={[CORRIDOR.halfWidth - 0.06, 1.6, corridorLayoutZ(-50)]}
+            rotation={[0, -Math.PI / 2, 0]}
+          >
+            <PaintSprite
+              name="Corridor Vent Sprite"
+              sketch={`${C}/kratkawentylacyjna.webp`}
+              billboard={false}
+              height={0.5}
+            />
+          </group>
+
+          {/* The table beside the window (the airplane rests above it) */}
+          <PaintSprite
+            name="Corridor Window Table"
+            sketch="/textures/shared/table.webp"
+            position={[CORRIDOR.table.x, CORRIDOR.table.y, CORRIDOR.table.z]}
+            height={2.3}
+            revealNear={9}
+            revealFar={18}
+          />
+        </>
+      ) : null}
     </group>
   );
 }

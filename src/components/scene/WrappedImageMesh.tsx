@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 
 import { getFogFadeRange } from "./fogVisibility";
+import { useDayNight } from "./dayNight/DayNightProvider";
+import { NIGHT_CONFIG } from "./dayNight/config";
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -25,6 +27,8 @@ const fragmentShader = /* glsl */ `
   uniform sampler2D texSketch;
   uniform sampler2D texPaint;
   uniform float reveal;
+  uniform float nightAmount;
+  uniform vec3 nightTint;
   uniform vec3 fogColor;
   uniform float fogNear;
   uniform float fogFar;
@@ -47,8 +51,10 @@ const fragmentShader = /* glsl */ `
     if (fogAlpha <= 0.01) discard;
 
     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+    color *= mix(vec3(1.0), nightTint, nightAmount);
     color = mix(color, fogColor, fogFactor);
     gl_FragColor = vec4(color, alpha * fogAlpha);
+    #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
 `;
@@ -163,6 +169,7 @@ export default function WrappedImageMesh({
 }: WrappedImageMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera, scene } = useThree();
+  const { transition } = useDayNight();
   const [texSketch, texPaint] = useLoader(THREE.TextureLoader, [sketch, painted ?? sketch]);
   const geometry = useMemo(
     () => createWrappedGeometry(width, height, depth, horizontalBorderUv, verticalBorderUv),
@@ -176,6 +183,8 @@ export default function WrappedImageMesh({
         texSketch: { value: texSketch },
         texPaint: { value: texPaint },
         reveal: { value: alwaysPainted ? 1 : 0 },
+        nightAmount: transition.uniforms.nightAmount,
+        nightTint: { value: new THREE.Color(NIGHT_CONFIG.unlitTint.illustration) },
         fogColor: { value: new THREE.Color("#ffffff") },
         fogNear: { value: 5 },
         fogFar: { value: 45 },
@@ -189,7 +198,7 @@ export default function WrappedImageMesh({
       depthTest: true,
       side: THREE.DoubleSide,
     }),
-    [alwaysPainted, texPaint, texSketch],
+    [alwaysPainted, texPaint, texSketch, transition],
   );
 
   useEffect(() => {

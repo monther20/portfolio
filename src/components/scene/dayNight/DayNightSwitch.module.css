@@ -1,0 +1,198 @@
+.control {
+  /* Written by the same GSAP clock that lights the scene. */
+  --night-amount: 0;
+  --night-mix: calc(var(--night-amount) * 100%);
+  --track-width: 66px;
+  --track-height: 34px;
+  --thumb-size: 25px;
+  --thumb-inset: 3px;
+  --thumb-travel: 31px;
+  --icon-size: 19px;
+  --ink: color-mix(in srgb, #343330, #ded2bc var(--night-mix));
+  --paper: color-mix(in srgb, #ffffff, #ead9b6 var(--night-mix));
+  --track: color-mix(in srgb, #ffffff, #303c53 var(--night-mix));
+  position: fixed;
+  top: max(1.15rem, calc(env(safe-area-inset-top) + 0.6rem));
+  right: max(1.1rem, calc(env(safe-area-inset-right) + 0.6rem));
+  z-index: 10001;
+  color: var(--ink);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px) rotate(-3deg);
+  transition: opacity 450ms ease, transform 550ms ease, visibility 450ms;
+}
+
+.control[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) rotate(0deg);
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 48px;
+  padding: 4px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: opacity 180ms ease;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.button:focus-visible {
+  outline: 1.5px dashed currentColor;
+  outline-offset: 5px;
+  border-radius: 7px 12px 8px 11px;
+}
+
+.label {
+  display: grid;
+  font: 600 1.4rem/1 var(--font-caveat), "Caveat", cursive;
+  text-align: right;
+}
+
+.label span {
+  grid-area: 1 / 1;
+  /* Fade out before the other word fades in, avoiding overlapping letters. */
+  opacity: calc(1 - var(--night-amount) * 2);
+  transform: translateY(calc(var(--night-amount) * 5px));
+}
+
+.label span[data-mode="night"] {
+  opacity: calc(var(--night-amount) * 2 - 1);
+  transform: translateY(calc((1 - var(--night-amount)) * 5px));
+}
+
+.track {
+  position: relative;
+  display: block;
+  width: var(--track-width);
+  height: var(--track-height);
+  flex: 0 0 var(--track-width);
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+  border-radius: 48% 52% 49% 51% / 49% 46% 54% 51%;
+  background: var(--track);
+  transform: rotate(-3deg);
+  transition: transform 250ms ease;
+}
+
+/* A second imperfect pencil line, rather than a polished UI shadow. */
+.track::after {
+  content: "";
+  position: absolute;
+  inset: -4px -3px -3px -4px;
+  border: 1px solid currentColor;
+  border-radius: 51% 49% 46% 54% / 52% 55% 45% 48%;
+  opacity: 0.24;
+  pointer-events: none;
+}
+
+.thumb {
+  position: absolute;
+  top: var(--thumb-inset);
+  left: var(--thumb-inset);
+  display: grid;
+  place-items: center;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  box-sizing: border-box;
+  border: 1.3px solid #343330;
+  border-radius: 46% 54% 51% 49%;
+  color: #343330;
+  background: var(--paper);
+  transform: translateX(calc(var(--night-amount) * var(--thumb-travel))) rotate(3deg);
+}
+
+.thumb svg {
+  grid-area: 1 / 1;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  stroke: currentColor;
+  stroke-width: 1.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sun {
+  opacity: calc(1 - var(--night-amount));
+  transform: rotate(calc(var(--night-amount) * 80deg)) scale(calc(1 - var(--night-amount) * 0.4));
+}
+
+.moon {
+  opacity: var(--night-amount);
+  transform: rotate(calc((var(--night-amount) - 1) * 60deg)) scale(calc(0.6 + var(--night-amount) * 0.4));
+}
+
+.star {
+  position: absolute;
+  top: 1px;
+  left: 11px;
+  font: 22px/28px Georgia, serif;
+  opacity: calc(var(--night-amount) * 0.7);
+  transform: scale(calc(0.5 + var(--night-amount) * 0.5)) rotate(calc((var(--night-amount) - 1) * 35deg));
+}
+
+@media (hover: hover) {
+  .button:hover:not(:disabled) .track {
+    transform: rotate(2deg) translateY(-1px);
+  }
+}
+
+.button:active:not(:disabled) .track {
+  transform: rotate(0deg) scale(0.95);
+}
+
+/* Compact artwork, not a scaled-down touch target. The sun/moon conveys the
+ * state; the switch keeps its accessible name when the decorative word hides. */
+@media (max-width: 600px), (orientation: landscape) and (max-height: 500px) {
+  .control {
+    --track-width: 56px;
+    --track-height: 30px;
+    --thumb-size: 23px;
+    --thumb-inset: 2px;
+    --thumb-travel: 26px;
+    --icon-size: 17px;
+    top: max(0.7rem, calc(env(safe-area-inset-top) + 0.4rem));
+    right: max(0.6rem, calc(env(safe-area-inset-right) + 0.4rem));
+  }
+
+  .button {
+    gap: 0;
+    padding: 6px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .label {
+    display: none;
+  }
+}
+
+/* Leave the right-side section rail clear in short landscape viewports. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .control {
+    left: max(0.7rem, calc(env(safe-area-inset-left) + 0.4rem));
+    right: auto;
+    top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .control * {
+    transition: none !important;
+  }
+}

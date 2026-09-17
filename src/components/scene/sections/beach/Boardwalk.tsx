@@ -9,10 +9,16 @@ import { CONTACT_TEXTURES } from "../../assetPaths";
 import { seededRange } from "../../PartingItem";
 import { BEACH } from "../../journeyConfig";
 import { useFogFade } from "../../useFogFade";
+import { useNightMaterials } from "../../dayNight/useNightMaterials";
 
-const BOARDWALK_POSITION: [number, number, number] = [0, -0.39, -1.72];
-/** Extend the pier far enough to reach the contact buttons. */
-const BOARDWALK_END_Z = BEACH.boardwalk.endZ - 5;
+import {
+  BOARDWALK_POSITION,
+  BOARDWALK_END_Z,
+  BOARDWALK_POST_WIDTH,
+  BOARDWALK_POST_HEIGHT,
+  boardwalkPostRows,
+} from "./boardwalkLayout";
+
 const PLANK_DEPTH = 0.68;
 const REMOVED_PLANK_COUNT = 20;
 const RETAINED_POST_START_INDEX = 4;
@@ -39,6 +45,7 @@ function FogFadedMesh({
 }: FogFadedMeshProps) {
   const ref = useRef<THREE.Mesh>(null);
   useFogFade(ref);
+  useNightMaterials(ref, "timber");
 
   return (
     <mesh
@@ -65,7 +72,10 @@ export default function Boardwalk() {
     () => new THREE.BoxGeometry(BEACH.boardwalk.width, 0.14, PLANK_DEPTH),
     [],
   );
-  const postGeometry = useMemo(() => new THREE.BoxGeometry(0.2, 1.75, 0.2), []);
+  const postGeometry = useMemo(
+    () => new THREE.BoxGeometry(BOARDWALK_POST_WIDTH, BOARDWALK_POST_HEIGHT, BOARDWALK_POST_WIDTH),
+    [],
+  );
 
   // Crop narrow strips from different boards in the source artwork, then turn
   // the grain so it runs along each plank instead of across the short edge.
@@ -128,18 +138,7 @@ export default function Boardwalk() {
     return out.slice(REMOVED_PLANK_COUNT);
   }, []);
 
-  const postRows = useMemo(() => {
-    const zPositions: number[] = [];
-    for (let z = BEACH.boardwalk.startZ - 0.65; z >= BOARDWALK_END_Z; z -= 3.35) {
-      zPositions.push(z);
-    }
-
-    const railX = BEACH.boardwalk.width / 2 - 0.08;
-    return {
-      zPositions,
-      sides: [BEACH.boardwalk.x - railX, BEACH.boardwalk.x + railX],
-    };
-  }, []);
+  const postRows = useMemo(boardwalkPostRows, []);
 
   const ropes = useMemo(
     () =>

@@ -11,7 +11,10 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { getFogFadeRange } from "../fogVisibility";
+import { configureArtworkTexture } from "../artworkTexture";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
+import { useDayNight } from "../dayNight/DayNightProvider";
+import { NIGHT_CONFIG } from "../dayNight/config";
 
 const vertexShader = /* glsl */ `
   uniform float bend;
@@ -37,6 +40,8 @@ const fragmentShader = /* glsl */ `
   uniform sampler2D texPaint;
   uniform sampler2D texBack;
   uniform float reveal;
+  uniform float nightAmount;
+  uniform vec3 nightTint;
   uniform vec3 fogColor;
   uniform float fogNear;
   uniform float fogFar;
@@ -66,8 +71,10 @@ const fragmentShader = /* glsl */ `
 
     color.a *= fogAlpha;
     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+    color.rgb *= mix(vec3(1.0), nightTint, nightAmount);
     color.rgb = mix(color.rgb, fogColor, fogFactor);
     gl_FragColor = color;
+    #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
 `;
@@ -111,6 +118,7 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
     const bendRef = useRef(0);
     const { camera, gl, scene } = useThree();
     const responsive = useResponsiveExperience();
+    const { transition } = useDayNight();
     const texSketch = useLoader(THREE.TextureLoader, sketch);
     const texPaint = useLoader(THREE.TextureLoader, painted ?? sketch);
     const texBack = useLoader(THREE.TextureLoader, back);
@@ -126,16 +134,11 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
     }), []);
 
     useEffect(() => {
-      const anisotropy = Math.min(
-        responsive.qualityTier === "low" ? 2 : responsive.qualityTier === "medium" ? 4 : 8,
-        gl.capabilities.getMaxAnisotropy(),
-      );
+      const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
       [texSketch, texPaint, texBack].forEach((texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = anisotropy;
-        texture.needsUpdate = true;
+        configureArtworkTexture(texture, maxAnisotropy);
       });
-    }, [gl, responsive.qualityTier, texBack, texPaint, texSketch]);
+    }, [gl, texBack, texPaint, texSketch]);
 
     useEffect(
       () => () => {
@@ -154,6 +157,8 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
       texPaint: { value: texPaint },
       texBack: { value: texBack },
       reveal: { value: 0 },
+      nightAmount: transition.uniforms.nightAmount,
+      nightTint: { value: new THREE.Color(NIGHT_CONFIG.unlitTint.illustration) },
       bend: { value: 0 },
       flutter: { value: 0.012 },
       time: { value: 0 },
@@ -162,7 +167,7 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
       fogFar: { value: 55 },
       fogFadeNear: { value: 27.5 },
       fogFadeFar: { value: 41 },
-    }), [texBack, texPaint, texSketch]);
+    }), [texBack, texPaint, texSketch, transition]);
 
     useFrame((state) => {
       const material = materialRef.current;

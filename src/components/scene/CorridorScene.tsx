@@ -1,22 +1,20 @@
 "use client";
 
 import CorridorShell from "./corridor/CorridorShell";
-import CorridorWindow from "./corridor/CorridorWindow";
 import CorridorGreeter from "./corridor/CorridorGreeter";
 import CorridorStations from "./corridor/CorridorStations";
+import CorridorLights from "./corridor/CorridorLights";
 
-/**
- * CorridorScene — the walkable hallway behind the front door: the avatar
- * welcome, info stations about me, and the window + table at the far end
- * where the paper airplane takes off.
+/** Critical entrance: mount behind the closed door during the initial load.
+ * Far corridor props and the window have independent background boundaries.
  */
 export default function CorridorScene() {
   return (
     <group name="Corridor Scene">
       <CorridorShell />
+      <CorridorLights />
       <CorridorGreeter />
-      <CorridorStations />
-      <CorridorWindow />
+      <CorridorStations part="near" />
     </group>
   );
 }

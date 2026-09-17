@@ -1,13 +1,10 @@
-import type { ShadowConfig } from "../shadowConfig";
+import { DAY_CONFIG } from "../dayNight/config";
 import {
-  CHAIR_ASPECT,
   HERP_ASPECT,
   ROCK1_ASPECT,
   ROCKH_ASPECT,
-  TABLE_ASPECT,
 } from "../room/floorDecalLayout";
 import {
-  cloneShadowConfig,
   createTransform,
   createVector3,
   type FloorDecalGroupDebug,
@@ -41,52 +38,25 @@ const createFloorDecalItem = (
 });
 
 /** All default coordinates/colors of the room scene. */
-export function createRoomDebugState(
-  shadowConfig: ShadowConfig,
-): RoomDebugState {
+export function createRoomDebugState(): RoomDebugState {
   return {
     scene: {
-      dayBackgroundColor: "#ffffff",
-      nightBackgroundColor: "#555566",
-      dayFogColor: "#ffffff",
-      nightFogColor: "#555566",
+      dayBackgroundColor: DAY_CONFIG.background,
+      dayFogColor: DAY_CONFIG.fog,
       fogNear: 5,
       fogFar: 45,
     },
     environment: {
       studioHdri: {
         visible: true,
-        environmentIntensity: 0.2,
+        environmentIntensity: DAY_CONFIG.environmentIntensity,
       },
     },
     lights: {
       interiorAmbient: {
         visible: true,
-        color: "#ffffff",
-        dayIntensity: 2.5,
-        nightIntensity: 1,
-      },
-      leftLanternSpot: {
-        visible: true,
-        position: createVector3(-2.84, 2.59, -15.2),
-        target: createVector3(-3.08, -4.76, -14.1),
-        intensity: 20,
-        angle: 1.2,
-        penumbra: 0.13,
-        distance: 12.5,
-        decay: 0.6,
-        color: "#ffe4a8",
-      },
-      rightLanternSpot: {
-        visible: true,
-        position: createVector3(2.58, 2.53, -15.1),
-        target: createVector3(4.56, -18.08, -14.1),
-        intensity: 24,
-        angle: 1.2,
-        penumbra: 0.13,
-        distance: 12.5,
-        decay: 0.6,
-        color: "#ffe4a8",
+        color: DAY_CONFIG.ambient.color,
+        dayIntensity: DAY_CONFIG.ambient.intensity,
       },
     },
     meshes: {
@@ -104,31 +74,19 @@ export function createRoomDebugState(
         [0.84, 0.67, 1],
       ),
       doorRoot: createTransform([0, -0.18, -15.9], [0, 0, 0], [0.6, 0.6, 0.6]),
-      doorFrame: createTransform([0, 0, 0.2]),
+      doorFrame: createTransform([0, 0, 0.2], [0, 0, 0], [1.01, 1.05, 1]),
       doorPanelPivot: createTransform([-2.555, -0.22, 0]),
       doorPanelSurface: createTransform([0, -0.1, 0]),
       leftLantern: createTransform(
-        [-2.85, 1.83, -16.05],
+        [-2.85, 0.55, -15.57],
         [0, 0, 0],
-        [0.75, 0.75, 0.75],
+        [2.5, 2.5, 2.5],
       ),
       rightLantern: createTransform(
-        [2.77, 1.84, -16.05],
+        [2.77, 0.56, -15.57],
         [0, 0, 0],
-        [0.75, 0.75, 0.75],
+        [2.5, 2.5, 2.5],
       ),
-      leftFloorGlow: {
-        ...createTransform([-3.2, -4.79, -27.1], [-Math.PI / 2, 0, 0]),
-        radius: 5.8,
-        color: "#ffe4a0",
-        maxOpacity: 0.35,
-      },
-      rightFloorGlow: {
-        ...createTransform([4.7, -4.8, -22.6], [-Math.PI / 2, 0, 0]),
-        radius: 2.5,
-        color: "#ffe4a0",
-        maxOpacity: 0.55,
-      },
     },
     interiorDetails: {
       floorDecals: {
@@ -338,40 +296,11 @@ export function createRoomDebugState(
             ),
           ],
         },
-        table: {
-          group: createFloorDecalGroup(),
-          items: [
-            createFloorDecalItem(
-              "table-01",
-              "Table",
-              "table",
-              TABLE_ASPECT,
-              [-4.2, -6.0, -8.5],
-              3.2,
-              30,
-            ),
-          ],
-        },
-        chair: {
-          group: createFloorDecalGroup(),
-          items: [
-            createFloorDecalItem(
-              "chair-01",
-              "Chair",
-              "chair",
-              CHAIR_ASPECT,
-              [-6.8, -6.4, -8.5],
-              4.5,
-              30,
-            ),
-          ],
-        },
       },
     },
     materials: {
       floor: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 1,
         metalness: 0,
         bumpScale: 0.02,
@@ -379,7 +308,6 @@ export function createRoomDebugState(
       },
       stonePath: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 0.9,
         metalness: 0,
         wireframe: false,
@@ -392,19 +320,16 @@ export function createRoomDebugState(
       },
       doorFrame: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 1,
         metalness: 0,
         wireframe: false,
       },
       doorPanel: {
         color: "#ffffff",
-        nightColor: "#888899",
         roughness: 1,
         metalness: 0,
         wireframe: false,
       },
     },
-    shadows: cloneShadowConfig(shadowConfig),
   };
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import * as THREE from "three";
+import { useRef } from "react";
+import { useNightMaterials } from "../dayNight/useNightMaterials";
 
 import { useTiledTexture } from "./useTiledTexture";
 
@@ -97,6 +99,8 @@ const DEFAULT_DEBUG: CorridorShellDebug = {
  * (the camera flies through it after the launch).
  */
 export default function CorridorShell() {
+  const root = useRef<THREE.Group>(null);
+  useNightMaterials(root, "corridor");
   const debug = DEFAULT_DEBUG;
   const length = Math.max(0.01, debug.startZ - debug.endWallZ);
   const floorTex = useTiledTexture(
@@ -149,6 +153,7 @@ export default function CorridorShell() {
 
   return (
     <group
+      ref={root}
       name="Corridor Shell"
       position={[debug.positionX, debug.positionY, debug.positionZ]}
       rotation={[debug.rotationX, debug.rotationY, debug.rotationZ]}

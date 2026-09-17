@@ -1,5 +1,3 @@
-import type { ShadowConfig } from "../shadowConfig";
-
 export type Vector3Debug = {
   x: number;
   y: number;
@@ -18,37 +16,17 @@ type LightDebug = {
   visible: boolean;
   color: string;
   dayIntensity: number;
-  nightIntensity: number;
-};
-
-type SpotLightDebug = {
-  visible: boolean;
-  position: Vector3Debug;
-  target: Vector3Debug;
-  color: string;
-  intensity: number;
-  angle: number;
-  penumbra: number;
-  distance: number;
-  decay: number;
 };
 
 type MaterialDebug = {
   color: string;
-  nightColor?: string;
   roughness: number;
   metalness: number;
   bumpScale?: number;
   wireframe: boolean;
 };
 
-type FloorGlowDebug = TransformDebug & {
-  radius: number;
-  color: string;
-  maxOpacity: number;
-};
-
-export type FloorDecalTextureKey = "rock1" | "rockHerp" | "herp" | "table" | "chair";
+export type FloorDecalTextureKey = "rock1" | "rockHerp" | "herp";
 
 export type FloorDecalGroupDebug = {
   visible: boolean;
@@ -76,8 +54,6 @@ export type FloorDecalsDebug = {
   all: FloorDecalGroupDebug;
   stones: FloorDecalCategoryDebug;
   herps: FloorDecalCategoryDebug;
-  table: FloorDecalCategoryDebug;
-  chair: FloorDecalCategoryDebug;
 };
 
 type InteriorDetailsDebug = {
@@ -87,9 +63,7 @@ type InteriorDetailsDebug = {
 export type RoomDebugState = {
   scene: {
     dayBackgroundColor: string;
-    nightBackgroundColor: string;
     dayFogColor: string;
-    nightFogColor: string;
     fogNear: number;
     fogFar: number;
   };
@@ -101,8 +75,6 @@ export type RoomDebugState = {
   };
   lights: {
     interiorAmbient: LightDebug;
-    leftLanternSpot: SpotLightDebug;
-    rightLanternSpot: SpotLightDebug;
   };
   meshes: {
     floor: TransformDebug;
@@ -114,8 +86,6 @@ export type RoomDebugState = {
     doorPanelSurface: TransformDebug;
     leftLantern: TransformDebug;
     rightLantern: TransformDebug;
-    leftFloorGlow: FloorGlowDebug;
-    rightFloorGlow: FloorGlowDebug;
   };
   interiorDetails: InteriorDetailsDebug;
   materials: {
@@ -125,7 +95,6 @@ export type RoomDebugState = {
     doorFrame: MaterialDebug;
     doorPanel: MaterialDebug;
   };
-  shadows: ShadowConfig;
 };
 
 export function createVector3(x = 0, y = 0, z = 0): Vector3Debug {
@@ -144,13 +113,6 @@ export function createTransform(
     rotation: createVector3(...rotation),
     scale: createVector3(...scale),
     renderOrder,
-  };
-}
-
-export function cloneShadowConfig(config: ShadowConfig): ShadowConfig {
-  return {
-    table: { ...config.table },
-    chair: { ...config.chair },
   };
 }
 

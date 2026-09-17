@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Text } from "@react-three/drei";
 
 import { useFogFade } from "./useFogFade";
+import { useNightText } from "./dayNight/useNightMaterials";
 
 const CAVEAT_FONT = "/fonts/Caveat-Variable.ttf";
 const CSS_PIXELS_PER_REM = 16;
@@ -43,6 +44,7 @@ export default function FloatingNote({
   name?: string;
 }) {
   const groupRef = useRef<THREE.Group>(null);
+  useNightText(groupRef, color);
   useFogFade(groupRef, { preserveTransparency: true, visibleThreshold: 0 });
 
   const worldUnitsPerPixel = distanceFactor / HTML_DISTANCE_SCALE;

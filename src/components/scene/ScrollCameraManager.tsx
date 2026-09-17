@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import {
@@ -16,10 +16,13 @@ import { getJourneyState, setJourneyState } from "./journeyState";
 import {
   JOURNEY_NAVIGATE_EVENT,
   JOURNEY_PROGRESS_EVENT,
+  JOURNEY_SECTIONS,
   type JourneyNavigateDetail,
   type JourneyProgressDetail,
 } from "./sectionNavigation";
 import { corridor } from "@/data/portfolio";
+import { JOURNEY_LOAD_STAGES, readyJourneyFarBound } from "./journeyLoading";
+import { useJourneyLoading } from "./JourneyLoadingProvider";
 import {
   reportJourneyInteraction,
   useResponsiveExperience,
@@ -49,11 +52,19 @@ type SectionNavigationMotion = {
   targetZ: number;
   elapsed: number;
   duration: number;
+  label: string;
 };
 
 export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const { camera, gl } = useThree();
   const responsive = useResponsiveExperience();
+  const { completedStages, setWaitingFor } = useJourneyLoading();
+  const lastWaitingFor = useRef<string | null>(null);
+  const reportWaiting = useCallback((label: string | null) => {
+    if (lastWaitingFor.current === label) return;
+    lastWaitingFor.current = label;
+    setWaitingFor(label);
+  }, [setWaitingFor]);
 
   const flightVelocity = useRef(0);
   const sectionNavigation = useRef<SectionNavigationMotion | null>(null);
@@ -70,7 +81,9 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   useEffect(() => {
     flightVelocity.current = 0;
     sectionNavigation.current = null;
-  }, [enabled]);
+    lastWaitingFor.current = null;
+    setWaitingFor(null);
+  }, [enabled, setWaitingFor]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -85,7 +98,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         return;
       }
 
-      const { z } = (event as CustomEvent<JourneyNavigateDetail>).detail;
+      const { id, z } = (event as CustomEvent<JourneyNavigateDetail>).detail;
       const targetZ = THREE.MathUtils.clamp(
         z,
         JOURNEY.farBound,
@@ -106,6 +119,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         targetZ,
         elapsed: 0,
         duration,
+        label: JOURNEY_SECTIONS.find((section) => section.id === id)?.label ?? "this section",
       };
       reportJourneyInteraction();
     };
@@ -218,9 +232,9 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("keydown", handleKeyDown);
       canvas.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", releasePointer);
-      window.removeEventListener("pointercancel", releasePointer);
+      canvas.removeEventListener("pointermove", handlePointerMove);
+      canvas.removeEventListener("pointerup", releasePointer);
+      canvas.removeEventListener("pointercancel", releasePointer);
     };
   }, [enabled, gl, responsive.isPhone]);
 
@@ -235,17 +249,26 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     ) {
       flightVelocity.current = 0;
       sectionNavigation.current = null;
+      reportWaiting(null);
       return;
     }
 
     const frameScale = Math.min(delta * 60, MAX_FRAME_SCALE);
 
     const nearBound = JOURNEY.corridorStart;
+    const farBound = readyJourneyFarBound(completedStages);
     const prevZ = camera.position.z;
     const navigation = sectionNavigation.current;
     let nextZ: number;
+    let waitingFor: string | null = null;
 
-    if (navigation) {
+    if (navigation && navigation.targetZ < farBound) {
+      // Queue the requested jump without flying through unmounted scenes.
+      // Scroll/swipe/another section click can cancel or replace it.
+      flightVelocity.current = 0;
+      nextZ = prevZ;
+      waitingFor = navigation.label;
+    } else if (navigation) {
       flightVelocity.current = 0;
       navigation.elapsed += delta;
       const progress = THREE.MathUtils.clamp(
@@ -270,11 +293,14 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       const proposedZ = prevZ - flightVelocity.current * frameScale;
       nextZ = THREE.MathUtils.clamp(
         proposedZ,
-        JOURNEY.farBound,
+        farBound,
         nearBound,
       );
 
-      if (nextZ === JOURNEY.farBound || nextZ === nearBound) {
+      if (farBound > JOURNEY.farBound && proposedZ <= farBound) {
+        waitingFor = JOURNEY_LOAD_STAGES[completedStages]?.label ?? "the next part";
+      }
+      if (nextZ === farBound || nextZ === nearBound) {
         flightVelocity.current *= 0.35;
       }
 
@@ -283,6 +309,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         flightVelocity.current = 0;
       }
     }
+
+    reportWaiting(waitingFor);
 
     if (journey.windowLaunched && nextZ > JOURNEY.corridorReturnResetZ) {
       setJourneyState({ windowLaunched: false, airplaneMode: "resting" });

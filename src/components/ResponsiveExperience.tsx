@@ -63,7 +63,7 @@ const DEFAULT_SIGNALS: BrowserSignals = {
   hardwareConcurrency: 4,
 };
 
-function buildProfile(signals: BrowserSignals): ResponsiveExperienceProfile {
+export function buildResponsiveExperienceProfile(signals: BrowserSignals): ResponsiveExperienceProfile {
   const width = Math.max(240, signals.width);
   const height = Math.max(240, signals.height);
   const aspect = width / height;
@@ -112,11 +112,16 @@ function buildProfile(signals: BrowserSignals): ResponsiveExperienceProfile {
             ? 1
             : 0.92;
 
-  const dprCap = qualityTier === "low"
-    ? 1.15
-    : qualityTier === "medium"
-      ? 1.4
-      : 1.75;
+  // Phones still use low-tier effects, but their high-density screens need
+  // more than ~1 CSS pixel per sample for distant pencil lines and paper text.
+  // Bound fill-rate separately: at most 2x DPR and two million phone pixels.
+  const dprCap = isPhone
+    ? Math.min(2, Math.sqrt(2_000_000 / (width * height)))
+    : qualityTier === "low"
+      ? 1.15
+      : qualityTier === "medium"
+        ? 1.4
+        : 1.75;
 
   return {
     width,
@@ -144,7 +149,7 @@ function buildProfile(signals: BrowserSignals): ResponsiveExperienceProfile {
   };
 }
 
-const DEFAULT_PROFILE = buildProfile(DEFAULT_SIGNALS);
+const DEFAULT_PROFILE = buildResponsiveExperienceProfile(DEFAULT_SIGNALS);
 const ResponsiveExperienceContext = createContext(DEFAULT_PROFILE);
 
 function readBrowserSignals(): BrowserSignals {
@@ -191,7 +196,7 @@ export function ResponsiveExperienceProvider({ children }: { children: ReactNode
     };
   }, []);
 
-  const profile = useMemo(() => buildProfile(signals), [signals]);
+  const profile = useMemo(() => buildResponsiveExperienceProfile(signals), [signals]);
 
   return (
     <ResponsiveExperienceContext.Provider value={profile}>

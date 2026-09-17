@@ -9,6 +9,7 @@ type SketchPreloaderProps = {
   isSketching?: boolean;
   auto?: boolean;
   percentageText?: string;
+  onExitComplete?: () => void;
 };
 
 function createSketchPoints(): SketchPoint[] {
@@ -32,6 +33,7 @@ export default function SketchPreloader({
   isSketching = false,
   auto = false,
   percentageText = `${Math.round(lineProgress)}%`,
+  onExitComplete,
 }: SketchPreloaderProps) {
   const [sketchPoints, setSketchPoints] = useState<SketchPoint[]>([[50, 0], [50, 100]]);
 
@@ -66,6 +68,13 @@ export default function SketchPreloader({
   return (
     <div
       className={className}
+      role="status"
+      aria-label="Preparing the entrance"
+      onAnimationEnd={(event) => {
+        if (isSketching && event.target === event.currentTarget && event.animationName === "sketch-preloader-fade") {
+          onExitComplete?.();
+        }
+      }}
       style={{ "--line-progress": lineProgress } as CSSProperties & Record<"--line-progress", number>}
     >
       <div className="sketch-preloader__half sketch-preloader__half--left" style={{ clipPath: leftClipPoly }}>
