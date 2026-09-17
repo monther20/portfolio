@@ -99,8 +99,8 @@ test("the lantern GLB's named source is at the audited bulb location", () => {
   assert.deepEqual(center.toArray(), [0, 0.276, 0]);
   const room = createRoomDebugState();
   for (const [mesh, expected] of [
-    [room.meshes.leftLantern, [-2.85, 1.24, -15.57]],
-    [room.meshes.rightLantern, [2.77, 1.25, -15.57]],
+    [room.meshes.leftLantern, [-2.85, 1.24, -15.41]],
+    [room.meshes.rightLantern, [2.77, 1.25, -15.41]],
   ] as const) {
     const world = center
       .clone()

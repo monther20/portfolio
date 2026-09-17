@@ -78,12 +78,12 @@ export function createRoomDebugState(): RoomDebugState {
       doorPanelPivot: createTransform([-2.555, -0.22, 0]),
       doorPanelSurface: createTransform([0, -0.1, 0]),
       leftLantern: createTransform(
-        [-2.85, 0.55, -15.57],
+        [-2.85, 0.55, -15.41],
         [0, 0, 0],
         [2.5, 2.5, 2.5],
       ),
       rightLantern: createTransform(
-        [2.77, 0.56, -15.57],
+        [2.77, 0.56, -15.41],
         [0, 0, 0],
         [2.5, 2.5, 2.5],
       ),
