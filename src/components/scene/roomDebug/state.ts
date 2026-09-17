@@ -69,7 +69,7 @@ export function createRoomDebugState(): RoomDebugState {
         visible: true,
       },
       exteriorWall: createTransform(
-        [0.0500000000000043, 1.75, -16.15],
+        [0.0500000000000043, 1.75, -16],
         [0, 0, 0],
         [0.84, 0.67, 1],
       ),
