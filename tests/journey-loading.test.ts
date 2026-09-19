@@ -6,6 +6,7 @@ import {
   JOURNEY_LOAD_STAGES,
   canLoadJourneyStage,
   completeJourneyStage,
+  journeyStagesNeededForZ,
   readyJourneyFarBound,
 } from "../src/components/scene/journeyLoading";
 
@@ -29,6 +30,14 @@ test("background stages load in travel order and completed scenes stay mounted",
       );
     });
   }
+});
+
+test("requested stages gate background work without breaking travel order", () => {
+  assert.equal(canLoadJourneyStage("corridor-far", 0, 0), false);
+  assert.equal(canLoadJourneyStage("corridor-far", 0, 1), true);
+  assert.equal(canLoadJourneyStage("window", 0, 2), false);
+  assert.equal(canLoadJourneyStage("window", 1, 1), false);
+  assert.equal(canLoadJourneyStage("window", 1, 2), true);
 });
 
 test("readiness cannot skip a missing stage or advance twice on duplicate signals", () => {
@@ -68,6 +77,11 @@ test("section jumps wait for their destination and every scene on the route", ()
     contact: 7,
   };
   for (const section of JOURNEY_SECTIONS) {
+    assert.equal(
+      journeyStagesNeededForZ(section.z),
+      requiredStages[section.id],
+      `${section.id} requested stage count`,
+    );
     for (
       let completed = 0;
       completed <= JOURNEY_LOAD_STAGES.length;

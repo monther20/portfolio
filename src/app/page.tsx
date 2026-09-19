@@ -131,6 +131,7 @@ function ResponsiveHallwayScene({
       {webglSupported === true ? (
         <Canvas
           className="experience-canvas"
+          role="application"
           aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore. A light switch is also available after entering."
           tabIndex={0}
           onKeyDown={(event) => {

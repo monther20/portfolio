@@ -25,10 +25,22 @@ export function readyJourneyFarBound(completedStages: number): number {
 export function canLoadJourneyStage(
   id: JourneyLoadStageId,
   completedStages: number,
+  requestedStages: number = JOURNEY_LOAD_STAGES.length,
 ): boolean {
-  return (
-    JOURNEY_LOAD_STAGES.findIndex((stage) => stage.id === id) <= completedStages
-  );
+  const index = JOURNEY_LOAD_STAGES.findIndex((stage) => stage.id === id);
+  return index <= completedStages && index < requestedStages;
+}
+
+/** Number of ordered stages that must be ready before the camera can reach z. */
+export function journeyStagesNeededForZ(z: number): number {
+  let completedStages = 0;
+  while (
+    completedStages < JOURNEY_LOAD_STAGES.length &&
+    z < readyJourneyFarBound(completedStages)
+  ) {
+    completedStages += 1;
+  }
+  return completedStages;
 }
 
 export function completeJourneyStage(

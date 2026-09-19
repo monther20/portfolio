@@ -21,7 +21,11 @@ import {
   type JourneyProgressDetail,
 } from "./sectionNavigation";
 import { corridor } from "@/data/portfolio";
-import { JOURNEY_LOAD_STAGES, readyJourneyFarBound } from "./journeyLoading";
+import {
+  JOURNEY_LOAD_STAGES,
+  journeyStagesNeededForZ,
+  readyJourneyFarBound,
+} from "./journeyLoading";
 import { useJourneyLoading } from "./JourneyLoadingProvider";
 import {
   reportJourneyInteraction,
@@ -46,6 +50,7 @@ const SECTION_NAV_SPEED = 72;
 const SECTION_NAV_MIN_DURATION = 0.7;
 const SECTION_NAV_MAX_DURATION = 1.8;
 const PROGRESS_REPORT_INTERVAL = 1 / 20;
+const NEXT_STAGE_PREFETCH_DISTANCE = 48;
 
 type SectionNavigationMotion = {
   startZ: number;
@@ -58,7 +63,12 @@ type SectionNavigationMotion = {
 export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const { camera, gl } = useThree();
   const responsive = useResponsiveExperience();
-  const { completedStages, setWaitingFor } = useJourneyLoading();
+  const {
+    completedStages,
+    requestedStages,
+    requestStagesThrough,
+    setWaitingFor,
+  } = useJourneyLoading();
   const lastWaitingFor = useRef<string | null>(null);
   const reportWaiting = useCallback((label: string | null) => {
     if (lastWaitingFor.current === label) return;
@@ -104,6 +114,8 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         JOURNEY.farBound,
         JOURNEY.corridorStart,
       );
+      requestStagesThrough(journeyStagesNeededForZ(targetZ));
+
       const distance = Math.abs(targetZ - camera.position.z);
       const duration = responsive.reducedMotion
         ? 0.01
@@ -130,7 +142,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         JOURNEY_NAVIGATE_EVENT,
         handleSectionNavigation,
       );
-  }, [camera, enabled, responsive.reducedMotion]);
+  }, [camera, enabled, requestStagesThrough, responsive.reducedMotion]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -254,6 +266,15 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     }
 
     const frameScale = Math.min(delta * 60, MAX_FRAME_SCALE);
+
+    const nextStage = JOURNEY_LOAD_STAGES[completedStages];
+    if (
+      nextStage &&
+      requestedStages <= completedStages &&
+      camera.position.z <= nextStage.stopZ + NEXT_STAGE_PREFETCH_DISTANCE
+    ) {
+      requestStagesThrough(completedStages + 1);
+    }
 
     const nearBound = JOURNEY.corridorStart;
     const farBound = readyJourneyFarBound(completedStages);

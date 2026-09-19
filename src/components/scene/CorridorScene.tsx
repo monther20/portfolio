@@ -1,20 +1,27 @@
 "use client";
 
-import CorridorShell from "./corridor/CorridorShell";
-import CorridorGreeter from "./corridor/CorridorGreeter";
-import CorridorStations from "./corridor/CorridorStations";
-import CorridorLights from "./corridor/CorridorLights";
+import { lazy, Suspense } from "react";
 
-/** Critical entrance: mount behind the closed door during the initial load.
- * Far corridor props and the window have independent background boundaries.
+import CorridorShell from "./corridor/CorridorShell";
+
+const CorridorDetails = lazy(() => import("./corridor/CorridorDetails"));
+
+/** Keep the lightweight corridor shell behind the closed entrance. Content
+ * hidden by the door loads only after the visitor chooses to enter.
  */
-export default function CorridorScene() {
+export default function CorridorScene({
+  detailsEnabled,
+}: {
+  detailsEnabled: boolean;
+}) {
   return (
     <group name="Corridor Scene">
       <CorridorShell />
-      <CorridorLights />
-      <CorridorGreeter />
-      <CorridorStations part="near" />
+      {detailsEnabled ? (
+        <Suspense fallback={null}>
+          <CorridorDetails />
+        </Suspense>
+      ) : null}
     </group>
   );
 }
