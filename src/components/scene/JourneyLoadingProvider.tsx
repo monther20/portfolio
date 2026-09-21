@@ -9,12 +9,15 @@ import {
   type ReactNode,
 } from "react";
 import {
+  JOURNEY_LOAD_STAGES,
   completeJourneyStage,
   type JourneyLoadStageId,
 } from "./journeyLoading";
 
 type JourneyLoadingState = {
   completedStages: number;
+  requestedStages: number;
+  requestStagesThrough: (count: number) => void;
   markReady: (id: JourneyLoadStageId) => void;
   failedStage: JourneyLoadStageId | null;
   markFailed: (id: JourneyLoadStageId) => void;
@@ -26,21 +29,38 @@ const JourneyLoadingContext = createContext<JourneyLoadingState | null>(null);
 
 export function JourneyLoadingProvider({ children }: { children: ReactNode }) {
   const [completedStages, setCompletedStages] = useState(0);
+  const [requestedStages, setRequestedStages] = useState(0);
   const [failedStage, markFailed] = useState<JourneyLoadStageId | null>(null);
   const [waitingFor, setWaitingFor] = useState<string | null>(null);
+  const requestStagesThrough = useCallback((count: number) => {
+    const safeCount = Math.min(
+      JOURNEY_LOAD_STAGES.length,
+      Math.max(0, Math.floor(count)),
+    );
+    setRequestedStages((current) => Math.max(current, safeCount));
+  }, []);
   const markReady = useCallback((id: JourneyLoadStageId) => {
     setCompletedStages((current) => completeJourneyStage(id, current));
   }, []);
   const value = useMemo(
     () => ({
       completedStages,
+      requestedStages,
+      requestStagesThrough,
       markReady,
       failedStage,
       markFailed,
       waitingFor,
       setWaitingFor,
     }),
-    [completedStages, markReady, failedStage, waitingFor],
+    [
+      completedStages,
+      requestedStages,
+      requestStagesThrough,
+      markReady,
+      failedStage,
+      waitingFor,
+    ],
   );
 
   return (

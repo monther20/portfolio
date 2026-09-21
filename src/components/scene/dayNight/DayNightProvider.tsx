@@ -58,6 +58,10 @@ export function DayNightProvider({
     const target = timeOfDay === "night" ? 1 : 0;
     const publish = () =>
       transition.listeners.forEach((listener) => listener(amount.value));
+    if (amount.value === target) {
+      publish();
+      return;
+    }
     const tween = gsap.to(amount, {
       value: target,
       duration: reducedMotion

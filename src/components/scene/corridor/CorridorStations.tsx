@@ -12,7 +12,6 @@ import {
   corridorStationInfluenceAt,
   corridorStationZ,
 } from "../journeyConfig";
-import CorridorCabinet from "./CorridorCabinet";
 import CorridorPictureFrame from "./CorridorPictureFrame";
 import { corridor } from "@/data/portfolio";
 import {
@@ -285,8 +284,6 @@ export default function CorridorStations({ part }: { part: "near" | "far" }) {
             revealNear={8}
             revealFar={16}
           />
-          <CorridorCabinet />
-
           {/* Vent flat on the right wall */}
           <group
             name="Corridor Vent"

@@ -34,10 +34,11 @@ export default function JourneyAssetStage({
   id: JourneyLoadStageId;
   children: ReactNode;
 }) {
-  const { completedStages, markReady, markFailed } = useJourneyLoading();
+  const { completedStages, requestedStages, markReady, markFailed } =
+    useJourneyLoading();
   const onReady = useCallback(() => markReady(id), [id, markReady]);
   const onError = useCallback(() => markFailed(id), [id, markFailed]);
-  if (!canLoadJourneyStage(id, completedStages)) return null;
+  if (!canLoadJourneyStage(id, completedStages, requestedStages)) return null;
 
   return (
     <StageErrorBoundary onError={onError}>

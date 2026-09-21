@@ -146,7 +146,7 @@ export const corridor = {
         "I work with React, Next.js, React Native, and TypeScript.",
       ],
       side: -1 as const, // left wall
-      art: `${CORRIDOR_BASE}/profile.png`,
+      art: `${CORRIDOR_BASE}/profile.webp`,
     },
     {
       title: "What I build",

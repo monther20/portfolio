@@ -108,7 +108,7 @@ export default function RoomScene({
 
       <JourneyScene
         scrollEnabled={isOpen && !isTransitioning}
-        backgroundEnabled={entryEnabled}
+        backgroundEnabled={isOpen}
       />
     </>
   );

@@ -36,7 +36,7 @@ export default function DayNightSwitch({ visible }: { visible: boolean }) {
       <button
         type="button"
         role="switch"
-        aria-label="Dark mode"
+        aria-label="Daylight moonlight"
         aria-checked={isNight}
         title={`Switch to ${isNight ? "light" : "dark"} mode`}
         disabled={!visible || locked}
