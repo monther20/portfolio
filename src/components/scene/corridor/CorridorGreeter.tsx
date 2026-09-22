@@ -7,6 +7,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 
 import AnimatedAvatar from "../AnimatedAvatar";
 import PaintSprite from "../PaintSprite";
+import { AVATAR_SPRITE_SHEET } from "../assetPaths";
 import { CORRIDOR } from "../journeyConfig";
 import { useFogFade } from "../useFogFade";
 import { corridor } from "@/data/portfolio";
@@ -212,7 +213,7 @@ export default function CorridorGreeter() {
         <AnimatedAvatar
           position={[0, -1.85, 0]}
           height={2.7}
-          fps={28 * responsive.motionScale}
+          fps={AVATAR_SPRITE_SHEET.fps * responsive.motionScale}
         />
       </group>
 

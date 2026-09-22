@@ -13,6 +13,7 @@ import { createRoomDebugState } from "./roomDebug/state";
 import type { RoomDebugState } from "./roomDebug/types";
 import { useResponsiveExperience } from "../ResponsiveExperience";
 import DayNightLighting from "./dayNight/DayNightLighting";
+import { AvatarTexturePreloader } from "./AnimatedAvatar";
 
 const AVATAR_APPROACH_DISTANCE = 7;
 
@@ -97,6 +98,7 @@ export default function RoomScene({
           />
         )}
 
+      <AvatarTexturePreloader />
       <DayNightLighting debug={debug} />
       <InteriorDetails debug={debug} />
       <ExteriorRoof debug={debug} />

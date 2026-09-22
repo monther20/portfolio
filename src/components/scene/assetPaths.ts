@@ -11,12 +11,23 @@ const CORRIDOR_TEXTURE_BASE = "/textures/corridor";
 const CONTACT_TEXTURE_BASE = "/textures/contact";
 const CLOUD_TEXTURE_BASE = "/textures/journey/clouds";
 
-const AVATAR_FRAME_COUNT = 33;
-export const AVATAR_FRAME_URLS = Array.from(
-  { length: AVATAR_FRAME_COUNT },
-  (_, index) =>
-    `${CORRIDOR_TEXTURE_BASE}/avatar_anim_warp/${String(index + 1).padStart(3, "0")}.webp`,
-);
+export const AVATAR_SPRITE_SHEET = {
+  url: `${CORRIDOR_TEXTURE_BASE}/avatar-wave-atlas.webp`,
+  frameCount: 17,
+  fps: 14,
+  columns: 6,
+  atlasWidth: 1980,
+  atlasHeight: 1914,
+  cellWidth: 330,
+  cellHeight: 638,
+  frameWidth: 326,
+  frameHeight: 634,
+  gutter: 2,
+  sourceWidth: 640,
+  sourceHeight: 640,
+  cropX: 201,
+  cropY: 4,
+} as const;
 
 const CLOUD_TEXTURE_FILES = [
   "1131c3eb-dfae-423f-924b-ff39d8ccd6dc",
