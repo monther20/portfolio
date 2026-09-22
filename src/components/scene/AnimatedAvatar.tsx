@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
 
-import { AVATAR_FRAME_URLS } from "./assetPaths";
+import { AVATAR_SPRITE_SHEET } from "./assetPaths";
 import { fogDepthForObject, fogOpacityForDepth } from "./fogVisibility";
-import { useResponsiveExperience } from "../ResponsiveExperience";
 import { useNightMaterialColor } from "./dayNight/useNightMaterials";
 
 function pingPongFrameIndex(step: number, count: number) {
@@ -16,14 +15,72 @@ function pingPongFrameIndex(step: number, count: number) {
   return step < count ? step : count * 2 - 2 - step;
 }
 
+function setAvatarFrame(texture: THREE.Texture, index: number) {
+  const sheet = AVATAR_SPRITE_SHEET;
+  const column = index % sheet.columns;
+  const row = Math.floor(index / sheet.columns);
+
+  texture.repeat.set(
+    sheet.frameWidth / sheet.atlasWidth,
+    sheet.frameHeight / sheet.atlasHeight,
+  );
+  texture.offset.set(
+    (column * sheet.cellWidth + sheet.gutter) / sheet.atlasWidth,
+    1 -
+      (row * sheet.cellHeight + sheet.gutter + sheet.frameHeight) /
+        sheet.atlasHeight,
+  );
+}
+
+function prepareAvatarTexture(
+  texture: THREE.Texture,
+  gl: THREE.WebGLRenderer,
+) {
+  const anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
+  const needsUpload =
+    texture.colorSpace !== THREE.SRGBColorSpace ||
+    texture.anisotropy !== anisotropy ||
+    texture.minFilter !== THREE.LinearFilter ||
+    texture.magFilter !== THREE.LinearFilter ||
+    texture.generateMipmaps;
+
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = anisotropy;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  setAvatarFrame(texture, 0);
+
+  if (needsUpload) texture.needsUpdate = true;
+
+  // Decode and upload the single atlas while the entrance loader is visible.
+  // Calling this again is cheap because Three caches the uploaded texture.
+  gl.initTexture(texture);
+}
+
+/** Warm the avatar's one texture before the visitor opens the door. */
+export function AvatarTexturePreloader() {
+  const texture = useLoader(
+    THREE.TextureLoader,
+    AVATAR_SPRITE_SHEET.url,
+  );
+  const { gl } = useThree();
+
+  useLayoutEffect(() => {
+    prepareAvatarTexture(texture, gl);
+  }, [gl, texture]);
+
+  return null;
+}
+
 /**
- * AnimatedAvatar — the hand-drawn character that greets you in the corridor.
- * Plays a generated 33-frame wave sequence in a ping-pong loop.
+ * Hand-drawn corridor greeter. Its sampled wave frames live in one cropped
+ * texture atlas, avoiding dozens of requests, decodes, and GPU textures.
  */
 export default function AnimatedAvatar({
   position,
   height = 2.7,
-  fps = 28,
+  fps = AVATAR_SPRITE_SHEET.fps,
 }: {
   position: [number, number, number];
   height?: number;
@@ -33,124 +90,46 @@ export default function AnimatedAvatar({
   useNightMaterialColor(materialRef, "illustration");
   const billboardRef = useRef<THREE.Group>(null);
   const lastFrame = useRef(-1);
-  const readyFrameCount = useRef(1);
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const { camera, scene, gl } = useThree();
-  const responsive = useResponsiveExperience();
-  const frameUrls = useMemo(
-    () =>
-      responsive.qualityTier === "low"
-        ? AVATAR_FRAME_URLS.filter((_, index) => index % 2 === 0)
-        : AVATAR_FRAME_URLS,
-    [responsive.qualityTier],
+  const texture = useLoader(
+    THREE.TextureLoader,
+    AVATAR_SPRITE_SHEET.url,
   );
-  const initialFrame = useLoader(THREE.TextureLoader, frameUrls[0]);
-  const [frames, setFrames] = useState<THREE.Texture[]>(() => [initialFrame]);
 
-  useEffect(() => {
-    let cancelled = false;
-    let ownedFrames: (typeof initialFrame)[] = [];
-    const loader = new THREE.TextureLoader();
-
-    void Promise.all(
-      frameUrls.slice(1).map(async (url) => {
-        try {
-          return await loader.loadAsync(url);
-        } catch {
-          return null;
-        }
-      }),
-    ).then((loadedFrames) => {
-      ownedFrames = loadedFrames.filter(
-        (texture): texture is typeof initialFrame => texture !== null,
-      );
-      if (cancelled) {
-        ownedFrames.forEach((texture) => texture.dispose());
-        return;
-      }
-      setFrames([initialFrame, ...ownedFrames]);
-    });
-
-    return () => {
-      cancelled = true;
-      ownedFrames.forEach((texture) => texture.dispose());
-    };
-  }, [frameUrls, initialFrame]);
-
-  useEffect(() => {
-    const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
-
-    frames.forEach((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = Math.min(8, maxAnisotropy);
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.generateMipmaps = false;
-      texture.needsUpdate = true;
-    });
-
-    // Uploading every frame in one effect creates a multi-second long task on
-    // throttled phones. The first frame is uploaded by the visible material;
-    // warm one remaining frame per idle callback so playback stays smooth
-    // without blocking the entrance.
-    const idleWindow = window as unknown as {
-      requestIdleCallback?: typeof window.requestIdleCallback;
-      cancelIdleCallback?: typeof window.cancelIdleCallback;
-    };
-    let nextFrame = 1;
-    let idleCallback = 0;
-    let timer = 0;
-    let cancelled = false;
-    readyFrameCount.current = 1;
+  useLayoutEffect(() => {
+    prepareAvatarTexture(texture, gl);
     lastFrame.current = -1;
+  }, [gl, texture]);
 
-    const uploadNextFrame = () => {
-      if (cancelled || nextFrame >= frames.length) return;
-      gl.initTexture(frames[nextFrame]);
-      nextFrame += 1;
-      readyFrameCount.current = nextFrame;
-      scheduleNextFrame();
+  // The source frames had large transparent margins. Keep the artwork in its
+  // original world-space position while drawing only the shared cropped area.
+  const plane = useMemo(() => {
+    const sheet = AVATAR_SPRITE_SHEET;
+    const scale = height / sheet.sourceHeight;
+    const cropCenterX = sheet.cropX + sheet.frameWidth / 2;
+    const cropCenterY = sheet.cropY + sheet.frameHeight / 2;
+
+    return {
+      width: sheet.frameWidth * scale,
+      height: sheet.frameHeight * scale,
+      x: (cropCenterX - sheet.sourceWidth / 2) * scale,
+      y: (sheet.sourceHeight / 2 - cropCenterY) * scale,
     };
-
-    const scheduleNextFrame = () => {
-      if (cancelled || nextFrame >= frames.length) return;
-      if (idleWindow.requestIdleCallback) {
-        idleCallback = idleWindow.requestIdleCallback(uploadNextFrame, {
-          timeout: 250,
-        });
-      } else {
-        timer = window.setTimeout(uploadNextFrame, 32);
-      }
-    };
-
-    scheduleNextFrame();
-    return () => {
-      cancelled = true;
-      if (idleCallback) idleWindow.cancelIdleCallback?.(idleCallback);
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [frames, gl]);
-
-  // Plane size follows the first generated frame's natural aspect ratio.
-  const [w, h] = useMemo(() => {
-    const img = frames[0]?.image as HTMLImageElement | undefined;
-    const aspect = img && img.height ? img.width / img.height : 1;
-    return [height * aspect, height];
-  }, [frames, height]);
+  }, [height]);
 
   useFrame((state) => {
     const mat = materialRef.current;
     if (!mat) return;
 
-    const count = Math.max(1, readyFrameCount.current);
+    const count = AVATAR_SPRITE_SHEET.frameCount;
     const cycle = count > 1 ? count * 2 - 2 : 1;
     const step = Math.floor(state.clock.elapsedTime * fps) % cycle;
     const index = pingPongFrameIndex(step, count);
 
     if (index !== lastFrame.current) {
       lastFrame.current = index;
-      mat.map = frames[index];
-      mat.needsUpdate = true;
+      setAvatarFrame(texture, index);
     }
 
     let opacity = 1;
@@ -175,11 +154,14 @@ export default function AnimatedAvatar({
       lockY
       lockZ={false}
     >
-      <mesh name="Animated Avatar Mesh">
-        <planeGeometry args={[w, h]} />
+      <mesh
+        name="Animated Avatar Mesh"
+        position={[plane.x, plane.y, 0]}
+      >
+        <planeGeometry args={[plane.width, plane.height]} />
         <meshBasicMaterial
           ref={materialRef}
-          map={frames[0]}
+          map={texture}
           alphaTest={0.02}
           transparent
           depthWrite
