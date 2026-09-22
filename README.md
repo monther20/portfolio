@@ -22,9 +22,9 @@ locally, or verify it on a deploy preview.
 
 ## Controls
 
-- Click or tap the door to enter; keyboard users can press **Enter** or **Space** while the 3D view is focused.
-- Scroll, swipe, or use the arrow keys to travel. The section navigation can jump directly to each portfolio stop.
-- Click or tap a lantern or corridor light, press **N**, or use the on-screen switch after entering to toggle day and night.
+- Click or tap the door to enter; keyboard users can press **Enter** or **Space** without first focusing the 3D view.
+- Scroll, swipe, or use any arrow key to travel. **Page Up**, **Page Down**, **Space**, and **Shift+Space** also work. The section navigation can jump directly to each portfolio stop.
+- Click or tap a lantern or corridor light, press **N** from anywhere outside a form or control, or use the on-screen switch after entering to toggle day and night.
 
 The experience adapts framing and rendering quality for phones, tablets, and desktops, respects reduced-motion preferences, and provides a contact fallback when WebGL 2 is unavailable.
 

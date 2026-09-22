@@ -25,6 +25,11 @@ import {
   useDayNight,
 } from "../components/scene/dayNight/DayNightProvider";
 import DayNightSwitch from "../components/scene/dayNight/DayNightSwitch";
+import { getJourneyState } from "../components/scene/journeyState";
+import {
+  isInteractiveKeyboardTarget,
+  portfolioKeyboardAction,
+} from "../components/scene/keyboardControls";
 
 function LoadingOverlay({
   sceneReady,
@@ -113,11 +118,67 @@ function ResponsiveHallwayScene({
     onEntryTransitionChange(false);
   }, [onEntryTransitionChange]);
   const responsive = useResponsiveExperience();
-  const { timeOfDay, toggle } = useDayNight();
+  const { timeOfDay, toggle, enabled: dayNightEnabled } = useDayNight();
 
   useEffect(() => {
     setWebglSupported(browserSupportsWebGL2());
   }, []);
+
+  useEffect(() => {
+    if (webglSupported !== true) return;
+
+    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isInteractiveKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      const action = portfolioKeyboardAction(event);
+      if (
+        action === "enter" &&
+        initialLoadingComplete &&
+        !doorOpen
+      ) {
+        event.preventDefault();
+        enter();
+        return;
+      }
+
+      if (
+        action === "toggle-day-night" &&
+        initialLoadingComplete &&
+        dayNightEnabled
+      ) {
+        const journey = getJourneyState();
+        if (
+          journey.cameraLocked ||
+          journey.contactOpen ||
+          journey.interactionLocked
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        toggle();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcut);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcut);
+  }, [
+    dayNightEnabled,
+    doorOpen,
+    enter,
+    initialLoadingComplete,
+    toggle,
+    webglSupported,
+  ]);
 
   return (
     <main
@@ -132,31 +193,8 @@ function ResponsiveHallwayScene({
         <Canvas
           className="experience-canvas"
           role="application"
-          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore. A light switch is also available after entering."
+          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter or Space to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore. Keyboard shortcuts work without focusing the 3D view unless you are using another control."
           tabIndex={0}
-          onKeyDown={(event) => {
-            // Ignore keys from embedded forms and other scene controls.
-            if (
-              (event.target !== event.currentTarget &&
-                !(event.target instanceof HTMLCanvasElement)) ||
-              event.repeat ||
-              event.altKey ||
-              event.ctrlKey ||
-              event.metaKey
-            )
-              return;
-            if (
-              initialLoadingComplete &&
-              !doorOpen &&
-              (event.key === "Enter" || event.key === " ")
-            ) {
-              event.preventDefault();
-              enter();
-            } else if (event.key.toLowerCase() === "n") {
-              event.preventDefault();
-              toggle();
-            }
-          }}
           dpr={responsive.maxDpr}
           performance={{ min: 0.5, debounce: 200 }}
           camera={{

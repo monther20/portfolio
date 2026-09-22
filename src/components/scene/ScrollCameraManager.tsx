@@ -28,6 +28,10 @@ import {
 } from "./journeyLoading";
 import { useJourneyLoading } from "./JourneyLoadingProvider";
 import {
+  isInteractiveKeyboardTarget,
+  journeyKeyboardDirection,
+} from "./keyboardControls";
+import {
   reportJourneyInteraction,
   useResponsiveExperience,
 } from "../ResponsiveExperience";
@@ -214,18 +218,17 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
       if (
-        target?.isContentEditable ||
-        target?.matches("input, textarea, select, button, a")
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isInteractiveKeyboardTarget(event.target)
       ) {
         return;
       }
 
-      let direction = 0;
-      if (event.key === "ArrowDown" || event.key === "PageDown") direction = 1;
-      if (event.key === "ArrowUp" || event.key === "PageUp") direction = -1;
-      if (event.key === " ") direction = event.shiftKey ? -1 : 1;
+      const direction = journeyKeyboardDirection(event);
       if (!direction) return;
 
       event.preventDefault();
