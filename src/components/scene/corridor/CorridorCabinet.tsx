@@ -8,6 +8,8 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { CABINET_MODEL_URL } from "../assetPaths";
 import { setJourneyState } from "../journeyState";
 import { useFogFade } from "../useFogFade";
+import { prepareTextureForRenderer } from "../ProgressiveArtwork";
+import { useJourneyStagePreparation } from "../journeyStagePreparation";
 
 // Temporarily disabled until the drawer animation and camera framing are fixed.
 const CABINET_INTERACTION_ENABLED = false;
@@ -29,7 +31,8 @@ export default function CorridorCabinet() {
   const returning = useRef(false);
   const ownsInteractionLock = useRef(false);
   const [open, setOpen] = useState(false);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
+  const registerStagePreparation = useJourneyStagePreparation();
   const gltf = useGLTF(CABINET_MODEL_URL);
   const modelScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
   const { actions } = useAnimations(gltf.animations, modelScene);
@@ -37,6 +40,8 @@ export default function CorridorCabinet() {
   useFogFade(cabinetRef);
 
   useEffect(() => {
+    const textures = new Set<THREE.Texture>();
+
     modelScene.traverse((child) => {
       if (!(child as THREE.Mesh).isMesh) return;
 
@@ -52,9 +57,19 @@ export default function CorridorCabinet() {
           material.metalness = 0;
           material.needsUpdate = true;
         }
+        for (const value of Object.values(material)) {
+          if (value instanceof THREE.Texture) textures.add(value);
+        }
       });
     });
-  }, [modelScene]);
+
+    // The cabinet is fog-hidden when it first mounts. Warm its embedded maps
+    // one at a time so its first visible frame does not upload them all.
+    for (const texture of textures) {
+      const preparation = prepareTextureForRenderer(gl, texture, false);
+      registerStagePreparation?.(preparation);
+    }
+  }, [gl, modelScene, registerStagePreparation]);
 
   const lockInteraction = useCallback(() => {
     ownsInteractionLock.current = true;

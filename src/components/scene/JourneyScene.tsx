@@ -1,6 +1,7 @@
 "use client";
 
 import { lazy, useEffect } from "react";
+import { useGLTF } from "@react-three/drei";
 
 import CorridorScene from "./CorridorScene";
 import ScrollCameraManager from "./ScrollCameraManager";
@@ -8,18 +9,48 @@ import JourneyAssetStage from "./JourneyAssetStage";
 import NightSky from "./dayNight/NightSky";
 import { useJourneyLoading } from "./JourneyLoadingProvider";
 import { JOURNEY } from "./journeyConfig";
+import { JOURNEY_LOAD_STAGES } from "./journeyLoading";
+import {
+  CABINET_MODEL_URL,
+  PAPER_AIRPLANE_MODEL_URL,
+} from "./assetPaths";
+import { prefetchProgressiveStage } from "./progressiveTextureLoading";
 
-const CorridorStations = lazy(() => import("./corridor/CorridorStations"));
-const CorridorCabinet = lazy(() => import("./corridor/CorridorCabinet"));
-const CorridorWindow = lazy(() => import("./corridor/CorridorWindow"));
-const PaperAirplaneActor = lazy(() => import("./PaperAirplaneActor"));
-const FlightClouds = lazy(() => import("./FlightClouds"));
-const JourneySection = lazy(() => import("./sections/JourneySection"));
-const SkillsSection = lazy(() => import("./sections/SkillsSection"));
-const ProjectsSection = lazy(() => import("./sections/ProjectsSection"));
-const BeachContactSection = lazy(
-  () => import("./sections/BeachContactSection"),
-);
+const loadCorridorStations = () => import("./corridor/CorridorStations");
+const loadCorridorCabinet = () => import("./corridor/CorridorCabinet");
+const loadCorridorWindow = () => import("./corridor/CorridorWindow");
+const loadPaperAirplaneActor = () => import("./PaperAirplaneActor");
+const loadFlightClouds = () => import("./FlightClouds");
+const loadJourneySection = () => import("./sections/JourneySection");
+const loadSkillsSection = () => import("./sections/SkillsSection");
+const loadProjectsSection = () => import("./sections/ProjectsSection");
+const loadBeachContactSection = () =>
+  import("./sections/BeachContactSection");
+
+const CorridorStations = lazy(loadCorridorStations);
+const CorridorCabinet = lazy(loadCorridorCabinet);
+const CorridorWindow = lazy(loadCorridorWindow);
+const PaperAirplaneActor = lazy(loadPaperAirplaneActor);
+const FlightClouds = lazy(loadFlightClouds);
+const JourneySection = lazy(loadJourneySection);
+const SkillsSection = lazy(loadSkillsSection);
+const ProjectsSection = lazy(loadProjectsSection);
+const BeachContactSection = lazy(loadBeachContactSection);
+
+const JOURNEY_STAGE_MODULE_LOADERS = [
+  () => loadCorridorStations(),
+  () =>
+    Promise.all([
+      loadCorridorCabinet(),
+      loadCorridorWindow(),
+      loadPaperAirplaneActor(),
+    ]),
+  () => loadFlightClouds(),
+  () => loadJourneySection(),
+  () => loadSkillsSection(),
+  () => loadProjectsSection(),
+  () => loadBeachContactSection(),
+] as const;
 
 export default function JourneyScene({
   scrollEnabled,
@@ -28,7 +59,7 @@ export default function JourneyScene({
   scrollEnabled: boolean;
   backgroundEnabled: boolean;
 }) {
-  const { requestStagesThrough } = useJourneyLoading();
+  const { requestedStages, requestStagesThrough } = useJourneyLoading();
 
   useEffect(() => {
     // The entrance is the only cold-load work. Start the first distant section
@@ -36,6 +67,25 @@ export default function JourneyScene({
     // sections as the visitor approaches them.
     if (backgroundEnabled) requestStagesThrough(1);
   }, [backgroundEnabled, requestStagesThrough]);
+
+  useEffect(() => {
+    if (!backgroundEnabled) return;
+
+    // Discover every requested code chunk at once instead of waiting for each
+    // preceding Suspense boundary. Originals still use a two-request queue.
+    for (let index = 0; index < requestedStages; index += 1) {
+      const stage = JOURNEY_LOAD_STAGES[index];
+      prefetchProgressiveStage(stage.id);
+      void JOURNEY_STAGE_MODULE_LOADERS[index]();
+    }
+
+    // Drei's own cache is also used by the mounted model components, so this
+    // parse/download cannot create a second GLTF result.
+    if (requestedStages >= 2) {
+      useGLTF.preload(CABINET_MODEL_URL);
+      useGLTF.preload(PAPER_AIRPLANE_MODEL_URL);
+    }
+  }, [backgroundEnabled, requestedStages]);
 
   return (
     <group name="Journey Scene">

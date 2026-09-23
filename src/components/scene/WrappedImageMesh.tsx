@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 
 import { getFogFadeRange } from "./fogVisibility";
+import { useProgressiveArtwork } from "./ProgressiveArtwork";
+import { useResponsiveExperience } from "../ResponsiveExperience";
 import { useDayNight } from "./dayNight/DayNightProvider";
 import { NIGHT_CONFIG } from "./dayNight/config";
 
@@ -24,8 +26,11 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
   varying float vFogDepth;
 
-  uniform sampler2D texSketch;
-  uniform sampler2D texPaint;
+  uniform sampler2D texSketchPreview;
+  uniform sampler2D texPaintPreview;
+  uniform sampler2D texSketchOriginal;
+  uniform sampler2D texPaintOriginal;
+  uniform float quality;
   uniform float reveal;
   uniform float nightAmount;
   uniform vec3 nightTint;
@@ -36,8 +41,16 @@ const fragmentShader = /* glsl */ `
   uniform float fogFadeFar;
 
   void main() {
-    vec4 sketch = texture2D(texSketch, vUv);
-    vec4 paint = texture2D(texPaint, vUv);
+    vec4 sketch = mix(
+      texture2D(texSketchPreview, vUv),
+      texture2D(texSketchOriginal, vUv),
+      quality
+    );
+    vec4 paint = mix(
+      texture2D(texPaintPreview, vUv),
+      texture2D(texPaintOriginal, vUv),
+      quality
+    );
 
     float luma = dot(sketch.rgb, vec3(0.299, 0.587, 0.114));
     float wipeLine = 1.0 - (reveal * 1.35 - 0.18);
@@ -168,9 +181,14 @@ export default function WrappedImageMesh({
   alwaysPainted = false,
 }: WrappedImageMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const qualityTarget = useRef(0);
   const { camera, scene } = useThree();
   const { transition } = useDayNight();
-  const [texSketch, texPaint] = useLoader(THREE.TextureLoader, [sketch, painted ?? sketch]);
+  const responsive = useResponsiveExperience();
+  const sketchTexture = useProgressiveArtwork(sketch);
+  const paintTexture = useProgressiveArtwork(painted ?? sketch);
+  const originalsReady =
+    sketchTexture.originalReady && paintTexture.originalReady;
   const geometry = useMemo(
     () => createWrappedGeometry(width, height, depth, horizontalBorderUv, verticalBorderUv),
     [depth, height, horizontalBorderUv, verticalBorderUv, width],
@@ -180,8 +198,11 @@ export default function WrappedImageMesh({
   const material = useMemo(
     () => new THREE.ShaderMaterial({
       uniforms: {
-        texSketch: { value: texSketch },
-        texPaint: { value: texPaint },
+        texSketchPreview: { value: sketchTexture.preview },
+        texPaintPreview: { value: paintTexture.preview },
+        texSketchOriginal: { value: sketchTexture.preview },
+        texPaintOriginal: { value: paintTexture.preview },
+        quality: { value: 0 },
         reveal: { value: alwaysPainted ? 1 : 0 },
         nightAmount: transition.uniforms.nightAmount,
         nightTint: { value: new THREE.Color(NIGHT_CONFIG.unlitTint.illustration) },
@@ -198,23 +219,37 @@ export default function WrappedImageMesh({
       depthTest: true,
       side: THREE.DoubleSide,
     }),
-    [alwaysPainted, texPaint, texSketch, transition],
+    [alwaysPainted, paintTexture.preview, sketchTexture.preview, transition],
   );
 
   useEffect(() => {
-    [texSketch, texPaint].forEach((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = 8;
-      texture.needsUpdate = true;
-    });
-  }, [texPaint, texSketch]);
+    material.uniforms.texSketchPreview.value = sketchTexture.preview;
+    material.uniforms.texPaintPreview.value = paintTexture.preview;
+    material.uniforms.texSketchOriginal.value = originalsReady
+      ? sketchTexture.original
+      : sketchTexture.preview;
+    material.uniforms.texPaintOriginal.value = originalsReady
+      ? paintTexture.original
+      : paintTexture.preview;
+    qualityTarget.current = originalsReady ? 1 : 0;
+    if (!originalsReady) material.uniforms.quality.value = 0;
+  }, [material, originalsReady, paintTexture, sketchTexture]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const mesh = meshRef.current;
     if (!mesh) return;
+
+    material.uniforms.quality.value = responsive.reducedMotion
+      ? qualityTarget.current
+      : THREE.MathUtils.damp(
+          material.uniforms.quality.value,
+          qualityTarget.current,
+          12,
+          delta,
+        );
 
     if (alwaysPainted) {
       material.uniforms.reveal.value = 1;

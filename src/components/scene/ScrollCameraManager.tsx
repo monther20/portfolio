@@ -54,6 +54,7 @@ const SECTION_NAV_SPEED = 72;
 const SECTION_NAV_MIN_DURATION = 0.7;
 const SECTION_NAV_MAX_DURATION = 1.8;
 const PROGRESS_REPORT_INTERVAL = 1 / 20;
+const LOADING_ACTIVITY_REPORT_INTERVAL = 0.5;
 const NEXT_STAGE_PREFETCH_DISTANCE = 48;
 
 type SectionNavigationMotion = {
@@ -83,6 +84,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const flightVelocity = useRef(0);
   const sectionNavigation = useRef<SectionNavigationMotion | null>(null);
   const lastProgressReport = useRef(-Infinity);
+  const lastLoadingActivityReport = useRef(-Infinity);
   const corridorFocuses = useMemo(
     () =>
       corridor.stations.map((station, index) => ({
@@ -283,6 +285,16 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     const farBound = readyJourneyFarBound(completedStages);
     const prevZ = camera.position.z;
     const navigation = sectionNavigation.current;
+    if (
+      (navigation || Math.abs(flightVelocity.current) >= MIN_VELOCITY) &&
+      state.clock.elapsedTime - lastLoadingActivityReport.current >=
+        LOADING_ACTIVITY_REPORT_INTERVAL
+    ) {
+      lastLoadingActivityReport.current = state.clock.elapsedTime;
+      // Keep optional high-resolution GPU uploads paused for the full queued
+      // navigation and inertial motion, not just the initiating click.
+      reportJourneyInteraction();
+    }
     let nextZ: number;
     let waitingFor: string | null = null;
 

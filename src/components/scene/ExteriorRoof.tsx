@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 
@@ -17,12 +17,6 @@ const WALL_TOP_EXTENSION_HEIGHT = 6;
 
 export default function ExteriorRoof({ debug }: { debug: RoomDebugState }) {
   const bricksTexture = useLoader(THREE.TextureLoader, "/textures/room/wall_bricks_2.webp");
-  // This is a color/albedo texture. Mark it as sRGB so it does not render
-  // lighter/washed out than the original image.
-  bricksTexture.colorSpace = THREE.SRGBColorSpace;
-  // Set anisotropy for better quality when viewed at an angle
-  bricksTexture.anisotropy = 16;
-  bricksTexture.needsUpdate = true;
 
   const topExtensionTexture = useMemo(() => {
     const texture = bricksTexture.clone();
@@ -37,6 +31,22 @@ export default function ExteriorRoof({ debug }: { debug: RoomDebugState }) {
 
     return texture;
   }, [bricksTexture]);
+
+  useLayoutEffect(() => {
+    for (const texture of [bricksTexture, topExtensionTexture]) {
+      const needsUpload =
+        texture.colorSpace !== THREE.SRGBColorSpace ||
+        texture.anisotropy !== 16;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = 16;
+      if (needsUpload) texture.needsUpdate = true;
+    }
+  }, [bricksTexture, topExtensionTexture]);
+
+  useEffect(
+    () => () => topExtensionTexture.dispose(),
+    [topExtensionTexture],
+  );
 
   const wall = debug.meshes.exteriorWall;
   const wallMaterial = debug.materials.exteriorWall;

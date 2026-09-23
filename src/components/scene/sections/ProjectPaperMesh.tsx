@@ -12,6 +12,11 @@ import * as THREE from "three";
 
 import { getFogFadeRange } from "../fogVisibility";
 import { configureArtworkTexture } from "../artworkTexture";
+import {
+  prepareTextureForRenderer,
+  useProgressiveArtwork,
+} from "../ProgressiveArtwork";
+import { useJourneyStagePreparation } from "../journeyStagePreparation";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { useDayNight } from "../dayNight/DayNightProvider";
 import { NIGHT_CONFIG } from "../dayNight/config";
@@ -36,9 +41,12 @@ const vertexShader = /* glsl */ `
 `;
 
 const fragmentShader = /* glsl */ `
-  uniform sampler2D texSketch;
-  uniform sampler2D texPaint;
+  uniform sampler2D texSketchPreview;
+  uniform sampler2D texPaintPreview;
+  uniform sampler2D texSketchOriginal;
+  uniform sampler2D texPaintOriginal;
   uniform sampler2D texBack;
+  uniform float quality;
   uniform float reveal;
   uniform float nightAmount;
   uniform vec3 nightTint;
@@ -54,8 +62,16 @@ const fragmentShader = /* glsl */ `
     vec4 color;
 
     if (gl_FrontFacing) {
-      vec4 sketch = texture2D(texSketch, vUv);
-      vec4 painted = texture2D(texPaint, vUv);
+      vec4 sketch = mix(
+        texture2D(texSketchPreview, vUv),
+        texture2D(texSketchOriginal, vUv),
+        quality
+      );
+      vec4 painted = mix(
+        texture2D(texPaintPreview, vUv),
+        texture2D(texPaintOriginal, vUv),
+        quality
+      );
       float luma = dot(sketch.rgb, vec3(0.299, 0.587, 0.114));
       vec3 pencil = vec3(luma);
       float wipe = smoothstep(1.08 - reveal * 1.28, 1.28 - reveal * 1.28, vUv.y);
@@ -116,11 +132,15 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
     const materialRef = useRef<THREE.ShaderMaterial>(null);
     const meshRef = useRef<THREE.Mesh>(null);
     const bendRef = useRef(0);
+    const qualityTarget = useRef(0);
     const { camera, gl, scene } = useThree();
+    const registerStagePreparation = useJourneyStagePreparation();
     const responsive = useResponsiveExperience();
     const { transition } = useDayNight();
-    const texSketch = useLoader(THREE.TextureLoader, sketch);
-    const texPaint = useLoader(THREE.TextureLoader, painted ?? sketch);
+    const sketchTexture = useProgressiveArtwork(sketch);
+    const paintTexture = useProgressiveArtwork(painted ?? sketch);
+    const originalsReady =
+      sketchTexture.originalReady && paintTexture.originalReady;
     const texBack = useLoader(THREE.TextureLoader, back);
     const worldPosition = useMemo(() => new THREE.Vector3(), []);
 
@@ -134,11 +154,13 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
     }), []);
 
     useEffect(() => {
-      const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
-      [texSketch, texPaint, texBack].forEach((texture) => {
-        configureArtworkTexture(texture, maxAnisotropy);
-      });
-    }, [gl, texBack, texPaint, texSketch]);
+      configureArtworkTexture(
+        texBack,
+        gl.capabilities.getMaxAnisotropy(),
+      );
+      const preparation = prepareTextureForRenderer(gl, texBack, false);
+      registerStagePreparation?.(preparation);
+    }, [gl, registerStagePreparation, texBack]);
 
     useEffect(
       () => () => {
@@ -147,15 +169,22 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
       [responsive.isCoarsePointer],
     );
 
-    const width = useMemo(() => {
-      const image = (texPaint.image ?? texSketch.image) as HTMLImageElement | undefined;
-      return height * (image?.height ? image.width / image.height : 0.5);
-    }, [height, texPaint.image, texSketch.image]);
+    const width = useMemo(
+      () =>
+        height *
+        (paintTexture.height
+          ? paintTexture.width / paintTexture.height
+          : 0.5),
+      [height, paintTexture.height, paintTexture.width],
+    );
 
     const uniforms = useMemo(() => ({
-      texSketch: { value: texSketch },
-      texPaint: { value: texPaint },
+      texSketchPreview: { value: sketchTexture.preview },
+      texPaintPreview: { value: paintTexture.preview },
+      texSketchOriginal: { value: sketchTexture.preview },
+      texPaintOriginal: { value: paintTexture.preview },
       texBack: { value: texBack },
+      quality: { value: 0 },
       reveal: { value: 0 },
       nightAmount: transition.uniforms.nightAmount,
       nightTint: { value: new THREE.Color(NIGHT_CONFIG.unlitTint.illustration) },
@@ -167,15 +196,39 @@ const ProjectPaperMesh = forwardRef<ProjectPaperMeshHandle, ProjectPaperMeshProp
       fogFar: { value: 55 },
       fogFadeNear: { value: 27.5 },
       fogFadeFar: { value: 41 },
-    }), [texBack, texPaint, texSketch, transition]);
+    }), [paintTexture.preview, sketchTexture.preview, texBack, transition]);
 
-    useFrame((state) => {
+    useEffect(() => {
+      const material = materialRef.current;
+      if (!material) return;
+
+      material.uniforms.texSketchPreview.value = sketchTexture.preview;
+      material.uniforms.texPaintPreview.value = paintTexture.preview;
+      material.uniforms.texSketchOriginal.value = originalsReady
+        ? sketchTexture.original
+        : sketchTexture.preview;
+      material.uniforms.texPaintOriginal.value = originalsReady
+        ? paintTexture.original
+        : paintTexture.preview;
+      qualityTarget.current = originalsReady ? 1 : 0;
+      if (!originalsReady) material.uniforms.quality.value = 0;
+    }, [originalsReady, paintTexture, sketchTexture]);
+
+    useFrame((state, delta) => {
       const material = materialRef.current;
       if (!material) return;
 
       material.uniforms.time.value = state.clock.elapsedTime;
       material.uniforms.bend.value = bendRef.current;
       material.uniforms.flutter.value = responsive.reducedMotion ? 0 : 0.012;
+      material.uniforms.quality.value = responsive.reducedMotion
+        ? qualityTarget.current
+        : THREE.MathUtils.damp(
+            material.uniforms.quality.value,
+            qualityTarget.current,
+            12,
+            delta,
+          );
 
       if (meshRef.current) {
         meshRef.current.getWorldPosition(worldPosition);
