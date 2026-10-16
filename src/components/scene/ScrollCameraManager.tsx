@@ -8,6 +8,7 @@ import {
   CORRIDOR_INFO_STATIONS,
   cameraYAt,
   corridorStationInfluenceAt,
+  corridorStationZ,
   descentProgressAt,
   journeyPhaseAt,
   windowProgressAt,
@@ -35,6 +36,11 @@ import {
   reportJourneyInteraction,
   useResponsiveExperience,
 } from "../ResponsiveExperience";
+import {
+  prioritizeProgressiveNavigation,
+  resumeProgressiveOriginalLoading,
+} from "./progressiveTextureLoading";
+import { corridorStationReadingAngles } from "./corridor/corridorFraming";
 
 const SCROLL_SPEED = 0.0028;
 const FRICTION = 0.92;
@@ -98,6 +104,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     flightVelocity.current = 0;
     sectionNavigation.current = null;
     lastWaitingFor.current = null;
+    resumeProgressiveOriginalLoading(true);
     setWaitingFor(null);
   }, [enabled, setWaitingFor]);
 
@@ -115,6 +122,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       }
 
       const { id, z } = (event as CustomEvent<JourneyNavigateDetail>).detail;
+      prioritizeProgressiveNavigation(id);
       const targetZ = THREE.MathUtils.clamp(
         z,
         JOURNEY.farBound,
@@ -143,11 +151,13 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     };
 
     window.addEventListener(JOURNEY_NAVIGATE_EVENT, handleSectionNavigation);
-    return () =>
+    return () => {
       window.removeEventListener(
         JOURNEY_NAVIGATE_EVENT,
         handleSectionNavigation,
       );
+      resumeProgressiveOriginalLoading(true);
+    };
   }, [camera, enabled, requestStagesThrough, responsive.reducedMotion]);
 
   useEffect(() => {
@@ -174,6 +184,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       if (Math.abs(inputDelta) < 0.5) return;
 
       sectionNavigation.current = null;
+      resumeProgressiveOriginalLoading(true);
       flightVelocity.current = THREE.MathUtils.clamp(
         flightVelocity.current + inputDelta * SCROLL_SPEED,
         -MAX_SCROLL_VELOCITY,
@@ -266,6 +277,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     ) {
       flightVelocity.current = 0;
       sectionNavigation.current = null;
+      resumeProgressiveOriginalLoading(true);
       reportWaiting(null);
       return;
     }
@@ -305,6 +317,9 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       nextZ = prevZ;
       waitingFor = navigation.label;
     } else if (navigation) {
+      // Every preview/model baseline on the route is now ready. Let the camera
+      // move immediately, then load the clicked section's originals first.
+      resumeProgressiveOriginalLoading();
       flightVelocity.current = 0;
       navigation.elapsed += delta;
       const progress = THREE.MathUtils.clamp(
@@ -402,14 +417,17 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         if (influence <= strongestInfluence) continue;
 
         strongestInfluence = influence;
-        yawTarget =
-          -focus.side *
-          CORRIDOR_INFO_STATIONS.focusYaw *
-          responsive.corridorFocusScale *
-          influence;
-        corridorPitchTarget = CORRIDOR_INFO_STATIONS.focusPitch * influence;
-        corridorRollTarget =
-          focus.side * CORRIDOR_INFO_STATIONS.focusRoll * influence;
+        const readingAngles = corridorStationReadingAngles(
+          focus.side,
+          corridorStationZ(focus.index),
+          nextZ,
+          responsive,
+          influence,
+        );
+        yawTarget = readingAngles.yaw * influence;
+        corridorPitchTarget = readingAngles.pitch * influence;
+        // A level horizon keeps small text comfortable to read.
+        corridorRollTarget = 0;
       }
 
       const windowInfluence =

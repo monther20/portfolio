@@ -114,12 +114,14 @@ Behavior:
 - no duplicate decoded `THREE.Texture` for progressive originals;
 - maximum two concurrent original-image loads;
 - maximum one concurrent load when Save-Data is enabled or the connection reports 2G;
-- destination intent has priority over ordinary lookahead work;
+- a clicked destination's originals have priority over ordinary lookahead work;
+- queued original work is paused while a direct navigation prepares its lightweight route;
+- originals already in flight finish normally; only queued work is held during route preparation;
 - queued speculative work pauses while the document is hidden;
 - image decode is awaited where supported;
 - failed originals remain non-fatal because the preview stays visible.
 
-Only assets in a requested stage or an explicitly indicated destination are queued. The complete journey is not loaded during the initial room view.
+Only lightweight previews are prefetched from hover/focus/touch intent. Originals enter the queue after their preview-backed component commits. Direct navigation holds queued originals until the required route baselines are ready and camera travel can begin. The complete journey is not loaded during the initial room view.
 
 ### 4. Added preview-first texture handling and GPU upload scheduling
 
@@ -132,7 +134,7 @@ src/components/scene/ProgressiveArtwork.tsx
 `useProgressiveArtwork()` performs the following:
 
 1. Loads the preview through the normal R3F loader/Suspense baseline.
-2. Requests the original through the shared queue after the component commits.
+2. Queues the original after the component commits; a direct-navigation hold prevents that queue from competing with missing previews.
 3. Configures colour space, mipmaps, filtering, and bounded anisotropy.
 4. Uploads decoded originals one at a time during idle opportunities.
 5. Delays optional high-resolution uploads while navigation or inertial movement is active.
@@ -184,7 +186,7 @@ Preloading now reacts to:
 - section click; and
 - the existing camera-position stage lookahead.
 
-Navigation intent prioritizes destination images immediately. Journey-stage module imports are also discovered concurrently instead of waiting for each earlier Suspense stage to finish before discovering the next chunk.
+Navigation intent immediately preloads only the destination's lightweight previews, using the exact scalar R3F cache keys consumed by the mounted artwork. On click, queued originals pause while requested code chunks and preview/model baselines prepare. The camera waits at its current position until the lightweight route is ready, then starts travel and resumes optional originals with the clicked section first. A loading notice appears only when preparation blocks travel. Journey-stage module imports are discovered concurrently, while scene components still commit in route order through their Suspense boundaries.
 
 Cabinet and airplane GLBs use `useGLTF.preload()`, which shares Drei's exact parsed-result cache with the mounted components. This avoids a parallel GLTF loader and duplicate parsing/downloads.
 
@@ -259,10 +261,11 @@ The cabinet's unique embedded texture maps are deduplicated by object identity a
 
 ### Direct section navigation
 
-- Hover/focus/touch starts destination artwork and model preloading.
-- Required code chunks are discovered together.
-- Ordered stage safety remains intact.
-- The camera starts only after baseline GPU/shader work is ready.
+- Hover/focus/touch starts destination preview and required-model preloading, not original artwork.
+- A click pauses queued original downloads; active requests finish normally.
+- Required code chunks and previews are prefetched concurrently, while scene baselines commit in route order.
+- The camera waits in place until baseline GPU/shader work is ready.
+- When the route is usable, the camera travels and queued originals resume with the clicked section first.
 - Original artwork can still be pending; the destination renders with previews.
 
 ## Files added
@@ -305,7 +308,7 @@ bun run build
 Results:
 
 - TypeScript: passed.
-- Tests: 89 passed, 0 failed.
+- Tests: 102 passed, 0 failed.
 - Next.js 16 production build and static generation: passed.
 - `git diff --check`: passed.
 

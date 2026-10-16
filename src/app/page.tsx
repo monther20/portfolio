@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
@@ -26,6 +26,11 @@ import {
 } from "../components/scene/dayNight/DayNightProvider";
 import DayNightSwitch from "../components/scene/dayNight/DayNightSwitch";
 import { getJourneyState } from "../components/scene/journeyState";
+import {
+  JOURNEY_SECTIONS,
+  navigateToJourneySection,
+} from "../components/scene/sectionNavigation";
+import CvDownloadControl from "../components/scene/CvDownloadControl";
 import {
   isInteractiveKeyboardTarget,
   portfolioKeyboardAction,
@@ -103,6 +108,11 @@ function ResponsiveHallwayScene({
   const [sceneReady, setSceneReady] = useState(false);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
+  const [roomDetailOpen, setRoomDetailOpen] = useState(false);
+  const [returningToDoor, setReturningToDoor] = useState(false);
+  const pendingEntry = useRef(false);
+  const entryStarted = useRef(false);
+  const pendingProjects = useRef(false);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
   const markInitialLoadingComplete = useCallback(
@@ -110,13 +120,43 @@ function ResponsiveHallwayScene({
     [],
   );
   const enter = useCallback(() => {
+    if (entryStarted.current) return;
+    entryStarted.current = true;
     setDoorOpen(true);
     onEntryTransitionChange(true);
   }, [onEntryTransitionChange]);
+  const returnToDoor = useCallback(() => {
+    setReturningToDoor(true);
+    setRoomDetailOpen(false);
+  }, []);
+  const requestEntry = useCallback(() => {
+    if (roomDetailOpen || returningToDoor) {
+      pendingEntry.current = true;
+      if (roomDetailOpen) returnToDoor();
+      return;
+    }
+    enter();
+  }, [enter, returnToDoor, returningToDoor, roomDetailOpen]);
+  const finishDetailReturn = useCallback(() => {
+    setReturningToDoor(false);
+    if (pendingEntry.current) {
+      pendingEntry.current = false;
+      enter();
+    }
+  }, [enter]);
   const finishEntry = useCallback(() => {
     setEntered(true);
     onEntryTransitionChange(false);
   }, [onEntryTransitionChange]);
+  useEffect(() => {
+    if (!entered || !pendingProjects.current) return;
+    // Wait for the journey camera's event subscription after the door handoff.
+    const frame = requestAnimationFrame(() => {
+      pendingProjects.current = false;
+      navigateToJourneySection(JOURNEY_SECTIONS.find((section) => section.id === "projects")!);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [entered]);
   const responsive = useResponsiveExperience();
   const { timeOfDay, toggle, enabled: dayNightEnabled } = useDayNight();
 
@@ -128,6 +168,11 @@ function ResponsiveHallwayScene({
     if (webglSupported !== true) return;
 
     const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && roomDetailOpen && !doorOpen) {
+        event.preventDefault();
+        returnToDoor();
+        return;
+      }
       if (
         event.defaultPrevented ||
         event.repeat ||
@@ -146,7 +191,7 @@ function ResponsiveHallwayScene({
         !doorOpen
       ) {
         event.preventDefault();
-        enter();
+        requestEntry();
         return;
       }
 
@@ -174,8 +219,10 @@ function ResponsiveHallwayScene({
   }, [
     dayNightEnabled,
     doorOpen,
-    enter,
+    requestEntry,
     initialLoadingComplete,
+    roomDetailOpen,
+    returnToDoor,
     toggle,
     webglSupported,
   ]);
@@ -193,7 +240,7 @@ function ResponsiveHallwayScene({
         <Canvas
           className="experience-canvas"
           role="application"
-          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter or Space to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore. Keyboard shortcuts work without focusing the 3D view unless you are using another control."
+          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter or Space to enter. Use the Look closer button to inspect the seated shadow and chessboard, then return to the door. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore."
           tabIndex={0}
           dpr={responsive.maxDpr}
           performance={{ min: 0.5, debounce: 200 }}
@@ -216,12 +263,74 @@ function ResponsiveHallwayScene({
             <RoomScene
               entryEnabled={initialLoadingComplete}
               isOpen={doorOpen}
-              onEnter={enter}
+              showRoomDetail={roomDetailOpen}
+              onDetailReturnComplete={finishDetailReturn}
+              onEnter={requestEntry}
               onTransitionComplete={finishEntry}
             />
             <SceneReadySignal onReady={markSceneReady} />
           </Suspense>
         </Canvas>
+      ) : null}
+
+      {webglSupported === true && initialLoadingComplete && !doorOpen ? (
+        <>
+          {!roomDetailOpen && !returningToDoor ? (
+            <header className="entrance-intro">
+              <p className="entrance-intro__eyebrow">A hand-drawn portfolio</p>
+              <h1>Monther Abdelrazek</h1>
+              <p>Web &amp; Mobile Developer</p>
+            </header>
+          ) : null}
+          <div className="room-detail-controls" aria-label="Room view controls">
+            {!roomDetailOpen && !returningToDoor ? (
+              <>
+                <p className="entrance-hint">
+                  Tap the door to explore, or choose a route.
+                </p>
+                <button
+                  type="button"
+                  className="room-detail-controls__button room-detail-controls__button--primary"
+                  onClick={() => requestEntry()}
+                >
+                  Enter portfolio →
+                </button>
+                <button
+                  type="button"
+                  className="room-detail-controls__button"
+                  onClick={() => {
+                    pendingProjects.current = true;
+                    requestEntry();
+                  }}
+                >
+                  View projects
+                </button>
+              </>
+            ) : null}
+            <button
+              type="button"
+              className="room-detail-controls__button"
+              aria-pressed={roomDetailOpen}
+              disabled={returningToDoor}
+              onClick={() => roomDetailOpen ? returnToDoor() : setRoomDetailOpen(true)}
+            >
+              {roomDetailOpen
+                ? "← Back to door"
+                : returningToDoor
+                  ? "Returning to door…"
+                  : "Look closer · chair & chessboard →"}
+            </button>
+            {roomDetailOpen ? (
+              <button
+                type="button"
+                className="room-detail-controls__button"
+                onClick={() => requestEntry()}
+              >
+                Enter portfolio →
+              </button>
+            ) : null}
+          </div>
+        </>
       ) : null}
 
       {webglSupported !== false && !initialLoadingComplete ? (
@@ -236,6 +345,7 @@ function ResponsiveHallwayScene({
           <DayNightSwitch visible={entered} />
           <JourneyHud visible={entered} />
           <JourneySectionNav visible={entered} />
+          <CvDownloadControl visible={entered} />
         </>
       ) : null}
     </main>

@@ -110,13 +110,14 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
   const navVisible = visible || hasJourneyProgress;
   const navigationLocked =
     journey.cameraLocked || journey.contactOpen || journey.interactionLocked;
+  const showNavigation = navVisible && !journey.contactOpen && !journey.interactionLocked;
 
   return (
     <nav
       ref={nav}
-      className={`journey-section-nav${navVisible ? " is-visible" : ""}`}
+      className={`journey-section-nav${showNavigation ? " is-visible" : ""}`}
       aria-label="Portfolio sections"
-      aria-hidden={!navVisible}
+      aria-hidden={!showNavigation}
       style={{ "--section-progress": progress } as CSSProperties}
     >
       <div className="journey-section-nav__rail" aria-hidden="true">
@@ -133,7 +134,7 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
                 className={`journey-section-nav__button${active ? " is-active" : ""}`}
                 aria-label={`Go to ${section.label} section`}
                 aria-current={active ? "location" : undefined}
-                disabled={!navVisible || navigationLocked}
+                disabled={!showNavigation || navigationLocked}
                 onPointerEnter={() => prefetchSection(section.id)}
                 onPointerDown={() => prefetchSection(section.id)}
                 onFocus={() => prefetchSection(section.id)}

@@ -181,15 +181,6 @@
   }
 }
 
-/* Leave the right-side section rail clear in short landscape viewports. */
-@media (orientation: landscape) and (max-height: 500px) {
-  .control {
-    left: max(0.7rem, calc(env(safe-area-inset-left) + 0.4rem));
-    right: auto;
-    top: max(0.5rem, env(safe-area-inset-top));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .control,
   .control * {

@@ -71,8 +71,9 @@ export default function JourneyScene({
   useEffect(() => {
     if (!backgroundEnabled) return;
 
-    // Discover every requested code chunk at once instead of waiting for each
-    // preceding Suspense boundary. Originals still use a two-request queue.
+    // Discover every requested code chunk and lightweight preview at once
+    // instead of waiting for each preceding Suspense boundary. Originals only
+    // join their bounded queue after the matching preview has committed.
     for (let index = 0; index < requestedStages; index += 1) {
       const stage = JOURNEY_LOAD_STAGES[index];
       prefetchProgressiveStage(stage.id);

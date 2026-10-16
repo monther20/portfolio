@@ -13,11 +13,10 @@ import { useFogFade } from "../useFogFade";
 import { corridor } from "@/data/portfolio";
 import { useResponsiveExperience } from "../../ResponsiveExperience";
 import { useNightText } from "../dayNight/useNightMaterials";
+import { corridorGreeterLayout } from "./corridorFraming";
 
 const HANDWRITTEN_FONT = "/fonts/Caveat-Variable.ttf";
-const NAME_Y = -1.25;
 const NAME_Z = -0.22;
-const ROLE_Y = -2.12;
 const ROLE_Z = 0.22;
 const corridorGreeterMotionSettings = {
   splitStartDistance: 6,
@@ -123,6 +122,7 @@ export default function CorridorGreeter() {
   const splitProgress = useRef(0);
   const { camera } = useThree();
   const responsive = useResponsiveExperience();
+  const layout = corridorGreeterLayout(responsive);
 
   useFogFade(nameLeftRef, { preserveTransparency: true, visibleThreshold: 0 });
   useFogFade(nameRightRef, { preserveTransparency: true, visibleThreshold: 0 });
@@ -138,7 +138,7 @@ export default function CorridorGreeter() {
       0,
       settings.splitTravelDistance,
     );
-    const damping = 1 - Math.pow(0.025, delta);
+    const damping = responsive.reducedMotion ? 1 : 1 - Math.pow(0.025, delta);
     splitProgress.current = THREE.MathUtils.lerp(
       splitProgress.current,
       targetProgress,
@@ -174,19 +174,19 @@ export default function CorridorGreeter() {
   return (
     <group
       name="Corridor Greeter"
-      position={[CORRIDOR.avatar.x, 0, CORRIDOR.avatar.z]}
+      position={[CORRIDOR.avatar.x, layout.y, CORRIDOR.avatar.z]}
       scale={responsive.greeterScale}
     >
       {/* The large name sits behind the avatar in real WebGL depth. */}
       <group
         ref={nameLeftRef}
         name="Greeter Name Left Half"
-        position={[0, NAME_Y, NAME_Z]}
+        position={[0, layout.nameY, NAME_Z]}
       >
         <GreeterTextHalf
           name="Greeter Name MON"
           anchorX="right"
-          fontSize={1.55}
+          fontSize={layout.nameFontSize}
           color="#2b2b2b"
           letterSpacing={0.015}
         >
@@ -196,12 +196,12 @@ export default function CorridorGreeter() {
       <group
         ref={nameRightRef}
         name="Greeter Name Right Half"
-        position={[0, NAME_Y, NAME_Z]}
+        position={[0, layout.nameY, NAME_Z]}
       >
         <GreeterTextHalf
           name="Greeter Name THER"
           anchorX="left"
-          fontSize={1.55}
+          fontSize={layout.nameFontSize}
           color="#2b2b2b"
           letterSpacing={0.015}
         >
@@ -211,8 +211,8 @@ export default function CorridorGreeter() {
 
       <group ref={avatarRef} name="Corridor Centered Avatar">
         <AnimatedAvatar
-          position={[0, -1.85, 0]}
-          height={2.7}
+          position={[0, layout.avatarY, 0]}
+          height={layout.avatarHeight}
           fps={AVATAR_SPRITE_SHEET.fps * responsive.motionScale}
         />
       </group>
@@ -224,14 +224,14 @@ export default function CorridorGreeter() {
         position={[
           corridorGreeterMotionSettings.roleJoinX -
             corridorGreeterMotionSettings.roleJoinGap / 2,
-          ROLE_Y,
+          layout.roleY,
           ROLE_Z,
         ]}
       >
         <GreeterTextHalf
           name="Greeter Role Web and Mobile"
           anchorX="right"
-          fontSize={0.48}
+          fontSize={layout.roleFontSize}
           color="#57524a"
         >
           web &amp; mobile
@@ -243,14 +243,14 @@ export default function CorridorGreeter() {
         position={[
           corridorGreeterMotionSettings.roleJoinX +
             corridorGreeterMotionSettings.roleJoinGap / 2,
-          ROLE_Y,
+          layout.roleY,
           ROLE_Z,
         ]}
       >
         <GreeterTextHalf
           name="Greeter Role Developer"
           anchorX="left"
-          fontSize={0.48}
+          fontSize={layout.roleFontSize}
           color="#57524a"
         >
           developer

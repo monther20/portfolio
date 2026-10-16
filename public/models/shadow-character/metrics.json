@@ -1,0 +1,29 @@
+{
+  "triangles": 14592,
+  "vertices": 7769,
+  "components": 24,
+  "joints": 21,
+  "materials": 1,
+  "meshPrimitives": 1,
+  "atlasResolution": [
+    1024,
+    1024
+  ],
+  "atlasTexelsPerMeter": 414,
+  "boundsMin": [
+    -0.5692340135574341,
+    0.0,
+    -0.11432445049285889
+  ],
+  "boundsMax": [
+    0.5675809383392334,
+    3.6111600399017334,
+    0.1536533236503601
+  ],
+  "dimensions": [
+    1.1368149518966675,
+    3.6111600399017334,
+    0.267977774143219
+  ],
+  "glbBytes": 964188
+}

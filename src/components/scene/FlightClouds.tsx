@@ -32,7 +32,11 @@ const CLOUD_POSITION_OVERRIDES: Partial<Record<number, CloudPositionOverride>> =
   5: { x: -1.74 },
   14: { y: -1.44, z: -172.02 },
   20: { y: -0.66 },
-  23: { x: 3.81 },
+  // Keep the late-flight clouds just behind the project papers, with the
+  // broad foreground cloud a little farther toward the right edge.
+  22: { z: -210 },
+  23: { x: 5.7 },
+  24: { z: -210 },
 };
 
 export default function FlightClouds() {

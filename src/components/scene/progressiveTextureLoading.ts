@@ -1,3 +1,4 @@
+import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
 import {
@@ -39,6 +40,8 @@ const textureLoader = new THREE.TextureLoader();
 let activeTasks = 0;
 let taskOrder = 0;
 let listeningForVisibility = false;
+let originalsPausedForNavigation = false;
+let prioritySection: JourneySectionId | null = null;
 
 function concurrentTextureLimit() {
   if (typeof navigator === "undefined") return 2;
@@ -95,7 +98,21 @@ function startTask(task: TextureTask) {
   );
 }
 
+function taskPriority(src: string, fallback: number) {
+  return getProgressiveArtworkAsset(src)?.section === prioritySection
+    ? PRIORITY.intent
+    : fallback;
+}
+
+function reprioritizeQueuedOriginals() {
+  for (const task of tasks.values()) {
+    if (task.status !== "queued") continue;
+    task.priority = taskPriority(task.src, PRIORITY.lookahead);
+  }
+}
+
 function pumpTextureQueue() {
+  if (originalsPausedForNavigation) return;
   if (typeof document !== "undefined" && document.hidden) return;
 
   const limit = concurrentTextureLimit();
@@ -124,9 +141,10 @@ export function requestProgressiveTexture(
     );
   }
 
+  const requestedPriority = taskPriority(src, PRIORITY[priority]);
   const existing = tasks.get(src);
   if (existing) {
-    existing.priority = Math.min(existing.priority, PRIORITY[priority]);
+    existing.priority = Math.min(existing.priority, requestedPriority);
     pumpTextureQueue();
     return existing.promise;
   }
@@ -139,7 +157,7 @@ export function requestProgressiveTexture(
   });
   const task: TextureTask = {
     src,
-    priority: PRIORITY[priority],
+    priority: requestedPriority,
     order: taskOrder,
     status: "queued",
     promise,
@@ -153,23 +171,45 @@ export function requestProgressiveTexture(
   return promise;
 }
 
-function prefetchAssets(
-  assets: readonly { src: string }[],
-  priority: ProgressiveLoadPriority,
-) {
+function prefetchPreviews(assets: readonly { preview: string }[]) {
   for (const asset of assets) {
-    void requestProgressiveTexture(asset.src, priority).catch(() => {
-      // A failed original is non-fatal: its small preview remains visible.
-    });
+    // This uses the exact scalar R3F cache key consumed by
+    // useProgressiveArtwork, so intent preloading cannot duplicate a texture.
+    useLoader.preload(THREE.TextureLoader, asset.preview);
   }
 }
 
-/** Start likely destination artwork on hover/focus/touch intent. */
+/** Start only the lightweight destination baseline on hover/focus/touch. */
 export function prefetchProgressiveSection(section: JourneySectionId) {
-  prefetchAssets(progressiveAssetsForSection(section), "intent");
+  prefetchPreviews(progressiveAssetsForSection(section));
 }
 
-/** Start originals when the existing journey staging requests their section. */
+/** Discover stage previews before its components mount. */
 export function prefetchProgressiveStage(stage: JourneyLoadStageId) {
-  prefetchAssets(progressiveAssetsForStage(stage), "lookahead");
+  prefetchPreviews(progressiveAssetsForStage(stage));
+}
+
+/**
+ * A direct navigation gives preview/model baselines exclusive priority. New
+ * original requests remain queued until the camera is allowed to move.
+ */
+export function prioritizeProgressiveNavigation(section: JourneySectionId) {
+  prioritySection = section;
+  originalsPausedForNavigation = true;
+  prefetchProgressiveSection(section);
+  reprioritizeQueuedOriginals();
+}
+
+/** Resume optional originals after the lightweight route is usable. */
+export function resumeProgressiveOriginalLoading(clearPriority = false) {
+  const wasPaused = originalsPausedForNavigation;
+  const hadPriority = prioritySection !== null;
+  if (!wasPaused && (!clearPriority || !hadPriority)) return;
+
+  originalsPausedForNavigation = false;
+  if (clearPriority) {
+    prioritySection = null;
+    reprioritizeQueuedOriginals();
+  }
+  pumpTextureQueue();
 }
