@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { useGLTF } from "@react-three/drei";
 
 import {
   JOURNEY_PROGRESS_EVENT,
@@ -20,6 +21,21 @@ import {
 } from "./sectionNavigation";
 import { useJourneyState } from "./journeyState";
 import { useDayNightTransition } from "./dayNight/DayNightProvider";
+import { prefetchProgressiveSection } from "./progressiveTextureLoading";
+import {
+  CABINET_MODEL_URL,
+  PAPER_AIRPLANE_MODEL_URL,
+} from "./assetPaths";
+
+function prefetchSection(section: JourneySectionId) {
+  prefetchProgressiveSection(section);
+  if (section !== "about") {
+    // Use the same Drei GLTF cache as the mounted actors; intent preloading
+    // warms the only heavy model gate without introducing another download.
+    useGLTF.preload(CABINET_MODEL_URL);
+    useGLTF.preload(PAPER_AIRPLANE_MODEL_URL);
+  }
+}
 
 function SectionIcon({ id }: { id: JourneySectionId }) {
   const paths: Record<JourneySectionId, ReactNode> = {
@@ -94,13 +110,14 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
   const navVisible = visible || hasJourneyProgress;
   const navigationLocked =
     journey.cameraLocked || journey.contactOpen || journey.interactionLocked;
+  const showNavigation = navVisible && !journey.contactOpen && !journey.interactionLocked;
 
   return (
     <nav
       ref={nav}
-      className={`journey-section-nav${navVisible ? " is-visible" : ""}`}
+      className={`journey-section-nav${showNavigation ? " is-visible" : ""}`}
       aria-label="Portfolio sections"
-      aria-hidden={!navVisible}
+      aria-hidden={!showNavigation}
       style={{ "--section-progress": progress } as CSSProperties}
     >
       <div className="journey-section-nav__rail" aria-hidden="true">
@@ -117,8 +134,14 @@ export default function JourneySectionNav({ visible }: { visible: boolean }) {
                 className={`journey-section-nav__button${active ? " is-active" : ""}`}
                 aria-label={`Go to ${section.label} section`}
                 aria-current={active ? "location" : undefined}
-                disabled={!navVisible || navigationLocked}
-                onClick={() => navigateToJourneySection(section)}
+                disabled={!showNavigation || navigationLocked}
+                onPointerEnter={() => prefetchSection(section.id)}
+                onPointerDown={() => prefetchSection(section.id)}
+                onFocus={() => prefetchSection(section.id)}
+                onClick={() => {
+                  prefetchSection(section.id);
+                  navigateToJourneySection(section);
+                }}
               >
                 <span className="journey-section-nav__label">
                   {section.label}

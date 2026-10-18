@@ -1,0 +1,4 @@
+# Preserve embedded asset data and PDF cross-reference byte offsets on checkout.
+*.pdf binary
+*.glb binary
+*.bin binary

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { useLoader, useFrame, useThree, extend } from "@react-three/fiber";
+import { useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";
 
-import { getFogFadeRange } from "./fogVisibility";
-import { configureArtworkTexture } from "./artworkTexture";
+import { getFogFadeRange, registerFogCull } from "./fogVisibility";
+import { useProgressiveArtwork } from "./ProgressiveArtwork";
 import { useResponsiveExperience } from "../ResponsiveExperience";
 import { useDayNight } from "./dayNight/DayNightProvider";
 import { NIGHT_CONFIG } from "./dayNight/config";
@@ -19,8 +19,11 @@ import { NIGHT_CONFIG } from "./dayNight/config";
  */
 const SketchPaintMaterial = shaderMaterial(
   {
-    texSketch: null,
-    texPaint: null,
+    texSketchPreview: null,
+    texPaintPreview: null,
+    texSketchOriginal: null,
+    texPaintOriginal: null,
+    quality: 0,
     reveal: 0,
     tintColor: new THREE.Color("#ffffff"),
     nightAmount: 0,
@@ -44,8 +47,11 @@ const SketchPaintMaterial = shaderMaterial(
   /* glsl */ `
     varying vec2 vUv;
     varying float vFogDepth;
-    uniform sampler2D texSketch;
-    uniform sampler2D texPaint;
+    uniform sampler2D texSketchPreview;
+    uniform sampler2D texPaintPreview;
+    uniform sampler2D texSketchOriginal;
+    uniform sampler2D texPaintOriginal;
+    uniform float quality;
     uniform float reveal;
     uniform vec3 tintColor;
     uniform float nightAmount;
@@ -57,8 +63,19 @@ const SketchPaintMaterial = shaderMaterial(
     uniform float fogFadeFar;
 
     void main() {
-      vec4 sketch = texture2D(texSketch, vUv);
-      vec4 paint  = texture2D(texPaint, vUv);
+      float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
+      if (fogAlpha <= 0.01) discard;
+
+      vec4 sketch = mix(
+        texture2D(texSketchPreview, vUv),
+        texture2D(texSketchOriginal, vUv),
+        quality
+      );
+      vec4 paint = mix(
+        texture2D(texPaintPreview, vUv),
+        texture2D(texPaintOriginal, vUv),
+        quality
+      );
 
       // Unrevealed look = grayscale of the sketch art (pencil on paper).
       float luma = dot(sketch.rgb, vec3(0.299, 0.587, 0.114));
@@ -73,9 +90,6 @@ const SketchPaintMaterial = shaderMaterial(
       float a  = mix(sketch.a, paint.a, w);
 
       if (a < 0.35) discard;
-
-      float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
-      if (fogAlpha <= 0.01) discard;
 
       gl_FragColor = vec4(rgb * mix(vec3(1.0), nightTint, nightAmount), fogAlpha) * vec4(tintColor, 1.0);
       float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
@@ -151,36 +165,62 @@ export default function PaintSprite({
   const groupRef = useRef<THREE.Group>(null);
   const scaleRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
-  const { scene, camera, gl } = useThree();
+  const { scene, camera } = useThree();
   const responsive = useResponsiveExperience();
   const { transition } = useDayNight();
 
-  // useLoader must run unconditionally — load `painted` (or reuse sketch when absent).
-  const texSketch = useLoader(THREE.TextureLoader, sketch);
-  const texPaint = useLoader(THREE.TextureLoader, painted ?? sketch);
+  // Both hooks stay unconditional. Their tiny previews are the Suspense
+  // baseline; original textures are promoted without replacing this mesh.
+  const sketchTexture = useProgressiveArtwork(sketch);
+  const paintTexture = useProgressiveArtwork(painted ?? sketch);
+  const originalsReady =
+    sketchTexture.originalReady && paintTexture.originalReady;
 
-  useEffect(() => {
-    const maxAnisotropy = gl.capabilities.getMaxAnisotropy();
-    [texSketch, texPaint].forEach((texture) => {
-      configureArtworkTexture(texture, maxAnisotropy);
-    });
-  }, [gl, texSketch, texPaint]);
-
-  // Derive plane size from the (painted) image's natural aspect ratio.
+  // Descriptor dimensions keep the plane fixed while texture quality changes.
   const [w, h] = useMemo(() => {
-    const img = (texPaint.image ?? texSketch.image) as HTMLImageElement | undefined;
-    const aspect = img && img.height ? img.width / img.height : 1;
+    const aspect = paintTexture.height
+      ? paintTexture.width / paintTexture.height
+      : 1;
     return [height * aspect, height];
-  }, [texPaint, texSketch, height]);
+  }, [height, paintTexture.height, paintTexture.width]);
 
   const tmp = useMemo(() => new THREE.Vector3(), []);
+  // Enclose the rendered plane and its enlarged touch target in the same
+  // sphere. Hover/parent scaling is consumed from the live world transform.
+  const targetScale = interactive ? Math.max(1, responsive.hitTargetScale) : 1;
+  const boundsRadius = Math.hypot(w * targetScale / 2, h * targetScale / 2, 0.002);
   const revealTarget = useRef(0);
+  const qualityTarget = useRef(0);
   const debugName = name ?? `PaintSprite ${sketch.split("/").pop() ?? sketch}`;
 
-  useFrame(() => {
+  useLayoutEffect(
+    () => registerFogCull(scene, scaleRef, boundsRadius),
+    [boundsRadius, scene],
+  );
+
+  useEffect(() => {
+    const mat = matRef.current;
+    if (!mat) return;
+
+    mat.texSketchPreview = sketchTexture.preview;
+    mat.texPaintPreview = paintTexture.preview;
+    mat.texSketchOriginal = originalsReady
+      ? sketchTexture.original
+      : sketchTexture.preview;
+    mat.texPaintOriginal = originalsReady
+      ? paintTexture.original
+      : paintTexture.preview;
+    qualityTarget.current = originalsReady ? 1 : 0;
+    if (!originalsReady) mat.quality = 0;
+  }, [originalsReady, paintTexture, sketchTexture]);
+
+  useFrame((_, delta) => {
     const mat = matRef.current;
     if (!mat) return;
     mat.nightAmount = transition.uniforms.nightAmount.value;
+    mat.quality = responsive.reducedMotion
+      ? qualityTarget.current
+      : THREE.MathUtils.damp(mat.quality, qualityTarget.current, 12, delta);
 
     // Proximity-driven reveal (+ hover boost to fully painted).
     let target = hovered ? 1 : 0;
@@ -257,8 +297,11 @@ export default function PaintSprite({
         <planeGeometry args={[w, h]} />
         <sketchPaintMaterial
           ref={matRef}
-          texSketch={texSketch}
-          texPaint={texPaint}
+          texSketchPreview={sketchTexture.preview}
+          texPaintPreview={paintTexture.preview}
+          texSketchOriginal={sketchTexture.original}
+          texPaintOriginal={paintTexture.original}
+          quality={0}
           transparent
           depthWrite={depthWrite}
           depthTest={depthTest}

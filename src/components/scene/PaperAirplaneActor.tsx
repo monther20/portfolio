@@ -39,6 +39,7 @@ import {
 import ContactLetterForm, {
   type LetterFields,
 } from "./airplane/ContactLetterForm";
+import { submitContactMessage } from "./airplane/contactSubmission";
 import {
   createPaperAirplaneDebugState,
   type PaperAirplaneDebugState,
@@ -529,33 +530,7 @@ export default function PaperAirplaneActor() {
     }
   });
 
-  const handleSend = useCallback(async (fields: LetterFields) => {
-    try {
-      const body = new URLSearchParams({
-        "form-name": "contact",
-        "bot-field": fields.botField,
-        email: fields.email,
-        subject: fields.subject,
-        message: fields.message,
-      });
-
-      const response = await fetch("/__forms.html", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString(),
-      });
-
-      if (!response.ok) {
-        console.error("Contact form submission failed", await response.text());
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Failed to submit contact form", error);
-      return false;
-    }
-  }, []);
+  const handleSend = useCallback((fields: LetterFields) => submitContactMessage(fields), []);
 
   const handleSendSuccess = useCallback(() => {
     sendRequested.current = true;

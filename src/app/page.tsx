@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
@@ -25,6 +25,13 @@ import {
   useDayNight,
 } from "../components/scene/dayNight/DayNightProvider";
 import DayNightSwitch from "../components/scene/dayNight/DayNightSwitch";
+import { getJourneyState } from "../components/scene/journeyState";
+import CvDownloadControl from "../components/scene/CvDownloadControl";
+import PerformanceProbe from "../components/scene/PerformanceProbe";
+import {
+  isInteractiveKeyboardTarget,
+  portfolioKeyboardAction,
+} from "../components/scene/keyboardControls";
 
 function LoadingOverlay({
   sceneReady,
@@ -98,6 +105,7 @@ function ResponsiveHallwayScene({
   const [sceneReady, setSceneReady] = useState(false);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
+  const entryStarted = useRef(false);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const markSceneReady = useCallback(() => setSceneReady(true), []);
   const markInitialLoadingComplete = useCallback(
@@ -105,6 +113,8 @@ function ResponsiveHallwayScene({
     [],
   );
   const enter = useCallback(() => {
+    if (entryStarted.current) return;
+    entryStarted.current = true;
     setDoorOpen(true);
     onEntryTransitionChange(true);
   }, [onEntryTransitionChange]);
@@ -113,11 +123,67 @@ function ResponsiveHallwayScene({
     onEntryTransitionChange(false);
   }, [onEntryTransitionChange]);
   const responsive = useResponsiveExperience();
-  const { timeOfDay, toggle } = useDayNight();
+  const { timeOfDay, toggle, enabled: dayNightEnabled } = useDayNight();
 
   useEffect(() => {
     setWebglSupported(browserSupportsWebGL2());
   }, []);
+
+  useEffect(() => {
+    if (webglSupported !== true) return;
+
+    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isInteractiveKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      const action = portfolioKeyboardAction(event);
+      if (
+        action === "enter" &&
+        initialLoadingComplete &&
+        !doorOpen
+      ) {
+        event.preventDefault();
+        enter();
+        return;
+      }
+
+      if (
+        action === "toggle-day-night" &&
+        initialLoadingComplete &&
+        dayNightEnabled
+      ) {
+        const journey = getJourneyState();
+        if (
+          journey.cameraLocked ||
+          journey.contactOpen ||
+          journey.interactionLocked
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        toggle();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcut);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcut);
+  }, [
+    dayNightEnabled,
+    doorOpen,
+    enter,
+    initialLoadingComplete,
+    toggle,
+    webglSupported,
+  ]);
 
   return (
     <main
@@ -125,6 +191,7 @@ function ResponsiveHallwayScene({
       data-layout={responsive.layout}
       data-quality={responsive.qualityTier}
       data-time-of-day={timeOfDay}
+      data-entrance-ready={initialLoadingComplete}
     >
       {webglSupported === false ? <WebGLFallback /> : null}
 
@@ -132,31 +199,8 @@ function ResponsiveHallwayScene({
         <Canvas
           className="experience-canvas"
           role="application"
-          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore. A light switch is also available after entering."
+          aria-label="Interactive 3D portfolio. Click or tap the door, or press Enter or Space to enter. Click a lantern or press N to toggle day and night. Once inside, scroll, swipe, or use the arrow keys to explore."
           tabIndex={0}
-          onKeyDown={(event) => {
-            // Ignore keys from embedded forms and other scene controls.
-            if (
-              (event.target !== event.currentTarget &&
-                !(event.target instanceof HTMLCanvasElement)) ||
-              event.repeat ||
-              event.altKey ||
-              event.ctrlKey ||
-              event.metaKey
-            )
-              return;
-            if (
-              initialLoadingComplete &&
-              !doorOpen &&
-              (event.key === "Enter" || event.key === " ")
-            ) {
-              event.preventDefault();
-              enter();
-            } else if (event.key.toLowerCase() === "n") {
-              event.preventDefault();
-              toggle();
-            }
-          }}
           dpr={responsive.maxDpr}
           performance={{ min: 0.5, debounce: 200 }}
           camera={{
@@ -174,6 +218,7 @@ function ResponsiveHallwayScene({
           }}
         >
           <ResponsiveCamera />
+          <PerformanceProbe />
           <Suspense fallback={null}>
             <RoomScene
               entryEnabled={initialLoadingComplete}
@@ -198,6 +243,7 @@ function ResponsiveHallwayScene({
           <DayNightSwitch visible={entered} />
           <JourneyHud visible={entered} />
           <JourneySectionNav visible={entered} />
+          <CvDownloadControl visible={entered} />
         </>
       ) : null}
     </main>

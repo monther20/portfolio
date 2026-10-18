@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/output/
 
 # production
 /build
@@ -47,4 +48,5 @@ next-env.d.ts
 # temp folder
 /temp
 
-/docs
+/docs/*
+!/docs/performance-dev-vs-remote-master.md

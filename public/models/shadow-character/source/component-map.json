@@ -1,0 +1,290 @@
+[
+  {
+    "name": "Torso",
+    "vertexStart": 0,
+    "vertexCount": 802,
+    "triangleCount": 1536,
+    "atlasChart": [
+      406,
+      5,
+      214,
+      390
+    ]
+  },
+  {
+    "name": "Neck",
+    "vertexStart": 802,
+    "vertexCount": 172,
+    "triangleCount": 320,
+    "atlasChart": [
+      697,
+      812,
+      97,
+      70
+    ]
+  },
+  {
+    "name": "Head",
+    "vertexStart": 974,
+    "vertexCount": 860,
+    "triangleCount": 1664,
+    "atlasChart": [
+      184,
+      812,
+      179,
+      128
+    ]
+  },
+  {
+    "name": "HatBrim",
+    "vertexStart": 1834,
+    "vertexCount": 330,
+    "triangleCount": 640,
+    "atlasChart": [
+      373,
+      812,
+      314,
+      83
+    ]
+  },
+  {
+    "name": "HatCrown",
+    "vertexStart": 2164,
+    "vertexCount": 640,
+    "triangleCount": 1232,
+    "atlasChart": [
+      794,
+      5,
+      170,
+      141
+    ]
+  },
+  {
+    "name": "HatTop",
+    "vertexStart": 2804,
+    "vertexCount": 147,
+    "triangleCount": 280,
+    "atlasChart": [
+      329,
+      963,
+      144,
+      25
+    ]
+  },
+  {
+    "name": "Leg.R",
+    "vertexStart": 2951,
+    "vertexCount": 722,
+    "triangleCount": 1344,
+    "atlasChart": [
+      104,
+      5,
+      94,
+      795
+    ]
+  },
+  {
+    "name": "Leg.L",
+    "vertexStart": 3673,
+    "vertexCount": 722,
+    "triangleCount": 1344,
+    "atlasChart": [
+      5,
+      5,
+      89,
+      797
+    ]
+  },
+  {
+    "name": "Arm.R",
+    "vertexStart": 4395,
+    "vertexCount": 512,
+    "triangleCount": 952,
+    "atlasChart": [
+      208,
+      5,
+      90,
+      550
+    ]
+  },
+  {
+    "name": "Arm.L",
+    "vertexStart": 4907,
+    "vertexCount": 512,
+    "triangleCount": 952,
+    "atlasChart": [
+      308,
+      5,
+      88,
+      536
+    ]
+  },
+  {
+    "name": "Palm.R",
+    "vertexStart": 5419,
+    "vertexCount": 206,
+    "triangleCount": 384,
+    "atlasChart": [
+      887,
+      812,
+      72,
+      64
+    ]
+  },
+  {
+    "name": "Palm.L",
+    "vertexStart": 5625,
+    "vertexCount": 206,
+    "triangleCount": 384,
+    "atlasChart": [
+      804,
+      812,
+      73,
+      65
+    ]
+  },
+  {
+    "name": "Finger.R.1",
+    "vertexStart": 5831,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      969,
+      812,
+      26,
+      63
+    ]
+  },
+  {
+    "name": "Finger.R.2",
+    "vertexStart": 5932,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      5,
+      963,
+      26,
+      56
+    ]
+  },
+  {
+    "name": "Finger.R.3",
+    "vertexStart": 6033,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      77,
+      963,
+      26,
+      51
+    ]
+  },
+  {
+    "name": "Finger.R.4",
+    "vertexStart": 6134,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      185,
+      963,
+      26,
+      43
+    ]
+  },
+  {
+    "name": "Finger.R.5",
+    "vertexStart": 6235,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      257,
+      963,
+      26,
+      41
+    ]
+  },
+  {
+    "name": "Finger.L.1",
+    "vertexStart": 6336,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      113,
+      963,
+      26,
+      50
+    ]
+  },
+  {
+    "name": "Finger.L.2",
+    "vertexStart": 6437,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      41,
+      963,
+      26,
+      54
+    ]
+  },
+  {
+    "name": "Finger.L.3",
+    "vertexStart": 6538,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      221,
+      963,
+      26,
+      43
+    ]
+  },
+  {
+    "name": "Finger.L.4",
+    "vertexStart": 6639,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      293,
+      963,
+      26,
+      34
+    ]
+  },
+  {
+    "name": "Finger.L.5",
+    "vertexStart": 6740,
+    "vertexCount": 101,
+    "triangleCount": 180,
+    "atlasChart": [
+      149,
+      963,
+      26,
+      50
+    ]
+  },
+  {
+    "name": "Shoe.R",
+    "vertexStart": 6841,
+    "vertexCount": 464,
+    "triangleCount": 880,
+    "atlasChart": [
+      630,
+      5,
+      154,
+      149
+    ]
+  },
+  {
+    "name": "Shoe.L",
+    "vertexStart": 7305,
+    "vertexCount": 464,
+    "triangleCount": 880,
+    "atlasChart": [
+      5,
+      812,
+      169,
+      141
+    ]
+  }
+]

@@ -3,6 +3,7 @@
 import { lazy, Suspense } from "react";
 
 import CorridorShell from "./corridor/CorridorShell";
+import CorridorLights from "./corridor/CorridorLights";
 
 const CorridorDetails = lazy(() => import("./corridor/CorridorDetails"));
 
@@ -17,6 +18,9 @@ export default function CorridorScene({
   return (
     <group name="Corridor Scene">
       <CorridorShell />
+      {/* Keep the point-light count stable before entry. Adding these lights at
+       * door-open time forces every standard room material to recompile. */}
+      <CorridorLights />
       {detailsEnabled ? (
         <Suspense fallback={null}>
           <CorridorDetails />

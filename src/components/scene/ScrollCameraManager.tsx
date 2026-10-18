@@ -8,6 +8,7 @@ import {
   CORRIDOR_INFO_STATIONS,
   cameraYAt,
   corridorStationInfluenceAt,
+  corridorStationZ,
   descentProgressAt,
   journeyPhaseAt,
   windowProgressAt,
@@ -28,9 +29,18 @@ import {
 } from "./journeyLoading";
 import { useJourneyLoading } from "./JourneyLoadingProvider";
 import {
+  isInteractiveKeyboardTarget,
+  journeyKeyboardDirection,
+} from "./keyboardControls";
+import {
   reportJourneyInteraction,
   useResponsiveExperience,
 } from "../ResponsiveExperience";
+import {
+  prioritizeProgressiveNavigation,
+  resumeProgressiveOriginalLoading,
+} from "./progressiveTextureLoading";
+import { corridorStationReadingAngles } from "./corridor/corridorFraming";
 
 const SCROLL_SPEED = 0.0028;
 const FRICTION = 0.92;
@@ -50,6 +60,7 @@ const SECTION_NAV_SPEED = 72;
 const SECTION_NAV_MIN_DURATION = 0.7;
 const SECTION_NAV_MAX_DURATION = 1.8;
 const PROGRESS_REPORT_INTERVAL = 1 / 20;
+const LOADING_ACTIVITY_REPORT_INTERVAL = 0.5;
 const NEXT_STAGE_PREFETCH_DISTANCE = 48;
 
 type SectionNavigationMotion = {
@@ -79,6 +90,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
   const flightVelocity = useRef(0);
   const sectionNavigation = useRef<SectionNavigationMotion | null>(null);
   const lastProgressReport = useRef(-Infinity);
+  const lastLoadingActivityReport = useRef(-Infinity);
   const corridorFocuses = useMemo(
     () =>
       corridor.stations.map((station, index) => ({
@@ -92,6 +104,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     flightVelocity.current = 0;
     sectionNavigation.current = null;
     lastWaitingFor.current = null;
+    resumeProgressiveOriginalLoading(true);
     setWaitingFor(null);
   }, [enabled, setWaitingFor]);
 
@@ -109,6 +122,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       }
 
       const { id, z } = (event as CustomEvent<JourneyNavigateDetail>).detail;
+      prioritizeProgressiveNavigation(id);
       const targetZ = THREE.MathUtils.clamp(
         z,
         JOURNEY.farBound,
@@ -137,11 +151,13 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     };
 
     window.addEventListener(JOURNEY_NAVIGATE_EVENT, handleSectionNavigation);
-    return () =>
+    return () => {
       window.removeEventListener(
         JOURNEY_NAVIGATE_EVENT,
         handleSectionNavigation,
       );
+      resumeProgressiveOriginalLoading(true);
+    };
   }, [camera, enabled, requestStagesThrough, responsive.reducedMotion]);
 
   useEffect(() => {
@@ -168,6 +184,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       if (Math.abs(inputDelta) < 0.5) return;
 
       sectionNavigation.current = null;
+      resumeProgressiveOriginalLoading(true);
       flightVelocity.current = THREE.MathUtils.clamp(
         flightVelocity.current + inputDelta * SCROLL_SPEED,
         -MAX_SCROLL_VELOCITY,
@@ -214,18 +231,17 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
       if (
-        target?.isContentEditable ||
-        target?.matches("input, textarea, select, button, a")
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isInteractiveKeyboardTarget(event.target)
       ) {
         return;
       }
 
-      let direction = 0;
-      if (event.key === "ArrowDown" || event.key === "PageDown") direction = 1;
-      if (event.key === "ArrowUp" || event.key === "PageUp") direction = -1;
-      if (event.key === " ") direction = event.shiftKey ? -1 : 1;
+      const direction = journeyKeyboardDirection(event);
       if (!direction) return;
 
       event.preventDefault();
@@ -261,6 +277,7 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     ) {
       flightVelocity.current = 0;
       sectionNavigation.current = null;
+      resumeProgressiveOriginalLoading(true);
       reportWaiting(null);
       return;
     }
@@ -280,6 +297,16 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
     const farBound = readyJourneyFarBound(completedStages);
     const prevZ = camera.position.z;
     const navigation = sectionNavigation.current;
+    if (
+      (navigation || Math.abs(flightVelocity.current) >= MIN_VELOCITY) &&
+      state.clock.elapsedTime - lastLoadingActivityReport.current >=
+        LOADING_ACTIVITY_REPORT_INTERVAL
+    ) {
+      lastLoadingActivityReport.current = state.clock.elapsedTime;
+      // Keep optional high-resolution GPU uploads paused for the full queued
+      // navigation and inertial motion, not just the initiating click.
+      reportJourneyInteraction();
+    }
     let nextZ: number;
     let waitingFor: string | null = null;
 
@@ -290,6 +317,9 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
       nextZ = prevZ;
       waitingFor = navigation.label;
     } else if (navigation) {
+      // Every preview/model baseline on the route is now ready. Let the camera
+      // move immediately, then load the clicked section's originals first.
+      resumeProgressiveOriginalLoading();
       flightVelocity.current = 0;
       navigation.elapsed += delta;
       const progress = THREE.MathUtils.clamp(
@@ -387,14 +417,17 @@ export default function ScrollCameraManager({ enabled }: { enabled: boolean }) {
         if (influence <= strongestInfluence) continue;
 
         strongestInfluence = influence;
-        yawTarget =
-          -focus.side *
-          CORRIDOR_INFO_STATIONS.focusYaw *
-          responsive.corridorFocusScale *
-          influence;
-        corridorPitchTarget = CORRIDOR_INFO_STATIONS.focusPitch * influence;
-        corridorRollTarget =
-          focus.side * CORRIDOR_INFO_STATIONS.focusRoll * influence;
+        const readingAngles = corridorStationReadingAngles(
+          focus.side,
+          corridorStationZ(focus.index),
+          nextZ,
+          responsive,
+          influence,
+        );
+        yawTarget = readingAngles.yaw * influence;
+        corridorPitchTarget = readingAngles.pitch * influence;
+        // A level horizon keeps small text comfortable to read.
+        corridorRollTarget = 0;
       }
 
       const windowInfluence =

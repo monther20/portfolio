@@ -25,13 +25,14 @@ export default function DayNightSwitch({ visible }: { visible: boolean }) {
     journey.cameraLocked ||
     journey.contactOpen ||
     journey.interactionLocked;
+  const showControl = visible && !journey.contactOpen && !journey.interactionLocked;
 
   return (
     <div
       ref={control}
       className={styles.control}
-      data-visible={visible}
-      aria-hidden={!visible}
+      data-visible={showControl}
+      aria-hidden={!showControl}
     >
       <button
         type="button"
@@ -39,7 +40,7 @@ export default function DayNightSwitch({ visible }: { visible: boolean }) {
         aria-label="Daylight moonlight"
         aria-checked={isNight}
         title={`Switch to ${isNight ? "light" : "dark"} mode`}
-        disabled={!visible || locked}
+        disabled={!showControl || locked}
         className={styles.button}
         onClick={toggle}
       >

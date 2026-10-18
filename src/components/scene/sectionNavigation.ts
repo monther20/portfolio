@@ -1,4 +1,5 @@
 import { JOURNEY, corridorStationZ } from "./journeyConfig";
+import { CORRIDOR_READING_DISTANCE } from "./corridor/corridorFraming";
 
 export const JOURNEY_NAVIGATE_EVENT = "portfolio:journey-navigate";
 export const JOURNEY_PROGRESS_EVENT = "portfolio:journey-progress";
@@ -7,8 +8,8 @@ export const JOURNEY_SECTIONS = [
   {
     id: "about",
     label: "About",
-    /** Stop just before the first corridor story panel. */
-    z: corridorStationZ(0) + 7,
+    /** Frame the full first story panel, rather than stopping beside it. */
+    z: corridorStationZ(0) + CORRIDOR_READING_DISTANCE,
   },
   {
     id: "journey",

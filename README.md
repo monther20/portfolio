@@ -22,9 +22,13 @@ locally, or verify it on a deploy preview.
 
 ## Controls
 
-- Click or tap the door to enter; keyboard users can press **Enter** or **Space** while the 3D view is focused.
-- Scroll, swipe, or use the arrow keys to travel. The section navigation can jump directly to each portfolio stop.
-- Click or tap a lantern or corridor light, press **N**, or use the on-screen switch after entering to toggle day and night.
+- Click or tap the door to enter; keyboard users can press **Enter** or **Space** without first focusing the 3D view.
+- Choose **View projects** at the entrance to enter and travel directly to selected work. **Look closer** opens the chair and chessboard view; **Escape** returns to the door.
+- Scroll, swipe, or use any arrow key to travel. **Page Up**, **Page Down**, **Space**, and **Shift+Space** also work. Section navigation jumps directly to each portfolio stop; compact screens use a bottom dock.
+- Click or tap a floating project paper to bring it forward, then use its **Open live project** artwork to visit the site. Press **Escape** or click the paper again to return it to the flight.
+- Click or tap the **Mail** sign at Contact to unfold the paper airplane on the ground. The email form is drawn directly on that paper; **Escape** or its close button folds it back.
+- Use the fixed **Download CV** button at the upper left after entering. It stays opposite the day/night switch as you travel.
+- Click or tap a lantern or corridor light, press **N** from anywhere outside a form or control, or use the on-screen switch after entering to toggle day and night.
 
 The experience adapts framing and rendering quality for phones, tablets, and desktops, respects reduced-motion preferences, and provides a contact fallback when WebGL 2 is unavailable.
 
@@ -45,7 +49,7 @@ Netlify installs its current Next.js adapter automatically.
 5. Add a form-submission email or webhook notification in Netlify's project
    notification settings so new messages are monitored outside the dashboard.
 
-The visible 3D form sends URL-encoded fields to `/__forms.html`. It shows
+The form on the unfolded paper sends URL-encoded fields to `/__forms.html`. It shows
 accessible submitting, accepted, and failure states; the paper-airplane send
 animation starts only after Netlify returns a successful response. A successful
 UI state confirms Netlify accepted the request, while the Forms dashboard is
@@ -57,6 +61,7 @@ the source of truth for stored delivery.
 - `src/app/layout.tsx` — edit site metadata such as title, description, author, and creator.
 - `src/components/scene/journeyConfig.ts` — adjust the camera timeline, corridor layout, and section anchors.
 - `src/components/scene/sectionNavigation.ts` — adjust navigation stops and labels.
+- `src/components/scene/corridor/corridorFraming.ts` — adjust greeting fit and readable wall-panel framing.
 - `src/components/scene/dayNight/config.ts` — tune day/night colors, lighting, stars, and transitions. See `docs/day-night.md` for the full system.
 - `src/components/ResponsiveExperience.tsx` — tune responsive layouts, quality tiers, DPR limits, and reduced-motion behavior.
 - `src/app/page.tsx` — controls the Canvas, entrance loader, room scene, and page-level HUD.
@@ -101,8 +106,20 @@ tests/                                 Bun unit and source-contract tests
 Model and environment URLs are centralized in `src/components/scene/assetPaths.ts`.
 `public/models/chair-table.glb` is the original furniture export; the site loads
 `chair-table.meshopt.glb` instead. Keep asset filenames URL-friendly (no spaces).
+The seated character also loads a lossless Meshopt/WebP variant. Regenerate it
+with `node scripts/optimize-seated-character.mjs`, or verify its decoded geometry,
+animation bytes, atlas pixels, and deterministic output with
+`node scripts/optimize-seated-character.mjs --check`. The original export stays
+available as the source.
 The corridor light GLBs can be regenerated with
 `node scripts/generate-corridor-lights.mjs`.
+
+The downloadable `public/Monther-Abdelrazek-CV.pdf` is generated from
+`src/data/portfolio.ts`. After updating that content, regenerate the CV with
+`python scripts/generate-cv.py`. This requires Python with ReportLab
+(`python -m pip install reportlab`) and Node.js with the project's installed
+TypeScript dependency. The generated PDF is served as a static asset; Python is
+not required to run or deploy the site.
 
 ## Validation
 
@@ -113,6 +130,22 @@ Run these checks sequentially before shipping:
 bun test tests
 bun run build
 ```
+
+## Performance measurements
+
+Measure the production server (`bun run build`, then `bun run start`), using the
+same device, viewport, day/night mode, and camera stop before and after changes.
+Use a fresh browser cache for loading comparisons. Allow travel and asset
+promotion to finish before collecting a stationary sample.
+
+Open `/?perf=1` to enable local diagnostics. A hidden
+`output[data-testid="performance-report"]` contains JSON updated every second,
+covering the last six seconds: frame intervals, CPU time inside renderer calls,
+draw calls, long tasks, renderer resource counts, and resource timing entries.
+The probe is inactive on ordinary visits and sends no data to a service.
+CPU render time does not measure GPU execution time; phone-sized desktop
+viewports do not measure physical phone performance. Browser scheduling can
+affect frame intervals, so compare rendering work as well as frame pacing.
 
 ## Notes
 

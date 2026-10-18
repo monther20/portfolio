@@ -216,6 +216,9 @@ function InfoStation({
       index={index}
       name={`Corridor Hinged Mini Wall: ${station.title}`}
     >
+      <WallText position={[0, 1.96, 0.05]} fontSize={0.3} maxWidth={3.4}>
+        {station.title}
+      </WallText>
       <group
         name={`Corridor Station Frame: ${station.title}`}
         position={[0, 0.7, -0.01]}
@@ -234,9 +237,9 @@ function InfoStation({
 
       <WallText
         position={[0, -1, 0]}
-        fontSize={responsive.isCompact ? 0.235 : 0.21}
+        fontSize={responsive.isPortrait ? 0.22 : 0.21}
         color="#000000"
-        maxWidth={responsive.isCompact ? 3.15 : 3.35}
+        maxWidth={3.35}
         rotation={side * 0.014}
       >
         {station.lines.join("\n")}

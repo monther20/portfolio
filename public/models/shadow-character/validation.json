@@ -1,0 +1,35 @@
+{
+  "glbReopened": true,
+  "outwardWindingAllShells": true,
+  "consistentEdgeOrientation": true,
+  "triangleCount": 14592,
+  "vertexCount": 7769,
+  "materialCount": 1,
+  "textureCount": 1,
+  "textureSize": [
+    1024,
+    1024
+  ],
+  "jointCount": 21,
+  "skinBindIdentity": true,
+  "maxIdleFootDisplacementMeters": 3.528594971768939e-09,
+  "idleLoopMatches": true,
+  "degenerateTriangles": 0,
+  "weldedBoundaryEdges": 0,
+  "weldedNonmanifoldEdges": 0,
+  "boundsMin": [
+    -0.5692340135574341,
+    0.0,
+    -0.11432445049285889
+  ],
+  "boundsMax": [
+    0.5675809383392334,
+    3.6111600399017334,
+    0.1536533236503601
+  ],
+  "animationNames": [
+    "Idle"
+  ],
+  "renderer": "CPU rasterization of reopened exported GLB; embedded unlit material, no lighting or optional shader",
+  "validationScope": "Structural, numerical and CPU rendered inspection; not Khronos validator or a WebGL runtime test."
+}
