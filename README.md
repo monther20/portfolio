@@ -106,6 +106,11 @@ tests/                                 Bun unit and source-contract tests
 Model and environment URLs are centralized in `src/components/scene/assetPaths.ts`.
 `public/models/chair-table.glb` is the original furniture export; the site loads
 `chair-table.meshopt.glb` instead. Keep asset filenames URL-friendly (no spaces).
+The seated character also loads a lossless Meshopt/WebP variant. Regenerate it
+with `node scripts/optimize-seated-character.mjs`, or verify its decoded geometry,
+animation bytes, atlas pixels, and deterministic output with
+`node scripts/optimize-seated-character.mjs --check`. The original export stays
+available as the source.
 The corridor light GLBs can be regenerated with
 `node scripts/generate-corridor-lights.mjs`.
 
@@ -125,6 +130,22 @@ Run these checks sequentially before shipping:
 bun test tests
 bun run build
 ```
+
+## Performance measurements
+
+Measure the production server (`bun run build`, then `bun run start`), using the
+same device, viewport, day/night mode, and camera stop before and after changes.
+Use a fresh browser cache for loading comparisons. Allow travel and asset
+promotion to finish before collecting a stationary sample.
+
+Open `/?perf=1` to enable local diagnostics. A hidden
+`output[data-testid="performance-report"]` contains JSON updated every second,
+covering the last six seconds: frame intervals, CPU time inside renderer calls,
+draw calls, long tasks, renderer resource counts, and resource timing entries.
+The probe is inactive on ordinary visits and sends no data to a service.
+CPU render time does not measure GPU execution time; phone-sized desktop
+viewports do not measure physical phone performance. Browser scheduling can
+affect frame intervals, so compare rendering work as well as frame pacing.
 
 ## Notes
 

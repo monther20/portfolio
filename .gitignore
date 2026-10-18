@@ -48,4 +48,5 @@ next-env.d.ts
 # temp folder
 /temp
 
-/docs
+/docs/*
+!/docs/performance-dev-vs-remote-master.md

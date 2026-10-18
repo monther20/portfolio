@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree, extend } from "@react-three/fiber";
 import { Billboard, shaderMaterial } from "@react-three/drei";
 
-import { getFogFadeRange } from "./fogVisibility";
+import { getFogFadeRange, registerFogCull } from "./fogVisibility";
 import { useProgressiveArtwork } from "./ProgressiveArtwork";
 import { useResponsiveExperience } from "../ResponsiveExperience";
 import { useDayNight } from "./dayNight/DayNightProvider";
@@ -63,6 +63,9 @@ const SketchPaintMaterial = shaderMaterial(
     uniform float fogFadeFar;
 
     void main() {
+      float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
+      if (fogAlpha <= 0.01) discard;
+
       vec4 sketch = mix(
         texture2D(texSketchPreview, vUv),
         texture2D(texSketchOriginal, vUv),
@@ -87,9 +90,6 @@ const SketchPaintMaterial = shaderMaterial(
       float a  = mix(sketch.a, paint.a, w);
 
       if (a < 0.35) discard;
-
-      float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
-      if (fogAlpha <= 0.01) discard;
 
       gl_FragColor = vec4(rgb * mix(vec3(1.0), nightTint, nightAmount), fogAlpha) * vec4(tintColor, 1.0);
       float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
@@ -185,9 +185,18 @@ export default function PaintSprite({
   }, [height, paintTexture.height, paintTexture.width]);
 
   const tmp = useMemo(() => new THREE.Vector3(), []);
+  // Enclose the rendered plane and its enlarged touch target in the same
+  // sphere. Hover/parent scaling is consumed from the live world transform.
+  const targetScale = interactive ? Math.max(1, responsive.hitTargetScale) : 1;
+  const boundsRadius = Math.hypot(w * targetScale / 2, h * targetScale / 2, 0.002);
   const revealTarget = useRef(0);
   const qualityTarget = useRef(0);
   const debugName = name ?? `PaintSprite ${sketch.split("/").pop() ?? sketch}`;
+
+  useLayoutEffect(
+    () => registerFogCull(scene, scaleRef, boundsRadius),
+    [boundsRadius, scene],
+  );
 
   useEffect(() => {
     const mat = matRef.current;

@@ -59,6 +59,9 @@ const fragmentShader = /* glsl */ `
   varying float vFogDepth;
 
   void main() {
+    float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
+    if (fogAlpha <= 0.01) discard;
+
     vec4 color;
 
     if (gl_FrontFacing) {
@@ -81,9 +84,6 @@ const fragmentShader = /* glsl */ `
     }
 
     if (color.a < 0.2) discard;
-
-    float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
-    if (fogAlpha <= 0.01) discard;
 
     color.a *= fogAlpha;
     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);

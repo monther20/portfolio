@@ -27,6 +27,7 @@ import {
 import DayNightSwitch from "../components/scene/dayNight/DayNightSwitch";
 import { getJourneyState } from "../components/scene/journeyState";
 import CvDownloadControl from "../components/scene/CvDownloadControl";
+import PerformanceProbe from "../components/scene/PerformanceProbe";
 import {
   isInteractiveKeyboardTarget,
   portfolioKeyboardAction,
@@ -217,6 +218,7 @@ function ResponsiveHallwayScene({
           }}
         >
           <ResponsiveCamera />
+          <PerformanceProbe />
           <Suspense fallback={null}>
             <RoomScene
               entryEnabled={initialLoadingComplete}

@@ -41,6 +41,9 @@ const fragmentShader = /* glsl */ `
   uniform float fogFadeFar;
 
   void main() {
+    float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
+    if (fogAlpha <= 0.01) discard;
+
     vec4 sketch = mix(
       texture2D(texSketchPreview, vUv),
       texture2D(texSketchOriginal, vUv),
@@ -59,9 +62,6 @@ const fragmentShader = /* glsl */ `
     float alpha = mix(sketch.a, paint.a, paintedAmount);
 
     if (alpha < 0.35) discard;
-
-    float fogAlpha = 1.0 - smoothstep(fogFadeNear, fogFadeFar, vFogDepth);
-    if (fogAlpha <= 0.01) discard;
 
     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
     color *= mix(vec3(1.0), nightTint, nightAmount);
